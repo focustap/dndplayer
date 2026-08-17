@@ -1,0 +1,57 @@
+.notes-editor input,
+.notes-editor textarea,
+.notes-editor select {
+  border: 1px solid #39433e;
+  background: #0f1311;
+  color: #eee;
+  padding: 12px;
+}
+
+.form-field {
+  display: grid;
+  gap: 6px;
+  color: #b9c1bb;
+  font-size: 9px;
+  letter-spacing: .04em;
+}
+
+.form-field > span {
+  color: #cbaa79;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.form-field small {
+  font-size: 8px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.stat-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+}
+
+.stat-fields .form-field input {
+  width: 100%;
+}
+
+.placement-help {
+  margin: -2px 2px 14px;
+  color: #89928d;
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.library-row b {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #cbaa79;
+  font-size: 8px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}

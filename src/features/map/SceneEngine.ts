@@ -25,7 +25,7 @@ export class SceneEngine {
     if (snapshot.scene.fogEnabled) this.renderFog(snapshot);
   }
   private async renderBackground(scene: Scene) {
-    if (scene.mapUrl) { try { const texture = await Assets.load<Texture>(scene.mapUrl); const sprite = new Sprite(texture); sprite.width = scene.width; sprite.height = scene.height; sprite.zIndex = 0; this.root.addChild(sprite); return; } catch { /* fall through to a recognizable offline demo scene */ } }
+    if (scene.mapUrl) { try { const texture = await Assets.load<Texture>(scene.mapUrl); const sprite = new Sprite(texture); const scale=Math.min(scene.width/texture.width,scene.height/texture.height); sprite.width=texture.width*scale; sprite.height=texture.height*scale; sprite.position.set((scene.width-sprite.width)/2,(scene.height-sprite.height)/2); sprite.zIndex = 0; this.root.addChild(sprite); return; } catch { /* fall through to a recognizable offline demo scene */ } }
     const floor = new Graphics().rect(0,0,scene.width,scene.height).fill(0x3d382f); floor.zIndex = 0; this.root.addChild(floor);
     const room = (x:number,y:number,w:number,h:number,color:number) => { const g = new Graphics().rect(x,y,w,h).fill(color).stroke({ color: 0x1b201d, width: 18 }); g.zIndex = 1; this.root.addChild(g); };
     room(90,90,620,330,0x5c5040); room(870,510,620,390,0x55493a); room(460,470,520,220,0x4c4438);
