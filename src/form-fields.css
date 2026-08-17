@@ -55,3 +55,9 @@
   letter-spacing: .06em;
   text-transform: uppercase;
 }
+
+.grid-popover { width: 300px; }
+.grid-toggle,.grid-size { display: grid; gap: 8px; margin-top: 12px; color: #adb6b0; font-size: 9px; }
+.grid-toggle { grid-template-columns: auto 1fr; align-items: center; }
+.grid-size > span { display: flex; justify-content: space-between; }
+.grid-size b { color: #d1ad78; }

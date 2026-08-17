@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useParams } from "react-router-dom";
-import type { FogRegion, FogTool, Placement, SceneOverlay, TabletopState, Token } from "../domain/types";
+import type { FogRegion, FogTool, GridType, Placement, SceneOverlay, TabletopState, Token } from "../domain/types";
 import { isDmRole } from "../domain/types";
 import { isSupabaseConfigured, supabase } from "../lib/supabase";
 import { tabletopService } from "../services/tabletopService";
@@ -13,6 +13,7 @@ interface TabletopActions {
   startPlacement(placement: Placement): void;
   cancelPlacement(): void;
   placeToken(x: number, y: number): Promise<void>;
+  updateSceneGrid(gridType: GridType, gridSize?: number): Promise<void>;
   commitTokenMove(id: string, x: number, y: number): Promise<void>;
   deleteToken(id: string): Promise<void>;
   patchToken(id: string, patch: Partial<Token>): Promise<void>;
@@ -55,6 +56,7 @@ export function TabletopProvider({ children, playerView }: { children: ReactNode
     startPlacement(placement) { const s=stateRef.current;if(!s||!isDmRole(s.role))return;setState(current=>current?{...current,placement,activeFogTool:null}:current); },
     cancelPlacement() { setState(current=>current?{...current,placement:null}:current); },
     async placeToken(x,y) { const s=stateRef.current;const placement=s?.placement;if(!s||!placement||!isDmRole(s.role))return;const token=placement.kind==="CHARACTER"?await tabletopService.placeCharacterToken(s.scene.id,placement.referenceId,x,y):await tabletopService.placeMonsterToken(s.scene.id,placement.referenceId,x,y);setState(current=>current?{...current,tokens:[...current.tokens,token],placement:null}:current); },
+    async updateSceneGrid(gridType, gridSize) { const s=stateRef.current;if(!s||!isDmRole(s.role))return;const size=Math.max(20,Math.min(240,Math.round(gridSize??s.scene.gridSize)));await tabletopService.updateSceneGrid(s.scene.id,gridType,size);setState(current=>current?{...current,scene:{...current.scene,gridType,gridSize:size}}:current); },
     async commitTokenMove(id, x, y) { await tabletopService.moveToken(id, x, y); setState((current) => current ? { ...current, tokens: current.tokens.map((token) => token.id === id ? { ...token, x, y } : token) } : current); },
     async deleteToken(id) { const s = stateRef.current; if (!s || !isDmRole(s.role)) return; if (isSupabaseConfigured && campaignId !== "demo") { const { error } = await supabase.from("tokens").delete().eq("id", id); if (error) throw error; } setState((current) => current ? { ...current, selectedTokenId: current.selectedTokenId === id ? null : current.selectedTokenId, tokens: current.tokens.filter((t) => t.id !== id) } : current); },
     async patchToken(id, patch) { const s=stateRef.current;const referenceId=s?.tokens.find(t=>t.id===id)?.referenceId;await tabletopService.updateToken(id, patch);if(patch.visible!==undefined&&referenceId&&s?.monsterInstances.some(m=>m.id===referenceId)&&isSupabaseConfigured&&campaignId!=="demo"){const {error}=await supabase.from("monster_instances").update({visible:patch.visible}).eq("id",referenceId);if(error)throw error;} setState((current) => current ? { ...current, tokens: current.tokens.map((t) => t.id === id ? { ...t, ...patch } : t), monsterInstances: patch.visible === undefined ? current.monsterInstances : current.monsterInstances.map((m) => referenceId === m.id ? { ...m, visible: patch.visible! } : m) } : current); },
