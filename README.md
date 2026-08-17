@@ -6,9 +6,9 @@ images, layered props/effects, tokens, fog, initiative, and fast creature
 controls with Supabase-backed authentication, persistence, authorization, and
 realtime synchronization.
 
-The repository includes an interactive demo mode when Supabase environment
-values are absent. Demo data is intentionally non-authoritative and in-memory;
-production persistence always uses Supabase.
+Authentication is handled exclusively by Supabase. Users can continue with
+Google or create an account with an email address and password. There is no
+production demo-account bypass.
 
 ## Stack
 
@@ -33,8 +33,8 @@ cp .env.example .env.local
 npm run dev
 ```
 
-The local Vite URL is normally `http://127.0.0.1:5173`. Without configured
-Supabase values, open the demo from the login screen.
+The local Vite URL is normally `http://127.0.0.1:5173`. Supabase values are
+required before sign-in is available.
 
 Quality commands:
 
@@ -47,13 +47,19 @@ npm run build
 ## Supabase setup
 
 1. Create a Supabase project.
-2. In Authentication settings, add the local and deployed origins as allowed
-   redirect URLs. Decide whether email confirmation should be enabled.
-3. Copy `.env.example` to `.env.local` and set:
+2. In Authentication > URL Configuration, set the deployed site as the Site
+   URL and add these exact redirect URLs:
+   - `http://127.0.0.1:5173/dashboard`
+   - `https://wayfinder-vtt.focustap.chatgpt.site/dashboard`
+3. In Authentication > Providers, enable Email and Google. In Google Cloud,
+   create a Web OAuth client, add the application's local and deployed origins,
+   and use the Supabase callback URL shown on the Google provider page as the
+   authorized redirect URI. Copy the Google client ID and secret into Supabase.
+4. Copy `.env.example` to `.env.local` and set:
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_PUBLISHABLE_KEY`
-4. Do not place a secret key or `service_role` key in a `VITE_` variable.
-5. Apply the migration:
+5. Do not place a secret key or `service_role` key in a `VITE_` variable.
+6. Apply the migration:
 
 ```bash
 npx supabase login
