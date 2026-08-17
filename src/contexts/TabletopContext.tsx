@@ -13,7 +13,6 @@ interface TabletopActions {
   startPlacement(placement: Placement): void;
   cancelPlacement(): void;
   placeToken(x: number, y: number): Promise<void>;
-  moveTokenLocal(id: string, x: number, y: number): void;
   commitTokenMove(id: string, x: number, y: number): Promise<void>;
   deleteToken(id: string): Promise<void>;
   patchToken(id: string, patch: Partial<Token>): Promise<void>;
@@ -56,8 +55,7 @@ export function TabletopProvider({ children, playerView }: { children: ReactNode
     startPlacement(placement) { const s=stateRef.current;if(!s||!isDmRole(s.role))return;setState(current=>current?{...current,placement,activeFogTool:null}:current); },
     cancelPlacement() { setState(current=>current?{...current,placement:null}:current); },
     async placeToken(x,y) { const s=stateRef.current;const placement=s?.placement;if(!s||!placement||!isDmRole(s.role))return;const token=placement.kind==="CHARACTER"?await tabletopService.placeCharacterToken(s.scene.id,placement.referenceId,x,y):await tabletopService.placeMonsterToken(s.scene.id,placement.referenceId,x,y);setState(current=>current?{...current,tokens:[...current.tokens,token],placement:null}:current); },
-    moveTokenLocal(id, x, y) { setState((s) => s ? { ...s, tokens: s.tokens.map((t) => t.id === id ? { ...t, x, y } : t) } : s); },
-    async commitTokenMove(id, x, y) { await tabletopService.moveToken(id, x, y); },
+    async commitTokenMove(id, x, y) { await tabletopService.moveToken(id, x, y); setState((current) => current ? { ...current, tokens: current.tokens.map((token) => token.id === id ? { ...token, x, y } : token) } : current); },
     async deleteToken(id) { const s = stateRef.current; if (!s || !isDmRole(s.role)) return; if (isSupabaseConfigured && campaignId !== "demo") { const { error } = await supabase.from("tokens").delete().eq("id", id); if (error) throw error; } setState((current) => current ? { ...current, selectedTokenId: current.selectedTokenId === id ? null : current.selectedTokenId, tokens: current.tokens.filter((t) => t.id !== id) } : current); },
     async patchToken(id, patch) { const s=stateRef.current;const referenceId=s?.tokens.find(t=>t.id===id)?.referenceId;await tabletopService.updateToken(id, patch);if(patch.visible!==undefined&&referenceId&&s?.monsterInstances.some(m=>m.id===referenceId)&&isSupabaseConfigured&&campaignId!=="demo"){const {error}=await supabase.from("monster_instances").update({visible:patch.visible}).eq("id",referenceId);if(error)throw error;} setState((current) => current ? { ...current, tokens: current.tokens.map((t) => t.id === id ? { ...t, ...patch } : t), monsterInstances: patch.visible === undefined ? current.monsterInstances : current.monsterInstances.map((m) => referenceId === m.id ? { ...m, visible: patch.visible! } : m) } : current); },
     async adjustHp(instanceId, amount, mode) { const safe = Math.max(0, Math.floor(amount)); if (!safe) return; await tabletopService.adjustMonsterHp(instanceId, safe, mode); setState((s) => s ? { ...s, monsterInstances: s.monsterInstances.map((m) => m.id === instanceId ? { ...m, currentHp: mode === "DAMAGE" ? Math.max(0, m.currentHp - safe) : Math.min(m.maxHp, m.currentHp + safe), dead: mode === "DAMAGE" ? m.currentHp - safe <= 0 : false } : m) } : s); },
