@@ -1,0 +1,2 @@
+-- Development seed intentionally stays minimal. The migration installs the
+-- system condition catalog; campaigns are created through the application.
