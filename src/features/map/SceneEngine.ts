@@ -5,7 +5,7 @@ export interface EngineSnapshot { scene: Scene; overlays: SceneOverlay[]; tokens
 interface EngineCallbacks { onSelect(id: string | null): void; onMoveLocal(id: string, x: number, y: number): void; onMoveCommit(id: string, x: number, y: number): void; onOverlayCommit(id: string, x: number, y: number): void; onFogCommit(tool: FogTool, points: number[]): void; onContext(id: string, x: number, y: number): void; }
 
 export class SceneEngine {
-  private app = new Application(); private root = new Container(); private snapshot: EngineSnapshot | null = null; private initialized = false; private destroyed = false; private renderVersion = 0; private dragging: { kind: "TOKEN"|"OVERLAY"; id: string; dx: number; dy: number } | null = null; private fogDraft: { tool: FogTool; sx: number; sy: number; x: number; y: number; samples: number[] } | null = null; private panning = false; private panStart = { x: 0, y: 0, rootX: 0, rootY: 0 }; private spaceDown = false;
+  private app = new Application(); private root = new Container(); private snapshot: EngineSnapshot | null = null; private initialized = false; private destroyed = false; private renderVersion = 0; private tokenTextures = new Map<string, Promise<Texture | null>>(); private dragging: { kind: "TOKEN"|"OVERLAY"; id: string; dx: number; dy: number } | null = null; private fogDraft: { tool: FogTool; sx: number; sy: number; x: number; y: number; samples: number[] } | null = null; private panning = false; private panStart = { x: 0, y: 0, rootX: 0, rootY: 0 }; private spaceDown = false;
   constructor(private host: HTMLElement, private callbacks: EngineCallbacks) {}
   async init() {
     await this.app.init({ resizeTo: this.host, antialias: true, backgroundColor: 0x151816, resolution: Math.min(window.devicePixelRatio, 2), autoDensity: true }); this.initialized=true;
@@ -20,7 +20,7 @@ export class SceneEngine {
     await this.renderBackground(snapshot.scene); if (version !== this.renderVersion || this.destroyed) return;
     if (snapshot.scene.gridType === "SQUARE") this.renderGrid(snapshot.scene);
     for (const overlay of snapshot.overlays.filter((o) => o.visible || snapshot.canDm)) await this.renderOverlay(overlay, snapshot.canDm);
-    for (const token of snapshot.tokens.filter((t) => snapshot.canDm || t.visible)) this.renderToken(token, snapshot);
+    for (const token of snapshot.tokens.filter((t) => snapshot.canDm || t.visible)) { await this.renderToken(token, snapshot); if (version !== this.renderVersion || this.destroyed) return; }
     if (snapshot.scene.fogEnabled) this.renderFog(snapshot);
   }
   private async renderBackground(scene: Scene) {
@@ -39,10 +39,23 @@ export class SceneEngine {
     if (canDm && overlay.locked) { const lock = new Text({ text:"◆", style:{ fill:0xd3ad76,fontSize:16 } }); lock.anchor.set(.5); lock.position.set(overlay.x,overlay.y-overlay.height/2-14); lock.zIndex=250; this.root.addChild(lock); }
   }
   private fallbackEffect(overlay: SceneOverlay) { const c=new Container(); const glow=new Graphics().ellipse(0,0,overlay.width,overlay.height).fill({color:0xc44721,alpha:.2}); c.addChild(glow); for(let i=0;i<12;i++){const flame=new Graphics().circle((i%4-1.5)*42,(Math.floor(i/4)-1)*38,16+(i%3)*5).fill({color:i%2?0xf0782d:0xc43d1e,alpha:.55}); c.addChild(flame);} return c; }
-  private renderToken(token: Token, snapshot: EngineSnapshot) {
+  private async loadTokenTexture(url: string) {
+    let pending = this.tokenTextures.get(url);
+    if (!pending) { pending = Assets.load<Texture>(url).catch(() => null); this.tokenTextures.set(url, pending); }
+    return pending;
+  }
+  private async renderToken(token: Token, snapshot: EngineSnapshot) {
     const cell=snapshot.scene.gridSize; const radius=cell*.36*token.size; const c=new Container(); c.position.set(token.x,token.y); c.rotation=token.rotation; c.zIndex=300; c.eventMode=snapshot.canMove(token)?"static":"auto"; c.cursor=snapshot.canMove(token)?"grab":"pointer";
-    const ring=new Graphics().circle(0,0,radius+5).fill(token.type==="MONSTER"?0x718460:token.type==="NPC"?0x9b794e:0x9a86b1); if(snapshot.selectedTokenId===token.id) ring.circle(0,0,radius+11).stroke({color:0xe3b978,width:4}); if(snapshot.canDm&&!token.visible) ring.alpha=.42; c.addChild(ring);
-    const face=new Graphics().circle(0,0,radius).fill(token.type==="MONSTER"?0x394a34:token.type==="NPC"?0x6e5335:0x544965); c.addChild(face); const label=new Text({text:token.displayName.slice(0,1).toUpperCase(),style:{fill:0xf4ead9,fontSize:radius*.8,fontWeight:"700",fontFamily:"Georgia"}}); label.anchor.set(.5); c.addChild(label);
+    const ringColor=token.type==="MONSTER"?0x718460:token.type==="NPC"?0x9b794e:0x9a86b1;
+    const ring=new Graphics().circle(0,0,radius+5).fill(ringColor); if(snapshot.canDm&&!token.visible) ring.alpha=.42; c.addChild(ring);
+    if(snapshot.selectedTokenId===token.id){const selected=new Graphics().circle(0,0,radius+11).stroke({color:0xe3b978,width:4});c.addChild(selected);}
+    const texture=token.imageUrl?await this.loadTokenTexture(token.imageUrl):null;
+    if(texture){
+      const portrait=new Sprite(texture); portrait.anchor.set(.5); const diameter=radius*2; const scale=Math.max(diameter/texture.width,diameter/texture.height); portrait.scale.set(scale);
+      const circleMask=new Graphics().circle(0,0,radius).fill(0xffffff); portrait.mask=circleMask; if(snapshot.canDm&&!token.visible) portrait.alpha=.42; c.addChild(portrait,circleMask);
+    }else{
+      const face=new Graphics().circle(0,0,radius).fill(token.type==="MONSTER"?0x394a34:token.type==="NPC"?0x6e5335:0x544965); if(snapshot.canDm&&!token.visible) face.alpha=.42; c.addChild(face); const label=new Text({text:token.displayName.slice(0,1).toUpperCase(),style:{fill:0xf4ead9,fontSize:radius*.8,fontWeight:"700",fontFamily:"Georgia"}}); label.anchor.set(.5); if(snapshot.canDm&&!token.visible) label.alpha=.42; c.addChild(label);
+    }
     if(token.conditions.length){const badge=new Graphics().circle(radius*.8,radius*.8,12).fill(0x8b5039); const bt=new Text({text:String(token.conditions.length),style:{fill:0xffffff,fontSize:12,fontWeight:"700"}}); bt.anchor.set(.5); bt.position.set(radius*.8,radius*.8); c.addChild(badge,bt);}
     if(snapshot.canDm&&!token.visible){const hidden=new Text({text:"HIDDEN",style:{fill:0xe5b978,fontSize:11,fontWeight:"700",letterSpacing:1}});hidden.anchor.set(.5);hidden.position.set(0,-radius-17);c.addChild(hidden);}
     if(snapshot.canDm&&snapshot.shiftIntel){const intel=snapshot.monsterIntel[token.referenceId??""]; if(intel){const panel=new Graphics().roundRect(-70,-radius-72,140,54,7).fill({color:0x0d1110,alpha:.94}).stroke({color:0x94754f,width:1});const info=new Text({text:`${token.displayName}\n${intel.hp} / ${intel.maxHp} HP   ·   AC ${intel.ac}`,style:{fill:0xe9e5dc,fontSize:12,fontFamily:"Arial",align:"center",lineHeight:19}});info.anchor.set(.5);info.position.set(0,-radius-45);c.addChild(panel,info);}}
@@ -53,5 +66,5 @@ export class SceneEngine {
   private handleMove(e:FederatedPointerEvent){if(this.panning){this.root.position.set(this.panStart.rootX+e.global.x-this.panStart.x,this.panStart.rootY+e.global.y-this.panStart.y);return;}if(this.fogDraft){const p=this.root.toLocal(e.global);this.fogDraft.x=p.x;this.fogDraft.y=p.y;if(this.fogDraft.tool.endsWith("BRUSH")){const s=this.fogDraft.samples;const lx=s[s.length-2],ly=s[s.length-1];if(Math.hypot(p.x-lx,p.y-ly)>(this.snapshot?.scene.gridSize??80)*.3)s.push(p.x,p.y);}return;}if(!this.dragging||!this.snapshot)return;const p=this.root.toLocal(e.global);let x=p.x-this.dragging.dx,y=p.y-this.dragging.dy;if(this.dragging.kind==="TOKEN"&&this.snapshot.scene.gridType==="SQUARE"){const cell=this.snapshot.scene.gridSize;x=Math.round(x/cell)*cell;y=Math.round(y/cell)*cell;}if(this.dragging.kind==="TOKEN")this.callbacks.onMoveLocal(this.dragging.id,x,y);else{const overlay=this.snapshot.overlays.find(o=>o.id===this.dragging!.id);if(overlay){overlay.x=x;overlay.y=y;void this.render(this.snapshot);}}}
   private handleUp(){if(this.fogDraft){const d=this.fogDraft;if(d.tool.endsWith("RECT")){const x=Math.min(d.sx,d.x),y=Math.min(d.sy,d.y);this.callbacks.onFogCommit(d.tool,[x,y,Math.max(10,Math.abs(d.x-d.sx)),Math.max(10,Math.abs(d.y-d.sy))]);}else this.callbacks.onFogCommit(d.tool,[(this.snapshot?.scene.gridSize??80)*.65,...d.samples]);this.fogDraft=null;return;}if(!this.dragging||!this.snapshot){this.panning=false;return;}if(this.dragging.kind==="TOKEN"){const token=this.snapshot.tokens.find(t=>t.id===this.dragging!.id);if(token)this.callbacks.onMoveCommit(token.id,token.x,token.y);}else{const overlay=this.snapshot.overlays.find(o=>o.id===this.dragging!.id);if(overlay)this.callbacks.onOverlayCommit(overlay.id,overlay.x,overlay.y);}this.dragging=null;this.panning=false;}
   private handleWheel=(e:WheelEvent)=>{e.preventDefault();const old=this.root.scale.x;const next=Math.max(.25,Math.min(3,old*(e.deltaY<0?1.1:.9)));const rect=this.app.canvas.getBoundingClientRect();const px=e.clientX-rect.left,py=e.clientY-rect.top;const wx=(px-this.root.x)/old,wy=(py-this.root.y)/old;this.root.scale.set(next);this.root.position.set(px-wx*next,py-wy*next);};
-  destroy(){this.destroyed=true;if(!this.initialized)return;this.app.canvas.removeEventListener("wheel",this.handleWheel);this.app.destroy(true,{children:true,texture:false});}
+  destroy(){this.destroyed=true;this.tokenTextures.clear();if(!this.initialized)return;this.app.canvas.removeEventListener("wheel",this.handleWheel);this.app.destroy(true,{children:true,texture:false});}
 }
