@@ -35,9 +35,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     async signInWithGoogle() {
       if (!isSupabaseConfigured) return "Supabase authentication is not configured yet.";
+      const appBaseUrl = new URL(import.meta.env.BASE_URL, window.location.origin);
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: `${window.location.origin}/dashboard` },
+        options: { redirectTo: new URL("dashboard", appBaseUrl).toString() },
       });
       return error?.message ?? null;
     },

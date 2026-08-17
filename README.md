@@ -17,6 +17,7 @@ production demo-account bypass.
   grid, fog, selection, drag, pan, and zoom
 - Supabase PostgreSQL, Auth, Realtime, and Storage
 - PostgreSQL RLS and narrow RPCs for campaign permissions
+- GitHub Actions and GitHub Pages for the production frontend
 
 ## Requirements
 
@@ -47,14 +48,17 @@ npm run build
 ## Supabase setup
 
 1. Create a Supabase project.
-2. In Authentication > URL Configuration, set the deployed site as the Site
-   URL and add these exact redirect URLs:
+2. In Authentication > URL Configuration, use this production Site URL:
+   - `https://focustap.github.io/dndplayer/`
+   Add these exact redirect URLs:
    - `http://127.0.0.1:5173/dashboard`
-   - `https://wayfinder-vtt.focustap.chatgpt.site/dashboard`
+   - `https://focustap.github.io/dndplayer/dashboard`
 3. In Authentication > Providers, enable Email and Google. In Google Cloud,
-   create a Web OAuth client, add the application's local and deployed origins,
-   and use the Supabase callback URL shown on the Google provider page as the
-   authorized redirect URI. Copy the Google client ID and secret into Supabase.
+   create a Web OAuth client and add `https://focustap.github.io` as an
+   authorized JavaScript origin. The authorized Google redirect URI remains:
+   - `https://feqwcrytaponcbhvfozc.supabase.co/auth/v1/callback`
+   Copy the Google client ID and secret into Supabase. Do not put the Google
+   client secret in the frontend bundle.
 4. Copy `.env.example` to `.env.local` and set:
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_PUBLISHABLE_KEY`
@@ -79,6 +83,31 @@ policies, explicit Data API grants, Realtime publication entries, role-checking
 RPCs, and the complete application schema. This is important for new Supabase
 projects because SQL-created tables are no longer automatically exposed to the
 Data API.
+
+## GitHub Pages deployment
+
+Production is built from `main` by `.github/workflows/deploy-pages.yml`. The
+workflow installs the locked dependencies with `npm ci`, builds the Vite app,
+uploads only `dist`, and deploys it with the official GitHub Pages Actions. It
+can also be started manually from the Actions tab.
+
+In GitHub, open **Settings > Pages** and set **Source** to **GitHub Actions**.
+Create these repository Actions variables (repository secrets with the same
+names also work):
+
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_PUBLISHABLE_KEY`
+
+Both values are browser-public Supabase configuration. Never add a database
+password, secret key, or `service_role` key. `VITE_BASE_PATH` is optional; the
+workflow normally uses the base path reported by GitHub Pages. Set it to `/`
+only when moving to a root Pages site or custom domain.
+
+The default production URL is `https://focustap.github.io/dndplayer/`. The app
+uses React Router with that deployment basename. A generated `dist/404.html`
+preserves and restores deep links before React starts, so direct visits and
+refreshes of login, dashboard, campaign, DM, and player routes work on GitHub
+Pages. The same redirect preserves Supabase OAuth query strings and URL hashes.
 
 ## Database model
 
