@@ -13,7 +13,7 @@ create table public.profiles (
 
 create table public.campaigns (
   id uuid primary key default gen_random_uuid(),
-  owner_id uuid not null default (select auth.uid()) references public.profiles(id) on delete restrict,
+  owner_id uuid not null default auth.uid() references public.profiles(id) on delete restrict,
   name text not null check (char_length(name) between 1 and 100),
   join_code text not null default upper(substr(md5(gen_random_uuid()::text), 1, 6)),
   archived boolean not null default false,
@@ -62,7 +62,7 @@ create table public.maps (
   storage_path text not null,
   width integer not null check (width > 0),
   height integer not null check (height > 0),
-  created_by uuid not null default (select auth.uid()) references public.profiles(id) on delete restrict,
+  created_by uuid not null default auth.uid() references public.profiles(id) on delete restrict,
   created_at timestamptz not null default now()
 );
 
@@ -103,7 +103,7 @@ create table public.scene_overlays (
   z_index integer not null default 1,
   visible boolean not null default true,
   locked boolean not null default false,
-  created_by uuid not null default (select auth.uid()) references public.profiles(id) on delete restrict,
+  created_by uuid not null default auth.uid() references public.profiles(id) on delete restrict,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -223,7 +223,7 @@ create table public.fog_regions (
   shape text not null check (shape in ('RECT','BRUSH')),
   points jsonb not null,
   sort_order bigint generated always as identity,
-  created_by uuid not null default (select auth.uid()) references public.profiles(id) on delete restrict,
+  created_by uuid not null default auth.uid() references public.profiles(id) on delete restrict,
   created_at timestamptz not null default now()
 );
 
@@ -232,7 +232,7 @@ create table public.campaign_notes (
   campaign_id uuid not null references public.campaigns(id) on delete cascade,
   title text not null,
   body text not null default '',
-  created_by uuid not null default (select auth.uid()) references public.profiles(id) on delete restrict,
+  created_by uuid not null default auth.uid() references public.profiles(id) on delete restrict,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -454,10 +454,10 @@ grant select on public.characters_public to authenticated;
 
 -- Private campaign asset bucket. Storage SELECT is granted only for active map or visible overlay assets.
 insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types) values('campaign-assets','campaign-assets',false,15728640,array['image/png','image/jpeg','image/webp']) on conflict (id) do nothing;
-create policy campaign_assets_dm_insert on storage.objects for insert to authenticated with check (bucket_id='campaign-assets' and exists(select 1 from public.campaign_members cm where cm.campaign_id=(storage.foldername(name))[1]::uuid and cm.user_id=(select auth.uid()) and cm.role in ('OWNER','DM')));
-create policy campaign_assets_allowed_select on storage.objects for select to authenticated using (bucket_id='campaign-assets' and (exists(select 1 from public.campaign_members cm where cm.campaign_id=(storage.foldername(name))[1]::uuid and cm.user_id=(select auth.uid()) and cm.role in ('OWNER','DM')) or exists(select 1 from public.maps m join public.scenes s on s.map_id=m.id where m.storage_path=name and s.active and (select private.is_campaign_member(s.campaign_id))) or exists(select 1 from public.scene_overlays o join public.scenes s on s.id=o.scene_id where o.storage_path=name and o.visible and s.active and (select private.is_campaign_member(s.campaign_id)))));
-create policy campaign_assets_dm_update on storage.objects for update to authenticated using (bucket_id='campaign-assets' and exists(select 1 from public.campaign_members cm where cm.campaign_id=(storage.foldername(name))[1]::uuid and cm.user_id=(select auth.uid()) and cm.role in ('OWNER','DM'))) with check (bucket_id='campaign-assets' and exists(select 1 from public.campaign_members cm where cm.campaign_id=(storage.foldername(name))[1]::uuid and cm.user_id=(select auth.uid()) and cm.role in ('OWNER','DM')));
-create policy campaign_assets_dm_delete on storage.objects for delete to authenticated using (bucket_id='campaign-assets' and exists(select 1 from public.campaign_members cm where cm.campaign_id=(storage.foldername(name))[1]::uuid and cm.user_id=(select auth.uid()) and cm.role in ('OWNER','DM')));
+create policy campaign_assets_dm_insert on storage.objects for insert to authenticated with check (bucket_id='campaign-assets' and exists(select 1 from public.campaign_members cm where cm.campaign_id=(storage.foldername(storage.objects.name))[1]::uuid and cm.user_id=(select auth.uid()) and cm.role in ('OWNER','DM')));
+create policy campaign_assets_allowed_select on storage.objects for select to authenticated using (bucket_id='campaign-assets' and (exists(select 1 from public.campaign_members cm where cm.campaign_id=(storage.foldername(storage.objects.name))[1]::uuid and cm.user_id=(select auth.uid()) and cm.role in ('OWNER','DM')) or exists(select 1 from public.maps m join public.scenes s on s.map_id=m.id where m.storage_path=storage.objects.name and s.active and (select private.is_campaign_member(s.campaign_id))) or exists(select 1 from public.scene_overlays o join public.scenes s on s.id=o.scene_id where o.storage_path=storage.objects.name and o.visible and s.active and (select private.is_campaign_member(s.campaign_id)))));
+create policy campaign_assets_dm_update on storage.objects for update to authenticated using (bucket_id='campaign-assets' and exists(select 1 from public.campaign_members cm where cm.campaign_id=(storage.foldername(storage.objects.name))[1]::uuid and cm.user_id=(select auth.uid()) and cm.role in ('OWNER','DM'))) with check (bucket_id='campaign-assets' and exists(select 1 from public.campaign_members cm where cm.campaign_id=(storage.foldername(storage.objects.name))[1]::uuid and cm.user_id=(select auth.uid()) and cm.role in ('OWNER','DM')));
+create policy campaign_assets_dm_delete on storage.objects for delete to authenticated using (bucket_id='campaign-assets' and exists(select 1 from public.campaign_members cm where cm.campaign_id=(storage.foldername(storage.objects.name))[1]::uuid and cm.user_id=(select auth.uid()) and cm.role in ('OWNER','DM')));
 
 insert into public.conditions(name) values ('Poisoned'),('Prone'),('Restrained'),('Stunned'),('Blinded'),('Charmed'),('Frightened'),('Grappled'),('Incapacitated'),('Invisible') on conflict do nothing;
 
