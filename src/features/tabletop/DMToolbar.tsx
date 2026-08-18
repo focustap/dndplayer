@@ -1,4 +1,4 @@
-import { Brush, CloudFog, Eye, EyeOff, Grid3X3, ImagePlus, Layers3, Lock, MousePointer2, RotateCcw, SquareDashed, Unlock, X } from "lucide-react";
+import { Brush, CloudFog, Eye, EyeOff, Grid3X3, ImagePlus, Layers3, Lock, MousePointer2, RotateCcw, SquareDashed, Trash2, Unlock, X } from "lucide-react";
 import { useRef, useState } from "react";
 import type { FogTool } from "../../domain/types";
 import { useTabletop } from "../../contexts/TabletopContext";
@@ -48,6 +48,7 @@ export function DMToolbar() {
         <span className={overlay.kind.toLowerCase()}>{overlay.kind[0]}</span><div><b>{overlay.name}</b><small>{Math.round(overlay.width)} × {Math.round(overlay.height)} · {Math.round(overlay.rotation * 180 / Math.PI)}°</small></div>
         <button title={overlay.visible ? "Hide" : "Show"} onClick={() => void actions.patchOverlay(overlay.id, { visible: !overlay.visible })}>{overlay.visible ? <Eye /> : <EyeOff />}</button>
         <button title={overlay.locked ? "Unlock" : "Lock"} onClick={() => void actions.patchOverlay(overlay.id, { locked: !overlay.locked })}>{overlay.locked ? <Lock /> : <Unlock />}</button>
+        <button className="danger" title={`Delete ${overlay.name}`} aria-label={`Delete ${overlay.name}`} onClick={() => { if (confirm(`Delete ${overlay.name}? This removes it from the scene and deletes its uploaded asset.`)) void actions.deleteOverlay(overlay.id); }}><Trash2 /></button>
         <div className="overlay-controls"><label>Scale<input type="range" min="60" max="500" value={overlay.width} onChange={event => { const width = Number(event.target.value); void actions.patchOverlay(overlay.id, { width, height: width * .72 }); }} /></label><label>Rotate<input type="range" min="-180" max="180" value={Math.round(overlay.rotation * 180 / Math.PI)} onChange={event => void actions.patchOverlay(overlay.id, { rotation: Number(event.target.value) * Math.PI / 180 })} /></label></div>
       </div>)}
     </div>}

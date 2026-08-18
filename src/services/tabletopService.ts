@@ -61,6 +61,18 @@ export const tabletopService = {
   async adjustMonsterHp(instanceId: string, amount: number, mode: "DAMAGE"|"HEAL") { if (isSupabaseConfigured) { const { error } = await supabase.rpc("adjust_monster_hp", { p_instance_id: instanceId, p_amount: amount, p_mode: mode }); if (error) throw error; } },
   async setMonsterHp(instanceId: string, currentHp: number, maxHp: number) { if (isSupabaseConfigured) { const { error } = await supabase.from("monster_instances").update({ current_hp: currentHp, max_hp: maxHp, dead: currentHp === 0 }).eq("id", instanceId); if (error) throw error; } },
   async updateOverlay(id: string, patch: Partial<SceneOverlay>) { if (isSupabaseConfigured) { const { error } = await supabase.from("scene_overlays").update({ x: patch.x, y: patch.y, width: patch.width, height: patch.height, rotation: patch.rotation, visible: patch.visible, locked: patch.locked, opacity: patch.opacity, z_index: patch.zIndex }).eq("id", id); if (error) throw error; } },
+  async deleteOverlay(id: string) {
+    if (!isSupabaseConfigured) return;
+    const { data: overlay, error: loadError } = await supabase.from("scene_overlays").select("storage_path").eq("id", id).single();
+    if (loadError) throw loadError;
+    const { error: deleteError } = await supabase.from("scene_overlays").delete().eq("id", id);
+    if (deleteError) throw deleteError;
+    const storagePath = overlay?.storage_path ? String(overlay.storage_path) : null;
+    if (storagePath) {
+      const { error: assetError } = await supabase.storage.from("campaign-assets").remove([storagePath]);
+      if (assetError) throw assetError;
+    }
+  },
   async addOverlay(sceneId: string, campaignId: string, file: File): Promise<SceneOverlay> { const local: SceneOverlay = { id: crypto.randomUUID(), sceneId, name: file.name, imageUrl: URL.createObjectURL(file), kind: "EFFECT", x: 700, y: 450, width: 240, height: 180, rotation: 0, opacity: 1, zIndex: 5, visible: true, locked: false }; if (!isSupabaseConfigured) return local; const path = `${campaignId}/overlays/${local.id}-${file.name.replace(/[^a-z0-9.-]/gi,"-")}`; const { error: uploadError } = await supabase.storage.from("campaign-assets").upload(path, file); if (uploadError) throw uploadError; const { data: signed, error: signError } = await supabase.storage.from("campaign-assets").createSignedUrl(path, 60 * 60 * 12); if (signError) throw signError; const { data, error } = await supabase.from("scene_overlays").insert({ id: local.id, scene_id: sceneId, name: file.name, storage_path: path, image_url: signed.signedUrl, kind: "EFFECT", x: local.x, y: local.y, width: local.width, height: local.height, z_index: local.zIndex }).select("*").single(); if (error) throw error; return asOverlay(data as Record<string, unknown>); },
   async addFogRegion(region: FogRegion) { if (isSupabaseConfigured) { const { error } = await supabase.from("fog_regions").insert({ id: region.id, scene_id: region.sceneId, mode: region.mode, shape: region.shape, points: region.points }); if (error) throw error; } },
   async resetFog(sceneId: string, covered: boolean) { if (isSupabaseConfigured) { const { error } = await supabase.rpc("reset_scene_fog", { p_scene_id: sceneId, p_covered: covered }); if (error) throw error; } },
