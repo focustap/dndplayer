@@ -10,12 +10,17 @@ const signTokenImage = async (token: Token) => { if (!token.imagePath) return to
 export const tabletopService = {
   async load(campaignId: string, playerView = false): Promise<TabletopState> {
     if (!isSupabaseConfigured || campaignId === "demo") return createDemoState(playerView);
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError) throw userError;
+    if (!user) throw new Error("Sign in is required to open this tabletop.");
     const [{ data: membership, error: memberError }, { data: campaign, error: campaignError }, { data: sceneRow, error: sceneError }] = await Promise.all([
-      supabase.from("campaign_members").select("role").eq("campaign_id", campaignId).single(),
+      // Members can read the campaign roster. Filter to the signed-in user's row
+      // before calling single(), otherwise a second player makes this query plural.
+      supabase.from("campaign_members").select("role").eq("campaign_id", campaignId).eq("user_id", user.id).maybeSingle(),
       supabase.from("campaigns").select("id,name,join_code,owner_id,updated_at").eq("id", campaignId).single(),
       supabase.from("scenes").select("*").eq("campaign_id", campaignId).eq("active", true).single(),
     ]);
-    if (memberError) throw memberError; if (campaignError) throw campaignError; if (sceneError) throw sceneError;
+    if (memberError) throw memberError; if (!membership) throw new Error("You are not a member of this campaign."); if (campaignError) throw campaignError; if (sceneError) throw sceneError;
     const role = membership.role as CampaignRole; const scene = asScene(sceneRow as Record<string, unknown>);
     if (scene.mapId) { const { data: map } = await supabase.from("maps").select("storage_path").eq("id",scene.mapId).single(); if (map?.storage_path) { const { data: signed } = await supabase.storage.from("campaign-assets").createSignedUrl(map.storage_path,60*60*12); if (signed) scene.mapUrl=signed.signedUrl; } }
     const [{ data: tokenRows }, { data: overlayRows }, { data: characterRows }, { data: combatRow }, { data: fogRows }, { data: templateRows }] = await Promise.all([
