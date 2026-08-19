@@ -20,7 +20,7 @@ export interface FogRegion { id: string; sceneId: string; mode: "REVEAL" | "HIDE
 export interface Placement { kind: "CHARACTER" | "MONSTER"; referenceId: string; name: string; imageUrl: string | null; }
 export interface AttackAnimationEvent { id: string; campaignId: string; attackerTokenId: string; targetTokenId: string; preset: AttackPreset; createdAt: string; }
 export interface AttackSelection { attackerTokenId: string; preset: AttackPreset; }
-export interface DiceRoll { id: string; campaignId: string; rollerUserId: string; rollerRole: CampaignRole; sides: number; quantity: number; results: number[]; total: number; createdAt: string; }
+export interface DiceRoll { id: string; campaignId: string; rollerUserId: string; rollerRole: CampaignRole; rollerDisplayName: string | null; sides: number; quantity: number; results: number[]; total: number; createdAt: string; }
 export interface TabletopState { campaign: Campaign; role: CampaignRole; scene: Scene; overlays: SceneOverlay[]; tokens: Token[]; characters: Character[]; monsterTemplates: MonsterTemplate[]; monsterInstances: MonsterInstance[]; combat: CombatSession; fogRegions: FogRegion[]; diceRolls: DiceRoll[]; selectedTokenId: string | null; activeFogTool: FogTool | null; placement: Placement | null; attackSelection: AttackSelection | null; attackEvent: AttackAnimationEvent | null; previewPlayerView: boolean; shiftIntel: boolean; connected: boolean; }
 
 export const CONDITION_OPTIONS = ["Poisoned","Prone","Restrained","Stunned","Blinded","Charmed","Frightened","Grappled","Incapacitated","Invisible"] as const;

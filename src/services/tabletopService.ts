@@ -9,7 +9,11 @@ const signTokenImage = async (token: Token) => { if (!token.imagePath) return to
 const throwQueryError = (error: { message?: string } | null, fallback: string) => { if (error) throw new Error(error.message || fallback); };
 const publicCharacterFields = "id,campaign_id,owner_id,name,image_url,image_path,current_hp,max_hp,ac,speed,passive_perception,passive_investigation,passive_insight,conditions";
 const asAttackEvent = (row: Record<string, unknown>): AttackAnimationEvent => ({ id: String(row.id), campaignId: String(row.campaign_id), attackerTokenId: String(row.attacker_token_id), targetTokenId: String(row.target_token_id), preset: row.preset as AttackPreset, createdAt: String(row.created_at) });
-export const asDiceRoll = (row: Record<string, unknown>): DiceRoll => ({ id: String(row.id), campaignId: String(row.campaign_id), rollerUserId: String(row.roller_user_id), rollerRole: row.roller_role as CampaignRole, sides: Number(row.sides), quantity: Number(row.quantity), results: (row.results as number[]) ?? [], total: Number(row.total), createdAt: String(row.created_at) });
+export const asDiceRoll = (row: Record<string, unknown>): DiceRoll => {
+  const profile = row.profiles as Record<string, unknown> | Record<string, unknown>[] | null;
+  const displayName = Array.isArray(profile) ? profile[0]?.display_name : profile?.display_name;
+  return { id: String(row.id), campaignId: String(row.campaign_id), rollerUserId: String(row.roller_user_id), rollerRole: row.roller_role as CampaignRole, rollerDisplayName: displayName ? String(displayName) : null, sides: Number(row.sides), quantity: Number(row.quantity), results: (row.results as number[]) ?? [], total: Number(row.total), createdAt: String(row.created_at) };
+};
 
 export const tabletopService = {
   async load(campaignId: string, playerView = false): Promise<TabletopState> {
@@ -34,7 +38,7 @@ export const tabletopService = {
       supabase.from("combat_sessions").select("*").eq("scene_id", scene.id).eq("active", true).maybeSingle(),
       supabase.from("fog_regions").select("*").eq("scene_id", scene.id),
       role === "OWNER" || role === "DM" ? supabase.from("monster_templates").select("*").eq("campaign_id", campaignId).order("name") : Promise.resolve({ data: [], error: null }),
-      supabase.from("tabletop_dice_rolls").select("id,campaign_id,roller_user_id,roller_role,sides,quantity,results,total,created_at").eq("campaign_id", campaignId).order("created_at", { ascending: false }).limit(12),
+      supabase.from("tabletop_dice_rolls").select("id,campaign_id,roller_user_id,roller_role,sides,quantity,results,total,created_at,profiles(display_name)").eq("campaign_id", campaignId).order("created_at", { ascending: false }).limit(12),
     ]);
     throwQueryError(tokenError, "Unable to load tabletop tokens."); throwQueryError(overlayError, "Unable to load tabletop overlays."); throwQueryError(characterError, "Unable to load campaign characters."); throwQueryError(combatError, "Unable to load tabletop combat."); throwQueryError(fogError, "Unable to load tabletop fog."); throwQueryError(templateError, "Unable to load monster templates."); throwQueryError(diceError, "Unable to load tabletop dice rolls.");
     let monsterInstances: MonsterInstance[] = [];
@@ -80,6 +84,12 @@ export const tabletopService = {
   async addFogRegion(region: FogRegion) { if (isSupabaseConfigured) { const { error } = await supabase.from("fog_regions").insert({ id: region.id, scene_id: region.sceneId, mode: region.mode, shape: region.shape, points: region.points }); if (error) throw error; } },
   async resetFog(sceneId: string, covered: boolean) { if (isSupabaseConfigured) { const { error } = await supabase.rpc("reset_scene_fog", { p_scene_id: sceneId, p_covered: covered }); if (error) throw error; } },
   async triggerAttack(campaignId: string, attackerTokenId: string, targetTokenId: string, preset: AttackPreset): Promise<AttackAnimationEvent> { const local: AttackAnimationEvent = { id: crypto.randomUUID(), campaignId, attackerTokenId, targetTokenId, preset, createdAt: new Date().toISOString() }; if (!isSupabaseConfigured) return local; const { data, error } = await supabase.from("tabletop_animation_events").insert({ campaign_id: campaignId, attacker_token_id: attackerTokenId, target_token_id: targetTokenId, preset }).select("id,campaign_id,attacker_token_id,target_token_id,preset,created_at").single(); if (error) throw error; return asAttackEvent(data as Record<string, unknown>); },
-  async rollDice(campaignId: string, sides: number, quantity: number): Promise<DiceRoll> { const { data, error } = await supabase.rpc("roll_tabletop_dice", { p_campaign_id: campaignId, p_sides: sides, p_quantity: quantity }); if (error) throw error; const row = Array.isArray(data) ? data[0] : data; if (!row) throw new Error("Dice roll returned no result."); return asDiceRoll(row as Record<string, unknown>); },
+  async hydrateDiceRollerName(roll: DiceRoll): Promise<DiceRoll> {
+    if (roll.rollerRole !== "PLAYER" || roll.rollerDisplayName) return roll;
+    const { data, error } = await supabase.from("profiles").select("display_name").eq("id", roll.rollerUserId).maybeSingle();
+    if (error) throw error;
+    return { ...roll, rollerDisplayName: data?.display_name ? String(data.display_name) : null };
+  },
+  async rollDice(campaignId: string, sides: number, quantity: number): Promise<DiceRoll> { const { data, error } = await supabase.rpc("roll_tabletop_dice", { p_campaign_id: campaignId, p_sides: sides, p_quantity: quantity }); if (error) throw error; const row = Array.isArray(data) ? data[0] : data; if (!row) throw new Error("Dice roll returned no result."); return tabletopService.hydrateDiceRollerName(asDiceRoll(row as Record<string, unknown>)); },
   async advanceTurn(combat: CombatSession, delta: 1|-1) { if (isSupabaseConfigured) { const { error } = await supabase.rpc("advance_turn", { p_combat_session_id: combat.id, p_delta: delta }); if (error) throw error; } },
 };
