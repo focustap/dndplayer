@@ -29,9 +29,9 @@ export const tabletopService = {
       supabase.from("campaigns").select("id,name,join_code,owner_id,updated_at").eq("id", campaignId).single(),
       sceneId && !playerView
         ? supabase.from("scenes").select("*").eq("campaign_id", campaignId).eq("id", sceneId).single()
-        : supabase.from("scenes").select("*").eq("campaign_id", campaignId).eq("active", true).eq("revealed", true).single(),
+        : supabase.from("scenes").select("*").eq("campaign_id", campaignId).eq("active", true).eq("revealed", true).maybeSingle(),
     ]);
-    if (memberError) throw memberError; if (!membership) throw new Error("You are not a member of this campaign."); if (campaignError) throw campaignError; if (sceneError) throw sceneError;
+    if (memberError) throw memberError; if (!membership) throw new Error("You are not a member of this campaign."); if (campaignError) throw campaignError; if (sceneError) throw sceneError; if (!sceneRow) throw new Error(playerView?"The DM has hidden the current scene.":"No live scene is selected.");
     const role = membership.role as CampaignRole; const scene = asScene(sceneRow as Record<string, unknown>);
     if (scene.mapId) { const { data: map } = await supabase.from("maps").select("storage_path").eq("id",scene.mapId).single(); if (map?.storage_path) { const { data: signed } = await supabase.storage.from("campaign-assets").createSignedUrl(map.storage_path,60*60*12); if (signed) scene.mapUrl=signed.signedUrl; } }
     const [{ data: tokenRows, error: tokenError }, { data: overlayRows, error: overlayError }, { data: characterRows, error: characterError }, { data: combatRow, error: combatError }, { data: fogRows, error: fogError }, { data: templateRows, error: templateError }, { data: diceRows, error: diceError }] = await Promise.all([
