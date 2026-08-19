@@ -1,0 +1,27 @@
+.dice-roller { position:absolute; z-index:85; right:326px; bottom:18px; }
+.player-shell .dice-roller { right:18px; }
+.dice-fab { width:42px; height:42px; display:grid; place-items:center; border:1px solid #b78d58; border-radius:50%; background:#322719; color:#e6bf82; box-shadow:0 8px 24px #000b; }
+.dice-fab svg { width:19px; }
+.dice-popover { position:absolute; right:0; bottom:51px; width:270px; padding:10px; border:1px solid #4b554d; background:#111513f8; box-shadow:0 16px 40px #000d; }
+.dice-title { display:flex; align-items:center; justify-content:space-between; padding:3px 2px 9px; border-bottom:1px solid #303934; }
+.dice-title span { display:flex; align-items:center; gap:7px; font:500 13px Georgia; }
+.dice-title svg { width:15px; color:#c39a62; }
+.dice-title button { border:0; background:none; color:#aeb5ae; }
+.dice-title button svg { width:13px; }
+.dice-types { display:grid; grid-template-columns:repeat(4,1fr); gap:4px; margin:10px 0; }
+.dice-types button,.dice-quantity button { border:1px solid #36403a; background:#1a211d; color:#c4cdc6; padding:7px 4px; font:600 9px Georgia; }
+.dice-types button.active { border-color:#bd955d; background:#493820; color:#f1d09c; }
+.dice-quantity { display:flex; align-items:center; justify-content:space-between; color:#9ba49e; font-size:8px; letter-spacing:.08em; }
+.dice-quantity>div { display:flex; align-items:center; gap:5px; }
+.dice-quantity button { width:24px; height:24px; padding:0; display:grid; place-items:center; }
+.dice-quantity button svg { width:11px; }
+.dice-quantity b { min-width:20px; text-align:center; color:#efe8db; font:600 15px Georgia; }
+.dice-roll-action { width:100%; margin:10px 0; padding:9px; border:1px solid #ad8755; background:#5a4326; color:#f4d39c; font:700 9px Georgia; letter-spacing:.1em; }
+.dice-roll-action:disabled { opacity:.6; }
+.dice-history { max-height:148px; overflow:auto; padding-top:8px; border-top:1px solid #2d3631; }
+.dice-history>small { display:block; color:#808a83; font-size:7px; letter-spacing:.13em; margin-bottom:6px; }
+.dice-history>div { display:grid; grid-template-columns:42px 1fr; gap:5px; padding:5px 0; border-top:1px solid #252d29; font-size:8px; line-height:1.35; }
+.dice-history>div b { color:#c39a62; font-size:7px; letter-spacing:.08em; }
+.dice-history>div span { color:#bfc6c0; }
+.dice-history strong { color:#f1d09c; font:600 12px Georgia; }
+.dice-history p { margin:7px 0 2px; color:#717c75; font-size:8px; }

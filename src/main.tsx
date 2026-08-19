@@ -6,6 +6,7 @@ import "./styles.css";
 import "./form-fields.css";
 import "./tabletop-destruction.css";
 import "./combat-polish.css";
+import "./dice-roller.css";
 
 const routerBase = import.meta.env.BASE_URL === "/" ? "/" : import.meta.env.BASE_URL.replace(/\/$/, "");
 
