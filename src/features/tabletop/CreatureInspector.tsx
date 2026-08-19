@@ -1,6 +1,6 @@
 import { ChevronRight, Eye, EyeOff, Plus, RotateCcw, Trash2, X } from "lucide-react";
 import { useRef, useState } from "react";
-import { CONDITION_OPTIONS, isDmRole, type AttackPreset } from "../../domain/types";
+import { CONDITION_OPTIONS, isDmRole, type AttackPreset, type MonsterAction, type MonsterTemplate } from "../../domain/types";
 import { useTabletop } from "../../contexts/TabletopContext";
 import { useAuth } from "../../contexts/AuthContext";
 
@@ -47,7 +47,7 @@ function InspectorContent({ tokenId }: { tokenId: string }) {
       {dm && <button className="danger" onClick={() => { if (confirm(`Delete ${token.displayName} from this scene?`)) void actions.deleteToken(token.id); }} aria-label={`Delete ${token.displayName}`} title="Delete token"><Trash2 /></button>}
     </div>
     {canAnimate && <section className="attack-controls"><small>ATTACK ANIMATION</small><div>{(["MELEE", "RANGED", "SPELL"] as AttackPreset[]).map((preset) => <button className={attackPreset === preset ? "active" : ""} key={preset} onClick={() => setAttackPreset(preset)}>{preset}</button>)}</div><button className="attack-start" onClick={() => void actions.startAttack(token.id, attackPreset)}>{state.attackSelection?.attackerTokenId === token.id ? "Choose a target on the map" : "Animate attack"}</button></section>}
-    <div className="stat-trio"><Stat label="ARMOR" value={String(ac)} /><Stat label="SPEED" value={`${speed} ft`} /><Stat label="SIZE" value={`${token.size}×`} /></div>
+    <div className="stat-trio"><Stat label="ARMOR" value={String(ac)} /><Stat label="SPEED" value={`${speed} ft`} /><Stat label="SIZE" value={monster?.template?.creatureSize ?? `${token.size}×`} /></div>
     <section className="hp-card">
       <div className="hp-title"><span>HIT POINTS</span><strong>{current} <i>/ {max}</i></strong></div>
       <div className="hp-track"><i style={{ width: `${Math.max(0, Math.min(100, current / max * 100))}%` }} /></div>
@@ -64,15 +64,48 @@ function InspectorContent({ tokenId }: { tokenId: string }) {
       {monster && <button onClick={() => setConditionOpen(!conditionOpen)}><Plus />Add</button>}
     </div>
     {conditionOpen && monster && <div className="condition-picker">{CONDITION_OPTIONS.filter((condition) => !monster.conditions.includes(condition)).map((condition) => <button key={condition} onClick={() => { void actions.toggleCondition(monster.id, condition); setConditionOpen(false); }}>{condition}</button>)}</div>}
-    {monster?.template && <>
-      <p className="section-label">ABILITIES</p>
-      <div className="abilities">{Object.entries(monster.template.abilities).map(([ability, value]) => <span key={ability}><small>{ability.toUpperCase()}</small><b>{value}</b></span>)}</div>
-      <p className="section-label">TRAITS & ACTIONS</p>
-      {[...monster.template.traits, ...monster.template.actions, ...monster.template.bonusActions, ...monster.template.reactions].map((action) => <details className="action-row" key={action.name}><summary><span><b>{action.name}</b><small>{action.attackBonus ? `+${action.attackBonus} to hit · ${action.damageExpression} ${action.damageType}` : action.description}</small></span><ChevronRight /></summary><p>{action.description}</p></details>)}
-      {monster.notes && <><p className="section-label">DM NOTES</p><p className="dm-notes">{monster.notes}</p></>}
-    </>}
+    {monster?.template && <MonsterMechanics template={monster.template} notes={monster.notes} />}
   </aside>;
 }
+
+function MonsterMechanics({ template, notes }: { template: MonsterTemplate; notes: string }) {
+  const movement = Object.entries(template.movement).filter(([kind, value]) => kind !== "hover" && value).map(([kind, value]) => `${kind === "walk" ? "Walk" : kind[0].toUpperCase() + kind.slice(1)} ${value} ft`);
+  if (template.movement.hover) movement.push("Hover");
+  const defenses = [["VULNERABLE", template.damageVulnerabilities], ["RESIST", template.damageResistances], ["IMMUNE", template.damageImmunities], ["CONDITION IMMUNE", template.conditionImmunities]].filter(([, values]) => values.length) as [string, string[]][];
+  return <>
+    <p className="section-label">{template.creatureSize.toUpperCase()} {template.creatureType.toUpperCase()}</p>
+    <div className="mechanics-facts"><span><small>HP FORMULA</small><b>{template.hpFormula ?? "—"}</b></span><span><small>INITIATIVE</small><b>{template.initiative.modifier === null ? "—" : `${template.initiative.modifier >= 0 ? "+" : ""}${template.initiative.modifier}`}</b></span><span><small>PASSIVE</small><b>{template.passivePerception ?? "—"}</b></span></div>
+    <p className="section-label">ABILITIES</p>
+    <div className="abilities">{Object.entries(template.abilities).map(([ability, value]) => <span key={ability}><small>{ability.toUpperCase()}</small><b>{value}</b></span>)}</div>
+    {(movement.length || Object.keys(template.savingThrows).length || Object.keys(template.skills).length || defenses.length || template.senses.length || template.languages.length) && <section className="monster-reference">
+      {movement.length > 0 && <p><b>Movement</b>{movement.join(" · ")}</p>}
+      {Object.keys(template.savingThrows).length > 0 && <p><b>Saves</b>{formatBonuses(template.savingThrows)}</p>}
+      {Object.keys(template.skills).length > 0 && <p><b>Skills</b>{formatBonuses(template.skills)}</p>}
+      {defenses.map(([label, values]) => <p key={label}><b>{label}</b>{values.join(", ")}</p>)}
+      {template.senses.length > 0 && <p><b>Senses</b>{template.senses.map((sense) => `${sense.name}${sense.range ? ` ${sense.range} ${sense.unit ?? "ft"}` : ""}`).join(", ")}</p>}
+      {template.languages.length > 0 && <p><b>Languages</b>{template.languages.join(", ")}</p>}
+    </section>}
+    <ActionSection title="TRAITS" actions={template.traits} />
+    <ActionSection title="ACTIONS" actions={template.actions} />
+    <ActionSection title="BONUS ACTIONS" actions={template.bonusActions} />
+    <ActionSection title="REACTIONS" actions={template.reactions} />
+    <ActionSection title={template.legendaryActionUses ? `LEGENDARY ACTIONS · ${template.legendaryActionUses} USES` : "LEGENDARY ACTIONS"} actions={template.legendaryActions} />
+    {template.spellcasting.length > 0 && <section className="monster-reference"><p><b>Spellcasting</b>{template.spellcasting.map((spellcasting) => `${spellcasting.ability ?? ""}${spellcasting.saveDc ? ` · DC ${spellcasting.saveDc}` : ""}${spellcasting.attackBonus ? ` · +${spellcasting.attackBonus} to hit` : ""}`).join(" · ")}</p>{template.spellcasting.flatMap((spellcasting) => spellcasting.spells).map((entry) => <p key={entry.frequency}><b>{entry.frequency}</b>{entry.spells.join(", ")}</p>)}</section>}
+    {notes && <><p className="section-label">DM NOTES</p><p className="dm-notes">{notes}</p></>}
+  </>;
+}
+
+function ActionSection({ title, actions }: { title: string; actions: MonsterAction[] }) {
+  if (!actions.length) return null;
+  return <><p className="section-label">{title}</p>{actions.map((action, index) => <details className="action-row" key={`${title}-${action.name}-${index}`}><summary><span><b>{action.name}</b><small>{actionSummary(action)}</small></span><ChevronRight /></summary><p>{action.description}</p>{action.variants?.map((variant, variantIndex) => <details className="action-variant" key={`${variant.name}-${variantIndex}`}><summary>{variant.name}</summary><p>{variant.description}</p></details>)}</details>)}</>;
+}
+
+function actionSummary(action: MonsterAction) {
+  const parts = [action.attackBonus === null || action.attackBonus === undefined ? null : `${action.attackBonus >= 0 ? "+" : ""}${action.attackBonus} to hit`, action.save ? `DC ${action.save.dc} ${action.save.ability}` : null, action.damage?.map((damage) => `${damage.dice} ${damage.damageType}`).join(" + "), action.usage?.kind === "RECHARGE" ? `Recharge ${action.usage.value}` : action.usage?.uses ? `${action.usage.uses}/day` : null].filter(Boolean);
+  return parts.join(" · ") || action.description;
+}
+
+function formatBonuses(values: Record<string, number>) { return Object.entries(values).map(([name, bonus]) => `${name} ${bonus >= 0 ? "+" : ""}${bonus}`).join(", "); }
 
 function Stat({ label, value }: { label: string; value: string }) { return <div><small>{label}</small><b>{value}</b></div>; }
 function DirectHp({ current, max, onSave }: { current: number; max: number; onSave(current: number, max: number): void }) {
