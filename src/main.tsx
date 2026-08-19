@@ -7,6 +7,7 @@ import "./form-fields.css";
 import "./tabletop-destruction.css";
 import "./combat-polish.css";
 import "./dice-roller.css";
+import "./player-creature-card.css";
 
 const routerBase = import.meta.env.BASE_URL === "/" ? "/" : import.meta.env.BASE_URL.replace(/\/$/, "");
 

@@ -1,0 +1,6 @@
+.player-creature-card { position:absolute; z-index:72; top:98px; right:18px; width:228px; display:flex; align-items:center; gap:10px; padding:10px; border:1px solid #4b554d; background:#111513ee; box-shadow:0 14px 32px #000b; }
+.player-creature-card>button { position:absolute; top:4px; right:4px; border:0; background:none; color:#8c9790; }
+.player-creature-card>button svg { width:12px; }
+.player-creature-portrait { width:48px; height:48px; flex:0 0 48px; display:grid; place-items:center; border-radius:50%; border:2px solid #718460; background:#354936 center/cover no-repeat; color:#f4ead9; font:700 18px Georgia; }
+.player-creature-card small { color:#b08b5d; font-size:8px; letter-spacing:.14em; }
+.player-creature-card h2 { margin:4px 0 0; font:600 16px Georgia; }
