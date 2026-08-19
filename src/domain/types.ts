@@ -6,7 +6,8 @@ export type FogTool = "REVEAL_BRUSH" | "REVEAL_RECT" | "HIDE_BRUSH" | "HIDE_RECT
 export type AttackPreset = "MELEE" | "RANGED" | "SPELL";
 
 export interface Campaign { id: string; name: string; joinCode: string; ownerId: string; role: CampaignRole; memberCount: number; updatedAt: string; }
-export interface Scene { id: string; campaignId: string; mapId: string | null; name: string; mapUrl: string | null; width: number; height: number; gridType: GridType; gridSize: number; feetPerCell: number; gridColor: string; gridOpacity: number; fogEnabled: boolean; fogCovered: boolean; active: boolean; }
+export type SceneLighting = "BRIGHT" | "DIM" | "DARK";
+export interface Scene { id: string; campaignId: string; mapId: string | null; name: string; mapUrl: string | null; width: number; height: number; gridType: GridType; gridSize: number; feetPerCell: number; gridColor: string; gridOpacity: number; fogEnabled: boolean; fogCovered: boolean; active: boolean; revealed: boolean; mapX: number; mapY: number; mapScale: number; gridOffsetX: number; gridOffsetY: number; lighting: SceneLighting; playerCameraX: number | null; playerCameraY: number | null; playerCameraZoom: number; }
 export interface SceneOverlay { id: string; sceneId: string; name: string; imageUrl: string; kind: OverlayKind; x: number; y: number; width: number; height: number; rotation: number; opacity: number; zIndex: number; visible: boolean; locked: boolean; }
 export interface Token { id: string; sceneId: string; referenceId: string | null; ownerUserId: string | null; type: TokenType; displayName: string; imageUrl: string | null; imagePath?: string | null; x: number; y: number; size: number; rotation: number; visible: boolean; locked: boolean; conditions: string[]; }
 export type MonsterAttackType = "MELEE" | "RANGED" | "MELEE_OR_RANGED" | "SPELL" | "OTHER";

@@ -4,7 +4,7 @@ import type { FogTool } from "../../domain/types";
 import { useTabletop } from "../../contexts/TabletopContext";
 
 export function DMToolbar() {
-  const { state, actions } = useTabletop();
+  const { state, actions, builder } = useTabletop();
   const [panel, setPanel] = useState<"grid" | "fog" | "layers" | null>(null);
   const [gridSize, setGridSize] = useState(80);
   const input = useRef<HTMLInputElement>(null);
@@ -15,21 +15,21 @@ export function DMToolbar() {
 
   return <>
     <nav className="dm-toolbar" aria-label="DM tools">
-      <button className={!state.activeFogTool ? "active" : ""} title="Select" onClick={() => actions.setFogTool(null)}><MousePointer2 /></button>
+      {builder&&<><button className={!state.activeFogTool ? "active" : ""} title="Select" onClick={() => actions.setFogTool(null)}><MousePointer2 /></button>
       <button className={panel === "grid" ? "active" : ""} title="Grid settings" onClick={() => { if (panel !== "grid") setGridSize(state.scene.gridSize); setPanel(panel === "grid" ? null : "grid"); }}><Grid3X3 /></button>
       <button className={panel === "fog" ? "active" : ""} title="Fog tools" onClick={() => setPanel(panel === "fog" ? null : "fog")}><CloudFog /></button>
       <button className={panel === "layers" ? "active" : ""} title="Scene layers" onClick={() => setPanel(panel === "layers" ? null : "layers")}><Layers3 /></button>
-      <span />
+      <span /></>}
       <button className={state.previewPlayerView ? "active" : ""} title="Preview player view" onClick={actions.togglePlayerPreview}><Eye /></button>
     </nav>
     {state.previewPlayerView && <div className="player-preview-badge"><Eye />PREVIEWING PLAYER VIEW<button onClick={actions.togglePlayerPreview}><X /></button></div>}
-    {panel === "grid" && <div className="tool-popover grid-popover">
+    {builder&&panel === "grid" && <div className="tool-popover grid-popover">
       <div className="popover-title"><span><Grid3X3 />Grid settings</span><button onClick={() => setPanel(null)}><X /></button></div>
       <label className="grid-toggle"><input type="checkbox" checked={state.scene.gridType === "SQUARE"} onChange={event => void actions.updateSceneGrid(event.target.checked ? "SQUARE" : "GRIDLESS", gridSize)} />Show square grid</label>
       {state.scene.gridType === "SQUARE" && <label className="grid-size"><span>Cell size <b>{gridSize}px</b></span><input type="range" min="20" max="240" step="4" value={gridSize} onChange={event => setGridSize(Number(event.target.value))} onPointerUp={event => commitGrid(Number(event.currentTarget.value))} onKeyUp={event => { if (event.key.startsWith("Arrow")) commitGrid(Number(event.currentTarget.value)); }} /></label>}
       <p>Grid settings are saved to this scene for everyone at the table.</p>
     </div>}
-    {panel === "fog" && <div className="tool-popover fog-popover">
+    {builder&&panel === "fog" && <div className="tool-popover fog-popover">
       <div className="popover-title"><span><CloudFog />Fog of war</span><button onClick={() => setPanel(null)}><X /></button></div>
       <div className="fog-tools">
         <Tool active={state.activeFogTool === "REVEAL_BRUSH"} icon={<Brush />} label="Reveal brush" onClick={() => chooseFog("REVEAL_BRUSH")} />
@@ -40,7 +40,7 @@ export function DMToolbar() {
       <p>{state.activeFogTool ? "Drag on the map to paint fog." : "Choose a tool, then draw directly on the scene."}</p>
       <div className="fog-reset"><button onClick={() => void actions.resetFog(true)}><EyeOff />Cover scene</button><button onClick={() => void actions.resetFog(false)}><RotateCcw />Clear fog</button></div>
     </div>}
-    {panel === "layers" && <div className="tool-popover layers-popover">
+    {builder&&panel === "layers" && <div className="tool-popover layers-popover">
       <div className="popover-title"><span><Layers3 />Scene layers</span><button onClick={() => setPanel(null)}><X /></button></div>
       <button className="upload-overlay" onClick={() => input.current?.click()}><ImagePlus /><span><b>Add image overlay</b><small>PNG, JPEG, or WebP</small></span></button>
       <input ref={input} hidden type="file" accept="image/png,image/jpeg,image/webp" onChange={event => { const file = event.target.files?.[0]; if (file) void actions.addOverlay(file); event.target.value = ""; }} />

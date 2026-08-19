@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useParams } from "react-router-dom";
-import type { AttackPreset, DiceRoll, FogRegion, FogTool, GridType, Placement, SceneOverlay, TabletopState, Token } from "../domain/types";
+import type { AttackPreset, DiceRoll, FogRegion, FogTool, GridType, Placement, Scene, SceneOverlay, TabletopState, Token } from "../domain/types";
 import { isDmRole } from "../domain/types";
 import { isSupabaseConfigured, supabase } from "../lib/supabase";
 import { asDiceRoll, tabletopService } from "../services/tabletopService";
@@ -18,6 +18,7 @@ interface TabletopActions {
   rollDice(sides: number, quantity: number): Promise<DiceRoll>;
   placeToken(x: number, y: number): Promise<void>;
   updateSceneGrid(gridType: GridType, gridSize?: number): Promise<void>;
+  updateScene(patch: Partial<Scene>): Promise<void>;
   commitTokenMove(id: string, x: number, y: number): Promise<void>;
   deleteToken(id: string): Promise<void>;
   patchToken(id: string, patch: Partial<Token>): Promise<void>;
@@ -38,15 +39,15 @@ interface TabletopActions {
   resetFog(covered: boolean): Promise<void>;
   reload(): Promise<void>;
 }
-interface TabletopValue { state: TabletopState | null; loading: boolean; error: string | null; playerView: boolean; actions: TabletopActions; }
+interface TabletopValue { state: TabletopState | null; loading: boolean; error: string | null; playerView: boolean; builder: boolean; actions: TabletopActions; }
 const TabletopContext = createContext<TabletopValue | null>(null);
 
-export function TabletopProvider({ children, playerView }: { children: ReactNode; playerView: boolean }) {
+export function TabletopProvider({ children, playerView, sceneId, builder = false }: { children: ReactNode; playerView: boolean; sceneId?: string; builder?: boolean }) {
   const { campaignId = "demo" } = useParams();
   const [state, setState] = useState<TabletopState | null>(null); const [loading, setLoading] = useState(true); const [error, setError] = useState<string | null>(null);
   const stateRef = useRef(state); useEffect(() => { stateRef.current = state; }, [state]);
-  const reload = useCallback(async () => { try { const next = await tabletopService.load(campaignId, playerView); setState((current) => current ? { ...next, selectedTokenId: current.selectedTokenId, activeFogTool: current.activeFogTool, previewPlayerView: current.previewPlayerView, shiftIntel: current.shiftIntel, attackSelection: current.attackSelection, attackEvent: current.attackEvent } : next); setError(null); } catch (e) { setError(e instanceof Error ? e.message : "Unable to load the tabletop"); } finally { setLoading(false); } }, [campaignId, playerView]);
-  useEffect(() => { let cancelled=false; void tabletopService.load(campaignId,playerView).then((next)=>{if(!cancelled){setState(next);setError(null);}}).catch((e:unknown)=>{if(!cancelled)setError(e instanceof Error?e.message:"Unable to load the tabletop");}).finally(()=>{if(!cancelled)setLoading(false);}); return()=>{cancelled=true;}; }, [campaignId,playerView]);
+  const reload = useCallback(async () => { try { const next = await tabletopService.load(campaignId, playerView, sceneId); setState((current) => current ? { ...next, selectedTokenId: current.selectedTokenId, activeFogTool: current.activeFogTool, previewPlayerView: current.previewPlayerView, shiftIntel: current.shiftIntel, attackSelection: current.attackSelection, attackEvent: current.attackEvent } : next); setError(null); } catch (e) { setError(e instanceof Error ? e.message : "Unable to load the tabletop"); } finally { setLoading(false); } }, [campaignId, playerView, sceneId]);
+  useEffect(() => { let cancelled=false; void tabletopService.load(campaignId,playerView,sceneId).then((next)=>{if(!cancelled){setState(next);setError(null);}}).catch((e:unknown)=>{if(!cancelled)setError(e instanceof Error?e.message:"Unable to load the tabletop");}).finally(()=>{if(!cancelled)setLoading(false);}); return()=>{cancelled=true;}; }, [campaignId,playerView,sceneId]);
   useEffect(() => {
     if (!isSupabaseConfigured || campaignId === "demo") return;
     const channel = supabase.channel(`campaign-sync:${campaignId}`)
@@ -75,6 +76,7 @@ export function TabletopProvider({ children, playerView }: { children: ReactNode
     async rollDice(sides, quantity) { const s = stateRef.current; if (!s) throw new Error("No tabletop is open."); const roll = await tabletopService.rollDice(s.campaign.id, sides, quantity); setState((current) => current ? { ...current, diceRolls: [roll, ...current.diceRolls.filter((item) => item.id !== roll.id)].slice(0, 12) } : current); return roll; },
     async placeToken(x,y) { const s=stateRef.current;const placement=s?.placement;if(!s||!placement||!isDmRole(s.role))return;const token=placement.kind==="CHARACTER"?await tabletopService.placeCharacterToken(s.scene.id,placement.referenceId,x,y):await tabletopService.placeMonsterToken(s.scene.id,placement.referenceId,x,y);setState(current=>current?{...current,tokens:[...current.tokens,token],placement:null}:current); },
     async updateSceneGrid(gridType, gridSize) { const s=stateRef.current;if(!s||!isDmRole(s.role))return;const size=Math.max(20,Math.min(240,Math.round(gridSize??s.scene.gridSize)));await tabletopService.updateSceneGrid(s.scene.id,gridType,size);setState(current=>current?{...current,scene:{...current.scene,gridType,gridSize:size}}:current); },
+    async updateScene(patch) { const s=stateRef.current;if(!s||!isDmRole(s.role))return;await tabletopService.updateScene(s.scene.id,patch);setState(current=>current?{...current,scene:{...current.scene,...patch}}:current); },
     async commitTokenMove(id, x, y) { await tabletopService.moveToken(id, x, y); setState((current) => current ? { ...current, tokens: current.tokens.map((token) => token.id === id ? { ...token, x, y } : token) } : current); },
     async deleteToken(id) { const s = stateRef.current; if (!s || !isDmRole(s.role)) return; if (isSupabaseConfigured && campaignId !== "demo") { const { error } = await supabase.from("tokens").delete().eq("id", id); if (error) throw error; } setState((current) => current ? { ...current, selectedTokenId: current.selectedTokenId === id ? null : current.selectedTokenId, tokens: current.tokens.filter((t) => t.id !== id) } : current); },
     async patchToken(id, patch) { const s=stateRef.current;const referenceId=s?.tokens.find(t=>t.id===id)?.referenceId;await tabletopService.updateToken(id, patch);if(patch.visible!==undefined&&referenceId&&s?.monsterInstances.some(m=>m.id===referenceId)&&isSupabaseConfigured&&campaignId!=="demo"){const {error}=await supabase.from("monster_instances").update({visible:patch.visible}).eq("id",referenceId);if(error)throw error;} setState((current) => current ? { ...current, tokens: current.tokens.map((t) => t.id === id ? { ...t, ...patch } : t), monsterInstances: patch.visible === undefined ? current.monsterInstances : current.monsterInstances.map((m) => referenceId === m.id ? { ...m, visible: patch.visible! } : m) } : current); },
@@ -95,6 +97,6 @@ export function TabletopProvider({ children, playerView }: { children: ReactNode
     async resetFog(covered) { const s = stateRef.current; if (!s) return; await tabletopService.resetFog(s.scene.id, covered); setState((current) => current ? { ...current, scene: { ...current.scene, fogCovered: covered }, fogRegions: [] } : current); },
     reload,
   }), [campaignId, reload]);
-  return <TabletopContext.Provider value={{ state, loading, error, playerView, actions }}>{children}</TabletopContext.Provider>;
+  return <TabletopContext.Provider value={{ state, loading, error, playerView, builder, actions }}>{children}</TabletopContext.Provider>;
 }
 export function useTabletop() { const value = useContext(TabletopContext); if (!value) throw new Error("useTabletop must be inside TabletopProvider"); return value; }
