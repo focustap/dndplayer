@@ -3,6 +3,7 @@ export type TokenType = "PLAYER" | "MONSTER" | "NPC";
 export type GridType = "SQUARE" | "GRIDLESS";
 export type OverlayKind = "PROP" | "EFFECT";
 export type FogTool = "REVEAL_BRUSH" | "REVEAL_RECT" | "HIDE_BRUSH" | "HIDE_RECT";
+export type AttackPreset = "MELEE" | "RANGED" | "SPELL";
 
 export interface Campaign { id: string; name: string; joinCode: string; ownerId: string; role: CampaignRole; memberCount: number; updatedAt: string; }
 export interface Scene { id: string; campaignId: string; mapId: string | null; name: string; mapUrl: string | null; width: number; height: number; gridType: GridType; gridSize: number; feetPerCell: number; gridColor: string; gridOpacity: number; fogEnabled: boolean; fogCovered: boolean; active: boolean; }
@@ -17,7 +18,9 @@ export interface InitiativeEntry { id: string; combatSessionId: string; tokenId:
 export interface CombatSession { id: string; campaignId: string; sceneId: string; active: boolean; round: number; currentIndex: number; entries: InitiativeEntry[]; }
 export interface FogRegion { id: string; sceneId: string; mode: "REVEAL" | "HIDE"; shape: "RECT" | "BRUSH"; points: number[]; }
 export interface Placement { kind: "CHARACTER" | "MONSTER"; referenceId: string; name: string; imageUrl: string | null; }
-export interface TabletopState { campaign: Campaign; role: CampaignRole; scene: Scene; overlays: SceneOverlay[]; tokens: Token[]; characters: Character[]; monsterTemplates: MonsterTemplate[]; monsterInstances: MonsterInstance[]; combat: CombatSession; fogRegions: FogRegion[]; selectedTokenId: string | null; activeFogTool: FogTool | null; placement: Placement | null; previewPlayerView: boolean; shiftIntel: boolean; connected: boolean; }
+export interface AttackAnimationEvent { id: string; campaignId: string; attackerTokenId: string; targetTokenId: string; preset: AttackPreset; createdAt: string; }
+export interface AttackSelection { attackerTokenId: string; preset: AttackPreset; }
+export interface TabletopState { campaign: Campaign; role: CampaignRole; scene: Scene; overlays: SceneOverlay[]; tokens: Token[]; characters: Character[]; monsterTemplates: MonsterTemplate[]; monsterInstances: MonsterInstance[]; combat: CombatSession; fogRegions: FogRegion[]; selectedTokenId: string | null; activeFogTool: FogTool | null; placement: Placement | null; attackSelection: AttackSelection | null; attackEvent: AttackAnimationEvent | null; previewPlayerView: boolean; shiftIntel: boolean; connected: boolean; }
 
 export const CONDITION_OPTIONS = ["Poisoned","Prone","Restrained","Stunned","Blinded","Charmed","Frightened","Grappled","Incapacitated","Invisible"] as const;
 export const isDmRole = (role: CampaignRole) => role === "OWNER" || role === "DM";

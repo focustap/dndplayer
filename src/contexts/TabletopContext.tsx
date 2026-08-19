@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useParams } from "react-router-dom";
-import type { FogRegion, FogTool, GridType, Placement, SceneOverlay, TabletopState, Token } from "../domain/types";
+import type { AttackPreset, FogRegion, FogTool, GridType, Placement, SceneOverlay, TabletopState, Token } from "../domain/types";
 import { isDmRole } from "../domain/types";
 import { isSupabaseConfigured, supabase } from "../lib/supabase";
 import { tabletopService } from "../services/tabletopService";
@@ -12,6 +12,9 @@ interface TabletopActions {
   togglePlayerPreview(): void;
   startPlacement(placement: Placement): void;
   cancelPlacement(): void;
+  startAttack(attackerTokenId: string, preset: AttackPreset): Promise<void>;
+  targetAttack(targetTokenId: string | null): Promise<void>;
+  cancelAttack(): void;
   placeToken(x: number, y: number): Promise<void>;
   updateSceneGrid(gridType: GridType, gridSize?: number): Promise<void>;
   commitTokenMove(id: string, x: number, y: number): Promise<void>;
@@ -41,11 +44,16 @@ export function TabletopProvider({ children, playerView }: { children: ReactNode
   const { campaignId = "demo" } = useParams();
   const [state, setState] = useState<TabletopState | null>(null); const [loading, setLoading] = useState(true); const [error, setError] = useState<string | null>(null);
   const stateRef = useRef(state); useEffect(() => { stateRef.current = state; }, [state]);
-  const reload = useCallback(async () => { try { const next = await tabletopService.load(campaignId, playerView); setState((current) => current ? { ...next, selectedTokenId: current.selectedTokenId, activeFogTool: current.activeFogTool, previewPlayerView: current.previewPlayerView, shiftIntel: current.shiftIntel } : next); setError(null); } catch (e) { setError(e instanceof Error ? e.message : "Unable to load the tabletop"); } finally { setLoading(false); } }, [campaignId, playerView]);
+  const reload = useCallback(async () => { try { const next = await tabletopService.load(campaignId, playerView); setState((current) => current ? { ...next, selectedTokenId: current.selectedTokenId, activeFogTool: current.activeFogTool, previewPlayerView: current.previewPlayerView, shiftIntel: current.shiftIntel, attackSelection: current.attackSelection, attackEvent: current.attackEvent } : next); setError(null); } catch (e) { setError(e instanceof Error ? e.message : "Unable to load the tabletop"); } finally { setLoading(false); } }, [campaignId, playerView]);
   useEffect(() => { let cancelled=false; void tabletopService.load(campaignId,playerView).then((next)=>{if(!cancelled){setState(next);setError(null);}}).catch((e:unknown)=>{if(!cancelled)setError(e instanceof Error?e.message:"Unable to load the tabletop");}).finally(()=>{if(!cancelled)setLoading(false);}); return()=>{cancelled=true;}; }, [campaignId,playerView]);
   useEffect(() => {
     if (!isSupabaseConfigured || campaignId === "demo") return;
-    const channel = supabase.channel(`campaign-sync:${campaignId}`).on("postgres_changes", { event: "INSERT", schema: "public", table: "sync_events", filter: `campaign_id=eq.${campaignId}` }, () => void reload()).subscribe();
+    const channel = supabase.channel(`campaign-sync:${campaignId}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "sync_events", filter: `campaign_id=eq.${campaignId}` }, () => void reload())
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "tabletop_animation_events", filter: `campaign_id=eq.${campaignId}` }, (payload) => {
+        const event = payload.new as { id: string; campaign_id: string; attacker_token_id: string; target_token_id: string; preset: AttackPreset; created_at: string };
+        setState((current) => current ? { ...current, attackEvent: { id: event.id, campaignId: event.campaign_id, attackerTokenId: event.attacker_token_id, targetTokenId: event.target_token_id, preset: event.preset, createdAt: event.created_at } } : current);
+      }).subscribe();
     return () => { void supabase.removeChannel(channel); };
   }, [campaignId, reload]);
 
@@ -56,6 +64,9 @@ export function TabletopProvider({ children, playerView }: { children: ReactNode
     togglePlayerPreview() { setState((s) => s ? { ...s, previewPlayerView: !s.previewPlayerView } : s); },
     startPlacement(placement) { const s=stateRef.current;if(!s||!isDmRole(s.role))return;setState(current=>current?{...current,placement,activeFogTool:null}:current); },
     cancelPlacement() { setState(current=>current?{...current,placement:null}:current); },
+    async startAttack(attackerTokenId, preset) { const s=stateRef.current; const attacker=s?.tokens.find((token) => token.id === attackerTokenId); if (!s || !attacker) return; if (!isDmRole(s.role)) { const { data: { user } } = await supabase.auth.getUser(); if (attacker.type !== "PLAYER" || attacker.ownerUserId !== user?.id) return; } setState((current) => current ? { ...current, attackSelection: { attackerTokenId, preset }, placement: null, activeFogTool: null } : current); },
+    cancelAttack() { setState((current) => current ? { ...current, attackSelection: null } : current); },
+    async targetAttack(targetTokenId) { const s=stateRef.current; const selection=s?.attackSelection; if (!s || !selection) return; if (!targetTokenId || targetTokenId === selection.attackerTokenId) { setState((current) => current ? { ...current, attackSelection: null } : current); return; } const event=await tabletopService.triggerAttack(s.campaign.id,selection.attackerTokenId,targetTokenId,selection.preset); setState((current) => current ? { ...current, attackSelection: null, attackEvent: event } : current); },
     async placeToken(x,y) { const s=stateRef.current;const placement=s?.placement;if(!s||!placement||!isDmRole(s.role))return;const token=placement.kind==="CHARACTER"?await tabletopService.placeCharacterToken(s.scene.id,placement.referenceId,x,y):await tabletopService.placeMonsterToken(s.scene.id,placement.referenceId,x,y);setState(current=>current?{...current,tokens:[...current.tokens,token],placement:null}:current); },
     async updateSceneGrid(gridType, gridSize) { const s=stateRef.current;if(!s||!isDmRole(s.role))return;const size=Math.max(20,Math.min(240,Math.round(gridSize??s.scene.gridSize)));await tabletopService.updateSceneGrid(s.scene.id,gridType,size);setState(current=>current?{...current,scene:{...current.scene,gridType,gridSize:size}}:current); },
     async commitTokenMove(id, x, y) { await tabletopService.moveToken(id, x, y); setState((current) => current ? { ...current, tokens: current.tokens.map((token) => token.id === id ? { ...token, x, y } : token) } : current); },

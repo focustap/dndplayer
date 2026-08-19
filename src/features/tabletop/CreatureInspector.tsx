@@ -1,7 +1,8 @@
 import { ChevronRight, Eye, EyeOff, Plus, RotateCcw, Trash2, X } from "lucide-react";
 import { useRef, useState } from "react";
-import { CONDITION_OPTIONS, isDmRole } from "../../domain/types";
+import { CONDITION_OPTIONS, isDmRole, type AttackPreset } from "../../domain/types";
 import { useTabletop } from "../../contexts/TabletopContext";
+import { useAuth } from "../../contexts/AuthContext";
 
 export function CreatureInspector() {
   const { state } = useTabletop();
@@ -13,9 +14,11 @@ export function CreatureInspector() {
 
 function InspectorContent({ tokenId }: { tokenId: string }) {
   const { state, actions } = useTabletop();
+  const { user } = useAuth();
   const [amount, setAmount] = useState("8");
   const [editing, setEditing] = useState(false);
   const [conditionOpen, setConditionOpen] = useState(false);
+  const [attackPreset, setAttackPreset] = useState<AttackPreset>("MELEE");
   const input = useRef<HTMLInputElement>(null);
   const token = state?.tokens.find((item) => item.id === tokenId);
   const monster = state?.monsterInstances.find((item) => item.id === token?.referenceId);
@@ -23,6 +26,7 @@ function InspectorContent({ tokenId }: { tokenId: string }) {
   if (!state || !token) return null;
 
   const dm = isDmRole(state.role);
+  const canAnimate = dm || (token.type === "PLAYER" && token.ownerUserId === user?.id);
   const current = monster?.currentHp ?? character?.currentHp ?? 0;
   const max = monster?.maxHp ?? character?.maxHp ?? 1;
   const ac = monster?.ac ?? character?.ac ?? 0;
@@ -42,6 +46,7 @@ function InspectorContent({ tokenId }: { tokenId: string }) {
       <button onClick={() => void actions.patchToken(token.id, { visible: !token.visible })} aria-label="Toggle visibility">{token.visible ? <Eye /> : <EyeOff />}</button>
       {dm && <button className="danger" onClick={() => { if (confirm(`Delete ${token.displayName} from this scene?`)) void actions.deleteToken(token.id); }} aria-label={`Delete ${token.displayName}`} title="Delete token"><Trash2 /></button>}
     </div>
+    {canAnimate && <section className="attack-controls"><small>ATTACK ANIMATION</small><div>{(["MELEE", "RANGED", "SPELL"] as AttackPreset[]).map((preset) => <button className={attackPreset === preset ? "active" : ""} key={preset} onClick={() => setAttackPreset(preset)}>{preset}</button>)}</div><button className="attack-start" onClick={() => void actions.startAttack(token.id, attackPreset)}>{state.attackSelection?.attackerTokenId === token.id ? "Choose a target on the map" : "Animate attack"}</button></section>}
     <div className="stat-trio"><Stat label="ARMOR" value={String(ac)} /><Stat label="SPEED" value={`${speed} ft`} /><Stat label="SIZE" value={`${token.size}×`} /></div>
     <section className="hp-card">
       <div className="hp-title"><span>HIT POINTS</span><strong>{current} <i>/ {max}</i></strong></div>
