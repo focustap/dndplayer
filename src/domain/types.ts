@@ -31,7 +31,7 @@ export interface AttackSelection { attackerTokenId: string; preset: AttackPreset
 export type CinematicStep =
   | { at: number; duration?: number; type: "SCREEN_SHAKE" | "FLASH" | "DARKEN" | "VIGNETTE" | "UI_FADE_OUT" | "UI_FADE_IN" | "TITLE" | "LOCK_INTERACTION" | "LETTERBOX" | "COLOR_WASH" | "BLUR"; intensity?: number; color?: string; text?: string }
   | { at: number; duration?: number; type: "CAMERA_FOCUS_TOKEN"; tokenId: string; zoom?: number; intensity?: number; persistCamera?: boolean }
-  | { at: number; duration?: number; type: "TOKEN_SHAKE" | "TOKEN_PULSE" | "TOKEN_FADE" | "TOKEN_RISE" | "IMPACT" | "TOKEN_GLOW"; tokenId: string; zoom?: number; intensity?: number; color?: string }
+  | { at: number; duration?: number; type: "TOKEN_SHAKE" | "TOKEN_PULSE" | "TOKEN_FADE" | "TOKEN_FADE_IN" | "TOKEN_RISE" | "IMPACT" | "TOKEN_GLOW"; tokenId: string; zoom?: number; intensity?: number; color?: string }
   | { at: number; duration?: number; type: "CAMERA_FOCUS_POINT"; x?: number; y?: number; zoom?: number; intensity?: number; persistCamera?: boolean }
   | { at: number; duration?: number; type: "MAP_SHAKE"; x?: number; y?: number; zoom?: number; intensity?: number };
 export interface CinematicEvent { id: string; campaignId: string; name: string; duration: number; steps: CinematicStep[]; createdAt: string; completed?: boolean; }

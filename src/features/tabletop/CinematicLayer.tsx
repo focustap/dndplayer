@@ -84,7 +84,7 @@ export function CinematicLayer({ event, onFinished }: CinematicLayerProps) {
     "--cinematic-flash-alpha": view.flash ? String(Math.max(.12, 1 - progressFor(view.flash, frame.elapsed))) : "0",
     "--cinematic-darkness": String(view.darken?.intensity ?? 0),
     "--cinematic-vignette": String(view.vignette?.intensity ?? 0),
-    "--cinematic-letterbox": String(Math.max(0, Math.min(1, view.letterbox?.intensity ?? .72))),
+    "--cinematic-letterbox": String(Math.max(0, Math.min(1, view.letterbox?.intensity ?? 0))),
     "--cinematic-wash": view.colorWash?.color ?? "#be3434",
     "--cinematic-wash-alpha": String(view.colorWash ? Math.max(0, Math.sin(progressFor(view.colorWash, frame.elapsed) * Math.PI) * (view.colorWash.intensity ?? .45)) : 0),
   } as CSSProperties;

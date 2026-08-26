@@ -121,6 +121,7 @@ export class SceneEngine {
       if (step.type === "TOKEN_SHAKE") display.position.set(base.x + Math.sin(elapsed * .14) * (step.intensity ?? 1) * 12 * (1 - progress), base.y + Math.cos(elapsed * .11) * (step.intensity ?? 1) * 8 * (1 - progress));
       if (step.type === "TOKEN_PULSE") display.scale.set(base.scale * (1 + .28 * Math.sin(progress * Math.PI)));
       if (step.type === "TOKEN_FADE") display.alpha = base.alpha * (1 - progress);
+      if (step.type === "TOKEN_FADE_IN") display.alpha = base.alpha * (1 - Math.pow(1 - progress, 3));
       if (step.type === "TOKEN_RISE") { display.alpha = base.alpha * Math.min(1, progress * 2); display.position.set(base.x, base.y + (1 - progress) * 55); }
       if (step.type === "TOKEN_GLOW") this.updateTokenGlow(cinematic, step.tokenId, step.color, step.intensity, elapsed, progress);
       if (step.type === "IMPACT" && !cinematic.impacts.has(step.at)) this.createCinematicImpact(cinematic, display, step.at);
