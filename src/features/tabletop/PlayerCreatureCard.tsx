@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 import { useTabletop } from "../../contexts/TabletopContext";
+import "./playerCombat.css";
 
 export function PlayerCreatureCard() {
   const { state, actions } = useTabletop();

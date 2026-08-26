@@ -1,0 +1,1 @@
+.campaign-content{min-height:0;overflow-y:auto}.campaign-content .notes-editor{max-height:calc(100vh - 185px);overflow-y:auto;padding-right:14px}.campaign-content .notes-editor textarea{min-height:190px}@media(max-height:780px){.campaign-content .notes-editor{max-height:calc(100vh - 145px)}}
