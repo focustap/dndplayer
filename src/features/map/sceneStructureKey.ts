@@ -28,7 +28,7 @@ export function createSceneStructureKey(snapshot: SceneStructureSnapshot) {
       id: scene.id,
       map: scene.mapId ? `map:${scene.mapId}` : stableAssetIdentity(null, scene.mapUrl),
       width: scene.width, height: scene.height, gridType: scene.gridType, gridSize: scene.gridSize,
-      feetPerCell: scene.feetPerCell, gridColor: scene.gridColor, gridOpacity: scene.gridOpacity,
+      feetPerCell: scene.feetPerCell, gridColor: scene.gridColor, gridOpacity: scene.gridOpacity, gridLineWidth: scene.gridLineWidth,
       fogEnabled: scene.fogEnabled, fogCovered: scene.fogCovered, mapX: scene.mapX, mapY: scene.mapY,
       mapScale: scene.mapScale, gridOffsetX: scene.gridOffsetX, gridOffsetY: scene.gridOffsetY,
       lighting: scene.lighting, playerCameraX: scene.playerCameraX, playerCameraY: scene.playerCameraY, playerCameraZoom: scene.playerCameraZoom,
