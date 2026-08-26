@@ -29,6 +29,7 @@ interface TabletopActions {
   updateSceneLink(id: string, patch: Partial<Pick<SceneLink, "destinationSceneId" | "label" | "x" | "y">>): Promise<void>;
   deleteSceneLink(id: string): Promise<void>;
   commitTokenMove(id: string, x: number, y: number): Promise<void>;
+  broadcastTokenMove(id:string,x:number,y:number,final:boolean):void;
   deleteToken(id: string): Promise<void>;
   patchToken(id: string, patch: Partial<Token>): Promise<void>;
   adjustHp(instanceId: string, amount: number, mode: "DAMAGE"|"HEAL"): Promise<void>;
@@ -63,11 +64,13 @@ export function TabletopProvider({ children, playerView, sceneId, builder = fals
   const { campaignId = "demo" } = useParams();
   const [state, setState] = useState<TabletopState | null>(null); const [loading, setLoading] = useState(true); const [error, setError] = useState<string | null>(null);
   const stateRef = useRef(state); useEffect(() => { stateRef.current = state; }, [state]);
+  const movementChannelRef=useRef<ReturnType<typeof supabase.channel>|null>(null);const moveSequences=useRef(new Map<string,number>());const receivedSequences=useRef(new Map<string,number>());
   const reload = useCallback(async () => { try { const next = await tabletopService.load(campaignId, playerView, sceneId); setState((current) => current ? { ...next, selectedTokenId: current.selectedTokenId, activeFogTool: current.activeFogTool, previewPlayerView: current.previewPlayerView, shiftIntel: current.shiftIntel, attackSelection: current.attackSelection, attackEvent: current.attackEvent, cinematicEvent: current.cinematicEvent, discoveryReveal: current.discoveryReveal } : next); setError(null); } catch (e) { setError(e instanceof Error ? e.message : "Unable to load the tabletop"); } finally { setLoading(false); } }, [campaignId, playerView, sceneId]);
   useEffect(() => { let cancelled=false; void tabletopService.load(campaignId,playerView,sceneId).then((next)=>{if(!cancelled){setState(next);setError(null);}}).catch((e:unknown)=>{if(!cancelled)setError(e instanceof Error?e.message:"Unable to load the tabletop");}).finally(()=>{if(!cancelled)setLoading(false);}); return()=>{cancelled=true;}; }, [campaignId,playerView,sceneId]);
   useEffect(() => {
     if (!isSupabaseConfigured || campaignId === "demo") return;
     const channel = supabase.channel(`campaign-sync:${campaignId}`)
+      .on("broadcast",{event:"token-move"},(message)=>{const p=message.payload as {tokenId?:string;x?:number;y?:number;sequence?:number;final?:boolean};if(!p.tokenId||!Number.isFinite(p.x)||!Number.isFinite(p.y)||!Number.isFinite(p.sequence))return;const tokenId=p.tokenId,sequence=p.sequence as number,x=p.x as number,y=p.y as number;const last=receivedSequences.current.get(tokenId)??-1;if(sequence<=last)return;receivedSequences.current.set(tokenId,sequence);setState(current=>current?{...current,tokens:current.tokens.map(token=>token.id===tokenId?{...token,x,y}:token),transientTokenIds:p.final?current.transientTokenIds.filter(id=>id!==tokenId):[...new Set([...current.transientTokenIds,tokenId])]}:current);})
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "sync_events", filter: `campaign_id=eq.${campaignId}` }, () => void reload())
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "tabletop_animation_events", filter: `campaign_id=eq.${campaignId}` }, (payload) => {
         const event = payload.new as { id: string; campaign_id: string; attacker_token_id: string; target_token_id: string; preset: AttackPreset; created_at: string };
@@ -77,7 +80,7 @@ export function TabletopProvider({ children, playerView, sceneId, builder = fals
           setState((current) => current ? { ...current, diceRolls: [roll, ...current.diceRolls.filter((item) => item.id !== roll.id)].slice(0, 12) } : current);
         });
       }).on("postgres_changes", { event: "INSERT", schema: "public", table: "tabletop_cinematic_events", filter: `campaign_id=eq.${campaignId}` }, (payload) => { setState(current => current ? { ...current, cinematicEvent: asCinematicEvent(payload.new as Record<string, unknown>) } : current); }).on("postgres_changes",{event:"INSERT",schema:"public",table:"tabletop_discovery_events",filter:`campaign_id=eq.${campaignId}`},(payload)=>{const id=String((payload.new as Record<string,unknown>).discoverable_id);void tabletopService.discover(id).then(item=>setState(current=>current?{...current,discoveryReveal:item}:current)).catch(()=>void reload());}).subscribe();
-    return () => { void supabase.removeChannel(channel); };
+    movementChannelRef.current=channel;return () => { if(movementChannelRef.current===channel)movementChannelRef.current=null;void supabase.removeChannel(channel); };
   }, [campaignId, reload]);
 
   const actions = useMemo<TabletopActions>(() => ({
@@ -108,7 +111,8 @@ export function TabletopProvider({ children, playerView, sceneId, builder = fals
     async travelSceneLink(linkId) { const s=stateRef.current;const link=s?.sceneLinks.find(candidate=>candidate.id===linkId);if(!s||!link||!isDmRole(s.role))return;await tabletopService.activateAndRevealScene(link.destinationSceneId);await reload(); },
     async updateSceneLink(id,patch) { const s=stateRef.current;if(!s||!isDmRole(s.role))return;await tabletopService.updateSceneLink(id,patch);setState(current=>current?{...current,sceneLinks:current.sceneLinks.map(link=>link.id===id?{...link,...patch}:link)}:current); },
     async deleteSceneLink(id) { const s=stateRef.current;if(!s||!isDmRole(s.role))return;await tabletopService.deleteSceneLink(id);setState(current=>current?{...current,sceneLinks:current.sceneLinks.filter(link=>link.id!==id)}:current); },
-    async commitTokenMove(id, x, y) { await tabletopService.moveToken(id, x, y); setState((current) => current ? { ...current, tokens: current.tokens.map((token) => token.id === id ? { ...token, x, y } : token) } : current); },
+    broadcastTokenMove(id,x,y,final){const channel=movementChannelRef.current;if(!channel)return;const sequence=(moveSequences.current.get(id)??0)+1;moveSequences.current.set(id,sequence);void channel.send({type:"broadcast",event:"token-move",payload:{tokenId:id,x,y,sequence,final}});},
+    async commitTokenMove(id, x, y) { setState((current) => current ? { ...current, tokens: current.tokens.map((token) => token.id === id ? { ...token, x, y } : token), transientTokenIds:current.transientTokenIds.filter(tokenId=>tokenId!==id) } : current); try{await tabletopService.moveToken(id, x, y);}catch(error){await reload();throw error;} },
     async deleteToken(id) { const s = stateRef.current; if (!s || !isDmRole(s.role)) return; if (isSupabaseConfigured && campaignId !== "demo") { const { error } = await supabase.from("tokens").delete().eq("id", id); if (error) throw error; } setState((current) => current ? { ...current, selectedTokenId: current.selectedTokenId === id ? null : current.selectedTokenId, tokens: current.tokens.filter((t) => t.id !== id) } : current); },
     async patchToken(id, patch) { const s=stateRef.current;const referenceId=s?.tokens.find(t=>t.id===id)?.referenceId;await tabletopService.updateToken(id, patch);if(patch.visible!==undefined&&referenceId&&s?.monsterInstances.some(m=>m.id===referenceId)&&isSupabaseConfigured&&campaignId!=="demo"){const {error}=await supabase.from("monster_instances").update({visible:patch.visible}).eq("id",referenceId);if(error)throw error;} setState((current) => current ? { ...current, tokens: current.tokens.map((t) => t.id === id ? { ...t, ...patch } : t), monsterInstances: patch.visible === undefined ? current.monsterInstances : current.monsterInstances.map((m) => referenceId === m.id ? { ...m, visible: patch.visible! } : m) } : current); },
     async adjustHp(instanceId, amount, mode) { const safe = Math.max(0, Math.floor(amount)); if (!safe) return; await tabletopService.adjustMonsterHp(instanceId, safe, mode); setState((s) => s ? { ...s, monsterInstances: s.monsterInstances.map((m) => m.id === instanceId ? { ...m, currentHp: mode === "DAMAGE" ? Math.max(0, m.currentHp - safe) : Math.min(m.maxHp, m.currentHp + safe), dead: mode === "DAMAGE" ? m.currentHp - safe <= 0 : false } : m) } : s); },
