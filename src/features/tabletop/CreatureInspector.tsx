@@ -1,6 +1,6 @@
 import { ChevronRight, Eye, EyeOff, Plus, RotateCcw, Trash2, X } from "lucide-react";
 import { useRef, useState } from "react";
-import { CONDITION_OPTIONS, isDmRole, type AttackPreset, type MonsterAction, type MonsterTemplate } from "../../domain/types";
+import { CONDITION_OPTIONS, isDmRole, type AbilityScores, type AttackPreset, type Character, type MonsterAction, type MonsterTemplate } from "../../domain/types";
 import { useTabletop } from "../../contexts/TabletopContext";
 import { useAuth } from "../../contexts/AuthContext";
 
@@ -53,6 +53,7 @@ function InspectorContent({ tokenId }: { tokenId: string }) {
     </div>
     {canAnimate && <section className="attack-controls"><small>ATTACK ANIMATION</small><div>{(["MELEE", "RANGED", "SPELL"] as AttackPreset[]).map((preset) => <button className={attackPreset === preset ? "active" : ""} key={preset} onClick={() => setAttackPreset(preset)}>{preset}</button>)}</div><button className="attack-start" onClick={() => void actions.startAttack(token.id, attackPreset)}>{state.attackSelection?.attackerTokenId === token.id ? "Choose a target on the map" : "Animate attack"}</button></section>}
     <div className="stat-trio"><Stat label="ARMOR" value={String(ac)} /><Stat label="SPEED" value={`${speed} ft`} /><Stat label="SIZE" value={monster?.template?.creatureSize ?? `${token.size}×`} /></div>
+    {character && <CharacterAbilityScores character={character} canEdit={canCharacterEdit} onSave={(abilities) => void actions.setCharacterAbilities(character.id, abilities)} />}
     <section className="hp-card">
       <div className="hp-title"><span>HIT POINTS</span><strong>{current} <i>/ {max}</i></strong></div>
       {character && character.tempHp > 0 && <div className="temp-hp">TEMP HP <b>+{character.tempHp}</b></div>}
@@ -128,4 +129,15 @@ function DirectHp({ current, max, onSave }: { current: number; max: number; onSa
 function DirectCharacterCombat({ character, onSave }: { character: { currentHp: number; maxHp: number; tempHp: number; ac: number }; onSave(current: number, max: number, temp: number, ac: number): void }) {
   const [current, setCurrent] = useState(String(character.currentHp)); const [max, setMax] = useState(String(character.maxHp)); const [temp, setTemp] = useState(String(character.tempHp)); const [ac, setAc] = useState(String(character.ac));
   return <div className="direct-hp character-combat-edit"><label>Current<input value={current} onChange={(event) => setCurrent(event.target.value)} /></label><label>Max<input value={max} onChange={(event) => setMax(event.target.value)} /></label><label>Temp<input value={temp} onChange={(event) => setTemp(event.target.value)} /></label><label>AC<input value={ac} onChange={(event) => setAc(event.target.value)} /></label><button onClick={() => onSave(Number(current), Number(max), Number(temp), Number(ac))}>Save</button></div>;
+}
+function CharacterAbilityScores({ character, canEdit, onSave }: { character: Character; canEdit: boolean; onSave(abilities: AbilityScores): void }) {
+  const [draft, setDraft] = useState(character.abilities);
+  const modifier = (score: number) => Math.floor((score - 10) / 2);
+  const formatModifier = (score: number) => `${modifier(score) >= 0 ? "+" : ""}${modifier(score)}`;
+  const change = (ability: keyof AbilityScores, value: string) => setDraft((current) => ({ ...current, [ability]: Number(value) }));
+  return <section className="character-abilities">
+    <p className="character-ability-title">ABILITY SCORES</p>
+    <div>{(Object.entries(draft) as [keyof AbilityScores, number][]).map(([ability, score]) => <label key={ability}><small>{ability.toUpperCase()} <b>{formatModifier(score)}</b></small>{canEdit ? <input aria-label={`${ability.toUpperCase()} score`} type="number" min={1} max={30} value={score} onChange={(event) => change(ability, event.target.value)} /> : <strong>{score}</strong>}</label>)}</div>
+    {canEdit && <button onClick={() => onSave(draft)}>Save ability scores</button>}
+  </section>;
 }
