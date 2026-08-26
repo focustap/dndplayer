@@ -1,0 +1,27 @@
+.cinematic-layer { inset: 0; pointer-events: none; position: fixed; z-index: 1200; }
+.cinematic-darkness, .cinematic-vignette, .cinematic-flash { inset: 0; position: absolute; }
+.cinematic-darkness { background: #020505; opacity: var(--cinematic-darkness); transition: opacity 90ms linear; }
+.cinematic-vignette { background: radial-gradient(ellipse at center, transparent 25%, rgba(0,0,0,.88) 100%); opacity: var(--cinematic-vignette); transition: opacity 90ms linear; }
+.cinematic-flash { background: var(--cinematic-flash); opacity: var(--cinematic-flash-alpha); mix-blend-mode: screen; }
+.cinematic-title { align-items: center; color: #f4ead9; display: flex; font-family: Georgia, serif; font-size: clamp(22px, 4vw, 56px); font-weight: 700; inset: 0; justify-content: center; letter-spacing: .16em; text-align: center; text-shadow: 0 3px 0 #111, 0 0 28px rgba(227,185,120,.72); }
+.cinematic-title span { animation: cinematic-title-in .32s cubic-bezier(.16,1,.3,1) both; max-width: min(85vw, 900px); }
+.tabletop-shell.cinematic-screen-shake { animation: cinematic-screen-shake 120ms linear infinite; }
+.tabletop-shell.cinematic-ui-muted > :not(.map-stage) { opacity: .08; pointer-events: none; transition: opacity 160ms ease; }
+.tabletop-shell.cinematic-interaction-lock .map-stage { pointer-events: none; }
+@keyframes cinematic-screen-shake { 0%,100% { transform: translate(0,0); } 25% { transform: translate(var(--cinematic-shake), calc(var(--cinematic-shake) * -.45)); } 55% { transform: translate(calc(var(--cinematic-shake) * -.7), var(--cinematic-shake)); } 80% { transform: translate(calc(var(--cinematic-shake) * .45), calc(var(--cinematic-shake) * -.25)); } }
+@keyframes cinematic-title-in { from { opacity: 0; transform: scale(.88) translateY(12px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+
+.cinematic-controls { bottom: 24px; position: fixed; right: 26px; z-index: 1000; }
+.cinematic-controls > button { align-items: center; background: #17201c; border: 1px solid #826b49; color: #f4ead9; display: flex; font: 700 11px/1 Arial, sans-serif; gap: 7px; letter-spacing: .08em; padding: 10px 13px; text-transform: uppercase; }
+.cinematic-controls > button.active, .cinematic-controls > button:hover { background: #2a352d; border-color: #e3b978; }
+.cinematic-controls > button svg { height: 16px; width: 16px; }
+.cinematic-controls-menu { background: #101614; border: 1px solid #826b49; bottom: 48px; box-shadow: 0 16px 42px rgba(0,0,0,.46); color: #d8d1c4; padding: 11px; position: absolute; right: 0; width: 292px; }
+.cinematic-controls-menu .popover-title { margin: -2px -2px 9px; }
+.cinematic-controls-menu p { color: #a69f91; font-size: 11px; line-height: 1.45; margin: 0 0 10px; }
+.cinematic-action-grid { display: grid; gap: 6px; grid-template-columns: 1fr 1fr; }
+.cinematic-action-grid button, .cinematic-restore { align-items: center; background: #1c2722; border: 1px solid #3d5144; color: #eee5d6; cursor: pointer; display: flex; font: 700 10px/1 Arial, sans-serif; gap: 6px; min-height: 36px; padding: 7px; text-align: left; text-transform: uppercase; }
+.cinematic-action-grid button:hover, .cinematic-restore:hover { border-color: #e3b978; color: #fff7e7; }
+.cinematic-action-grid button:disabled { cursor: not-allowed; opacity: .43; }
+.cinematic-action-grid .boss-entrance { background: #38261f; border-color: #8f6648; grid-column: span 2; }
+.cinematic-action-grid svg, .cinematic-restore svg { height: 14px; width: 14px; }
+.cinematic-restore { justify-content: center; margin-top: 8px; width: 100%; }
