@@ -7,10 +7,11 @@ interface EngineCallbacks { onSelect(id: string | null): void; onMoveCommit(id: 
 interface TokenMovementAnimation { display: Container; startX: number; startY: number; targetX: number; targetY: number; startedAt: number; }
 interface AttackEffect { id: string; preset: AttackAnimationEvent["preset"]; attacker: Container; target: Container; attackerX: number; attackerY: number; targetX: number; targetY: number; projectile: Graphics | null; burst: Graphics | null; startedAt: number; }
 interface CinematicImpact { ring: Graphics; animate: () => void; }
-interface CinematicState { event: CinematicEvent; startedAt: number; rootX: number; rootY: number; scale: number; tokenBases: Map<string, { x: number; y: number; alpha: number; scale: number }>; impacts: Set<number>; effects: Set<CinematicImpact>; }
+interface CinematicTokenGlow { tokenId: string; graphic: Graphics; }
+interface CinematicState { event: CinematicEvent; startedAt: number; rootX: number; rootY: number; scale: number; tokenBases: Map<string, { x: number; y: number; alpha: number; scale: number }>; impacts: Set<number>; effects: Set<CinematicImpact>; glows: Map<string, CinematicTokenGlow>; }
 
 export class SceneEngine {
-  private app = new Application(); private root = new Container(); private snapshot: EngineSnapshot | null = null; private initialized = false; private destroyed = false; private renderVersion = 0; private structureKey: string | null = null; private tokenTextures = new Map<string, Promise<Texture | null>>(); private tokenDisplays = new Map<string, Container>(); private overlayDisplays = new Map<string, Container>(); private sceneLinkDisplays = new Map<string, Container>(); private tokenPositionTargets = new Map<string, { x: number; y: number }>(); private tokenMovementAnimations = new Map<string, TokenMovementAnimation>(); private attackEffects = new Map<string, AttackEffect>(); private lastAttackEventId: string | null = null; private cinematic: CinematicState | null = null; private selectedRings = new Map<string, Graphics>(); private intelDisplays = new Map<string, Container>(); private intelKey: string | null = null; private selectedTokenId: string | null = null; private placementGhost: Container | null = null; private placementKey: string | null = null; private pointerCandidate: { kind: "TOKEN"|"OVERLAY"|"SCENE_LINK"; id: string; startX: number; startY: number; originX: number; originY: number; dx: number; dy: number; display: Container } | null = null; private dragging: { kind: "TOKEN"|"OVERLAY"|"SCENE_LINK"; id: string; dx: number; dy: number; x: number; y: number; originX: number; originY: number; display: Container } | null = null; private instrumentation = { structuralRebuilds: 0, moveCommits: 0, overlayCommits: 0, sceneLinkCommits: 0 }; private fogDraft: { tool: FogTool; sx: number; sy: number; x: number; y: number; samples: number[] } | null = null; private panning = false; private panStart = { x: 0, y: 0, rootX: 0, rootY: 0 }; private spaceDown = false;
+  private app = new Application(); private root = new Container(); private snapshot: EngineSnapshot | null = null; private initialized = false; private destroyed = false; private renderVersion = 0; private structureKey: string | null = null; private tokenTextures = new Map<string, Promise<Texture | null>>(); private tokenDisplays = new Map<string, Container>(); private overlayDisplays = new Map<string, Container>(); private sceneLinkDisplays = new Map<string, Container>(); private tokenPositionTargets = new Map<string, { x: number; y: number }>(); private tokenMovementAnimations = new Map<string, TokenMovementAnimation>(); private attackEffects = new Map<string, AttackEffect>(); private lastAttackEventId: string | null = null; private cinematic: CinematicState | null = null; private finishedCinematicIds = new Set<string>(); private selectedRings = new Map<string, Graphics>(); private intelDisplays = new Map<string, Container>(); private intelKey: string | null = null; private selectedTokenId: string | null = null; private placementGhost: Container | null = null; private placementKey: string | null = null; private pointerCandidate: { kind: "TOKEN"|"OVERLAY"|"SCENE_LINK"; id: string; startX: number; startY: number; originX: number; originY: number; dx: number; dy: number; display: Container } | null = null; private dragging: { kind: "TOKEN"|"OVERLAY"|"SCENE_LINK"; id: string; dx: number; dy: number; x: number; y: number; originX: number; originY: number; display: Container } | null = null; private instrumentation = { structuralRebuilds: 0, moveCommits: 0, overlayCommits: 0, sceneLinkCommits: 0 }; private fogDraft: { tool: FogTool; sx: number; sy: number; x: number; y: number; samples: number[] } | null = null; private panning = false; private panStart = { x: 0, y: 0, rootX: 0, rootY: 0 }; private spaceDown = false;
   constructor(private host: HTMLElement, private callbacks: EngineCallbacks) {}
   async init() {
     await this.app.init({ resizeTo: this.host, antialias: true, backgroundColor: 0x151816, resolution: Math.min(window.devicePixelRatio, 2), autoDensity: true }); this.initialized=true;
@@ -57,21 +58,124 @@ export class SceneEngine {
     this.updateCinematic(now); this.updateAttackEffects(now);
   };
   private updateCinematic(now: number) {
-    const event=this.snapshot?.cinematicEvent;
+    const event = this.snapshot?.cinematicEvent;
     if (!event) { if (this.cinematic) this.clearCinematic(); return; }
-    if (!this.cinematic || this.cinematic.event.id!==event.id) { this.clearCinematic(); const bases=new Map<string,{x:number;y:number;alpha:number;scale:number}>();for(const [id,display] of this.tokenDisplays)bases.set(id,{x:display.x,y:display.y,alpha:display.alpha,scale:display.scale.x});this.cinematic={event,startedAt:now,rootX:this.root.x,rootY:this.root.y,scale:this.root.scale.x,tokenBases:bases,impacts:new Set(),effects:new Set()}; }
-    const cinematic=this.cinematic; const elapsed=now-cinematic.startedAt;
-    if (elapsed>event.duration) { this.clearCinematic(); return; }
-    this.root.position.set(cinematic.rootX,cinematic.rootY); this.root.scale.set(cinematic.scale);
-    for(const [id,base] of cinematic.tokenBases){const display=this.tokenDisplays.get(id);if(display){display.position.set(base.x,base.y);display.alpha=base.alpha;display.scale.set(base.scale);}}
-    for(const step of event.steps){const duration=step.duration??600;if(elapsed<step.at||elapsed>step.at+duration)continue;const p=Math.min(1,(elapsed-step.at)/duration);const ease=1-Math.pow(1-p,3);
-      if(step.type==="MAP_SHAKE"){const n=(step.intensity??.25)*28*(1-p);this.root.position.set(cinematic.rootX+Math.sin(elapsed*.09)*n,cinematic.rootY+Math.cos(elapsed*.13)*n);}
-      if(step.type==="CAMERA_FOCUS_TOKEN"){const point=this.tokenDisplays.get(step.tokenId)?.position;if(point){const scale=cinematic.scale*(step.zoom??1.35);this.root.scale.set(cinematic.scale+(scale-cinematic.scale)*ease);this.root.position.set(cinematic.rootX+(this.host.clientWidth/2-point.x*scale-cinematic.rootX)*ease,cinematic.rootY+(this.host.clientHeight/2-point.y*scale-cinematic.rootY)*ease);}}
-      if(step.type==="CAMERA_FOCUS_POINT"){const point={x:step.x??0,y:step.y??0};const scale=cinematic.scale*(step.zoom??1.35);this.root.scale.set(cinematic.scale+(scale-cinematic.scale)*ease);this.root.position.set(cinematic.rootX+(this.host.clientWidth/2-point.x*scale-cinematic.rootX)*ease,cinematic.rootY+(this.host.clientHeight/2-point.y*scale-cinematic.rootY)*ease);}
-      if("tokenId" in step){const display=this.tokenDisplays.get(step.tokenId),base=cinematic.tokenBases.get(step.tokenId);if(!display||!base)continue;if(step.type==="TOKEN_SHAKE")display.position.set(base.x+Math.sin(elapsed*.14)*(step.intensity??1)*12*(1-p),base.y+Math.cos(elapsed*.11)*(step.intensity??1)*8*(1-p));if(step.type==="TOKEN_PULSE")display.scale.set(base.scale*(1+.28*Math.sin(p*Math.PI)));if(step.type==="TOKEN_FADE")display.alpha=base.alpha*(1-p);if(step.type==="TOKEN_RISE"){display.alpha=base.alpha*Math.min(1,p*2);display.position.set(base.x,base.y+(1-p)*55);if(p>.8)display.position.set(base.x,base.y);}if(step.type==="IMPACT"&&!cinematic.impacts.has(step.at)){cinematic.impacts.add(step.at);const ring=new Graphics().circle(0,0,14).stroke({color:0xf0c378,width:4,alpha:.9});ring.position.copyFrom(display.position);ring.zIndex=720;this.root.addChild(ring);let age=0;const effect:CinematicImpact={ring,animate:()=>{age+=this.app.ticker.deltaMS;ring.scale.set(1+age/110);ring.alpha=Math.max(0,1-age/400);if(age>=400){this.app.ticker.remove(effect.animate);ring.destroy();cinematic.effects.delete(effect);}}};cinematic.effects.add(effect);this.app.ticker.add(effect.animate);}}
+    if (event.completed || this.finishedCinematicIds.has(event.id)) {
+      if (this.cinematic?.event.id === event.id) this.clearCinematic(false);
+      return;
     }
+    if (!this.cinematic || this.cinematic.event.id !== event.id) {
+      this.clearCinematic();
+      const tokenBases = new Map<string, { x: number; y: number; alpha: number; scale: number }>();
+      for (const [id, display] of this.tokenDisplays) tokenBases.set(id, { x: display.x, y: display.y, alpha: display.alpha, scale: display.scale.x });
+      this.cinematic = { event, startedAt: now, rootX: this.root.x, rootY: this.root.y, scale: this.root.scale.x, tokenBases, impacts: new Set(), effects: new Set(), glows: new Map() };
+    }
+    const cinematic = this.cinematic;
+    const elapsed = now - cinematic.startedAt;
+    if (elapsed >= event.duration) {
+      this.finishedCinematicIds.add(event.id);
+      if (this.finishedCinematicIds.size > 24) this.finishedCinematicIds.delete(this.finishedCinematicIds.values().next().value!);
+      this.clearCinematic(false);
+      return;
+    }
+
+    for (const [id, base] of cinematic.tokenBases) {
+      const display = this.tokenDisplays.get(id);
+      if (display) { display.position.set(base.x, base.y); display.alpha = base.alpha; display.scale.set(base.scale); }
+    }
+
+    let cameraX = cinematic.rootX;
+    let cameraY = cinematic.rootY;
+    let cameraScale = cinematic.scale;
+    for (const step of event.steps) {
+      if ((step.type !== "CAMERA_FOCUS_TOKEN" && step.type !== "CAMERA_FOCUS_POINT") || elapsed < step.at) continue;
+      const duration = step.duration ?? 600;
+      const progress = Math.min(1, (elapsed - step.at) / duration);
+      if (progress >= 1 && !step.persistCamera) continue;
+      const point = step.type === "CAMERA_FOCUS_TOKEN"
+        ? this.tokenDisplays.get(step.tokenId)?.position
+        : { x: step.x ?? 0, y: step.y ?? 0 };
+      if (!point) continue;
+      const ease = 1 - Math.pow(1 - progress, 3);
+      const targetScale = cinematic.scale * (step.zoom ?? 1.35);
+      const targetX = this.host.clientWidth / 2 - point.x * targetScale;
+      const targetY = this.host.clientHeight / 2 - point.y * targetScale;
+      cameraScale = cinematic.scale + (targetScale - cinematic.scale) * ease;
+      cameraX = cinematic.rootX + (targetX - cinematic.rootX) * ease;
+      cameraY = cinematic.rootY + (targetY - cinematic.rootY) * ease;
+    }
+
+    for (const step of event.steps) {
+      const duration = step.duration ?? 600;
+      if (elapsed < step.at || elapsed > step.at + duration) continue;
+      const progress = Math.min(1, (elapsed - step.at) / duration);
+      if (step.type === "MAP_SHAKE") {
+        const n = (step.intensity ?? .25) * 28 * (1 - progress);
+        cameraX += Math.sin(elapsed * .09) * n;
+        cameraY += Math.cos(elapsed * .13) * n;
+      }
+      if (!("tokenId" in step)) continue;
+      const display = this.tokenDisplays.get(step.tokenId);
+      const base = cinematic.tokenBases.get(step.tokenId);
+      if (!display || !base) continue;
+      if (step.type === "TOKEN_SHAKE") display.position.set(base.x + Math.sin(elapsed * .14) * (step.intensity ?? 1) * 12 * (1 - progress), base.y + Math.cos(elapsed * .11) * (step.intensity ?? 1) * 8 * (1 - progress));
+      if (step.type === "TOKEN_PULSE") display.scale.set(base.scale * (1 + .28 * Math.sin(progress * Math.PI)));
+      if (step.type === "TOKEN_FADE") display.alpha = base.alpha * (1 - progress);
+      if (step.type === "TOKEN_RISE") { display.alpha = base.alpha * Math.min(1, progress * 2); display.position.set(base.x, base.y + (1 - progress) * 55); }
+      if (step.type === "TOKEN_GLOW") this.updateTokenGlow(cinematic, step.tokenId, step.color, step.intensity, elapsed, progress);
+      if (step.type === "IMPACT" && !cinematic.impacts.has(step.at)) this.createCinematicImpact(cinematic, display, step.at);
+    }
+    this.root.scale.set(cameraScale);
+    this.root.position.set(cameraX, cameraY);
   }
-  private clearCinematic(){const cinematic=this.cinematic;if(!cinematic)return;for(const effect of cinematic.effects){this.app.ticker.remove(effect.animate);effect.ring.destroy();}cinematic.effects.clear();this.root.position.set(cinematic.rootX,cinematic.rootY);this.root.scale.set(cinematic.scale);for(const [id,base] of cinematic.tokenBases){const display=this.tokenDisplays.get(id);if(display){display.position.set(base.x,base.y);display.alpha=base.alpha;display.scale.set(base.scale);}}this.cinematic=null;}
+  private updateTokenGlow(cinematic: CinematicState, tokenId: string, color: string | undefined, intensity: number | undefined, elapsed: number, progress: number) {
+    const display = this.tokenDisplays.get(tokenId);
+    const token = this.snapshot?.tokens.find((candidate) => candidate.id === tokenId);
+    if (!display || !token || !this.snapshot) return;
+    let glow = cinematic.glows.get(tokenId);
+    if (!glow) {
+      const radius = this.snapshot.scene.gridSize * .32 * token.size + 15;
+      const graphic = new Graphics().circle(0, 0, radius).fill({ color: this.cinematicColor(color, 0xb699ff), alpha: .15 }).stroke({ color: this.cinematicColor(color, 0xb699ff), width: 4, alpha: .85 });
+      graphic.eventMode = "none";
+      display.addChildAt(graphic, 0);
+      glow = { tokenId, graphic };
+      cinematic.glows.set(tokenId, glow);
+    }
+    const envelope = Math.sin(progress * Math.PI);
+    const strength = intensity ?? .7;
+    glow.graphic.alpha = Math.max(.12, envelope * strength);
+    glow.graphic.scale.set(1 + Math.sin(elapsed * .014) * .08 + envelope * .12);
+  }
+  private cinematicColor(value: string | undefined, fallback: number) {
+    if (!value) return fallback;
+    const parsed = Number.parseInt(value.replace("#", ""), 16);
+    return Number.isNaN(parsed) ? fallback : parsed;
+  }
+  private createCinematicImpact(cinematic: CinematicState, display: Container, at: number) {
+    cinematic.impacts.add(at);
+    const ring = new Graphics().circle(0, 0, 14).stroke({ color: 0xf0c378, width: 4, alpha: .9 });
+    ring.position.copyFrom(display.position); ring.zIndex = 720; this.root.addChild(ring);
+    let age = 0;
+    const effect: CinematicImpact = { ring, animate: () => {
+      age += this.app.ticker.deltaMS; ring.scale.set(1 + age / 110); ring.alpha = Math.max(0, 1 - age / 400);
+      if (age >= 400) { this.app.ticker.remove(effect.animate); ring.destroy(); cinematic.effects.delete(effect); }
+    }};
+    cinematic.effects.add(effect); this.app.ticker.add(effect.animate);
+  }
+  private clearCinematic(restoreCamera = true) {
+    const cinematic = this.cinematic;
+    if (!cinematic) return;
+    for (const effect of cinematic.effects) { this.app.ticker.remove(effect.animate); effect.ring.destroy(); }
+    for (const glow of cinematic.glows.values()) { glow.graphic.removeFromParent(); glow.graphic.destroy(); }
+    cinematic.effects.clear(); cinematic.glows.clear();
+    const persistCamera = cinematic.event.steps.some((step) => (step.type === "CAMERA_FOCUS_TOKEN" || step.type === "CAMERA_FOCUS_POINT") && step.persistCamera);
+    if (restoreCamera || !persistCamera) { this.root.position.set(cinematic.rootX, cinematic.rootY); this.root.scale.set(cinematic.scale); }
+    for (const [id, base] of cinematic.tokenBases) {
+      const display = this.tokenDisplays.get(id);
+      if (display) { display.position.set(base.x, base.y); display.alpha = base.alpha; display.scale.set(base.scale); }
+    }
+    this.cinematic = null;
+  }
   private applyAttackEvent(snapshot: EngineSnapshot) {
     const event = snapshot.attackEvent;
     if (!event || event.id === this.lastAttackEventId) return;

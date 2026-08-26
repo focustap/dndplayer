@@ -18,6 +18,7 @@ interface TabletopActions {
   targetAttack(targetTokenId: string | null): Promise<void>;
   cancelAttack(): void;
   triggerCinematic(name: string, duration: number, steps: CinematicEvent["steps"]): Promise<void>;
+  finishCinematic(): void;
   cancelCinematic(): void;
   rollDice(sides: number, quantity: number): Promise<DiceRoll>;
   placeToken(x: number, y: number): Promise<void>;
@@ -85,6 +86,7 @@ export function TabletopProvider({ children, playerView, sceneId, builder = fals
     async startAttack(attackerTokenId, preset) { const s=stateRef.current; const attacker=s?.tokens.find((token) => token.id === attackerTokenId); if (!s || !attacker) return; if (!isDmRole(s.role)) { const { data: { user } } = await supabase.auth.getUser(); if (attacker.type !== "PLAYER" || attacker.ownerUserId !== user?.id) return; } setState((current) => current ? { ...current, attackSelection: { attackerTokenId, preset }, placement: null, activeFogTool: null } : current); },
     cancelAttack() { setState((current) => current ? { ...current, attackSelection: null } : current); },
     async triggerCinematic(name,duration,steps) { const s=stateRef.current;if(!s||!isDmRole(s.role))return;const event=await tabletopService.triggerCinematic(s.campaign.id,name,duration,steps);setState(current=>current?{...current,cinematicEvent:event}:current); },
+    finishCinematic() { setState(current=>current?.cinematicEvent ? { ...current, cinematicEvent: { ...current.cinematicEvent, completed: true } } : current); },
     cancelCinematic() { setState(current=>current?{...current,cinematicEvent:null}:current); },
     async targetAttack(targetTokenId) { const s=stateRef.current; const selection=s?.attackSelection; if (!s || !selection) return; if (!targetTokenId || targetTokenId === selection.attackerTokenId) { setState((current) => current ? { ...current, attackSelection: null } : current); return; } const event=await tabletopService.triggerAttack(s.campaign.id,selection.attackerTokenId,targetTokenId,selection.preset); setState((current) => current ? { ...current, attackSelection: null, attackEvent: event } : current); },
     async rollDice(sides, quantity) { const s = stateRef.current; if (!s) throw new Error("No tabletop is open."); const roll = await tabletopService.rollDice(s.campaign.id, sides, quantity); setState((current) => current ? { ...current, diceRolls: [roll, ...current.diceRolls.filter((item) => item.id !== roll.id)].slice(0, 12) } : current); return roll; },

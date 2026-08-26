@@ -9,20 +9,31 @@ export function CinematicControls() {
   if (!state) return null;
   const selected = state.selectedTokenId ? state.tokens.find((token) => token.id === state.selectedTokenId) : null;
   const play = (name: string, duration: number, steps: CinematicEvent["steps"]) => void actions.triggerCinematic(name, duration, steps);
-  const selectedStep = (type: "CAMERA_FOCUS_TOKEN" | "IMPACT", duration: number) => selected ? [{ at: 0, duration, type, tokenId: selected.id, zoom: 1.38 }] as CinematicEvent["steps"] : [];
+  const focusSelected = selected ? [{ at: 0, duration: 900, type: "CAMERA_FOCUS_TOKEN" as const, tokenId: selected.id, zoom: 1.38, persistCamera: true }] : [];
+  const impactSelected = selected ? [{ at: 0, duration: 420, type: "IMPACT" as const, tokenId: selected.id }] : [];
   const bossSteps: CinematicEvent["steps"] = selected ? [
-    { at: 0, duration: 6050, type: "LOCK_INTERACTION" },
+    { at: 0, duration: 6500, type: "LOCK_INTERACTION" },
     { at: 0, duration: 650, type: "UI_FADE_OUT" },
-    { at: 120, duration: 5200, type: "DARKEN", intensity: .64 },
-    { at: 180, duration: 5200, type: "VIGNETTE", intensity: .92 },
-    { at: 430, duration: 1800, type: "CAMERA_FOCUS_TOKEN", tokenId: selected.id, zoom: 1.45 },
-    { at: 1180, duration: 240, type: "TOKEN_FADE", tokenId: selected.id },
-    { at: 1430, duration: 1350, type: "TOKEN_RISE", tokenId: selected.id },
-    { at: 2750, duration: 560, type: "MAP_SHAKE", intensity: 1 },
-    { at: 2830, duration: 420, type: "IMPACT", tokenId: selected.id },
-    { at: 3300, duration: 1800, type: "TITLE", text: "A THREAT EMERGES" },
-    { at: 5400, duration: 650, type: "UI_FADE_IN" },
+    { at: 100, duration: 5600, type: "DARKEN", intensity: .58 },
+    { at: 180, duration: 5400, type: "VIGNETTE", intensity: .82 },
+    { at: 280, duration: 1200, type: "LETTERBOX", intensity: .72 },
+    { at: 430, duration: 1700, type: "CAMERA_FOCUS_TOKEN", tokenId: selected.id, zoom: 1.45, persistCamera: true },
+    { at: 1140, duration: 320, type: "TOKEN_FADE", tokenId: selected.id },
+    { at: 1440, duration: 1350, type: "TOKEN_RISE", tokenId: selected.id },
+    { at: 2640, duration: 620, type: "MAP_SHAKE", intensity: .82 },
+    { at: 2760, duration: 460, type: "IMPACT", tokenId: selected.id },
+    { at: 3160, duration: 1900, type: "TITLE", text: "A THREAT EMERGES" },
+    { at: 5200, duration: 1000, type: "DARKEN", intensity: .18 },
+    { at: 5350, duration: 900, type: "VIGNETTE", intensity: .25 },
+    { at: 5650, duration: 650, type: "UI_FADE_IN" },
   ] : [];
+  const powerSurge: CinematicEvent["steps"] = selected ? [
+    { at: 0, duration: 1100, type: "TOKEN_GLOW", tokenId: selected.id, color: "#b699ff", intensity: .9 },
+    { at: 80, duration: 720, type: "TOKEN_PULSE", tokenId: selected.id },
+    { at: 480, duration: 360, type: "FLASH", color: "#d9ccff" },
+    { at: 510, duration: 460, type: "IMPACT", tokenId: selected.id },
+  ] : [];
+
   return <div className="cinematic-controls">
     <button className={open ? "active" : ""} onClick={() => setOpen((value) => !value)} title="Cinematic effects"><Clapperboard /><span>Cinematics</span></button>
     {open && <div className="cinematic-controls-menu">
@@ -32,11 +43,14 @@ export function CinematicControls() {
         <button onClick={() => play("Light shake", 750, [{ at: 0, duration: 680, type: "SCREEN_SHAKE", intensity: .28 }])}><Gauge />Light shake</button>
         <button onClick={() => play("Heavy shake", 900, [{ at: 0, duration: 820, type: "SCREEN_SHAKE", intensity: .9 }, { at: 0, duration: 820, type: "MAP_SHAKE", intensity: .85 }])}><ShieldAlert />Heavy shake</button>
         <button onClick={() => play("Flash", 420, [{ at: 0, duration: 360, type: "FLASH", color: "#fff3c5" }])}><Flashlight />Flash</button>
-        <button disabled={!selected} onClick={() => selected && play("Focus selected token", 1000, selectedStep("CAMERA_FOCUS_TOKEN", 900))}><Crosshair />Focus selected</button>
-        <button disabled={!selected} onClick={() => selected && play("Token impact", 560, selectedStep("IMPACT", 420))}><Crosshair />Token impact</button>
-        <button disabled={!selected} className="boss-entrance" onClick={() => selected && play("Boss entrance", 6200, bossSteps)}><Clapperboard />Boss entrance demo</button>
+        <button disabled={!selected} onClick={() => selected && play("Focus selected token", 1000, focusSelected)}><Crosshair />Focus selected</button>
+        <button disabled={!selected} onClick={() => selected && play("Token impact", 560, impactSelected)}><Crosshair />Token impact</button>
+        <button className="cinematic-dread" onClick={() => play("Dread", 1800, [{ at: 0, duration: 1600, type: "LETTERBOX", intensity: .78 }, { at: 0, duration: 1600, type: "DARKEN", intensity: .48 }, { at: 80, duration: 1520, type: "VIGNETTE", intensity: .82 }, { at: 260, duration: 920, type: "SCREEN_SHAKE", intensity: .17 }])}><ShieldAlert />Dread</button>
+        <button className="cinematic-blood" onClick={() => play("Blood pulse", 1100, [{ at: 0, duration: 1020, type: "COLOR_WASH", color: "#a61522", intensity: .62 }, { at: 80, duration: 780, type: "SCREEN_SHAKE", intensity: .32 }, { at: 180, duration: 280, type: "FLASH", color: "#e25555" }])}><Flashlight />Blood pulse</button>
+        <button disabled={!selected} className="cinematic-power" onClick={() => selected && play("Power surge", 1200, powerSurge)}><Crosshair />Power surge</button>
+        <button disabled={!selected} className="boss-entrance" onClick={() => selected && play("Boss entrance", 6600, bossSteps)}><Clapperboard />Boss entrance demo</button>
       </div>
-      <button className="cinematic-restore" onClick={() => play("Restore", 100, [])}><Undo2 />Cancel / restore</button>
+      <button className="cinematic-restore" onClick={actions.cancelCinematic}><Undo2 />Cancel / restore</button>
     </div>}
   </div>;
 }
