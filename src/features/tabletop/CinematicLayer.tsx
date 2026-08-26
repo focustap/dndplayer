@@ -10,8 +10,10 @@ interface CinematicLayerProps {
 interface CinematicFrame {
   elapsed: number;
   event: CinematicEvent | null;
+  exiting?: boolean;
 }
 
+const letterboxExitDuration = 260;
 const durationFor = (step: CinematicStep) => step.duration ?? 600;
 const progressFor = (step: CinematicStep, elapsed: number) => Math.min(1, Math.max(0, (elapsed - step.at) / durationFor(step)));
 const isActive = (step: CinematicStep, elapsed: number) => elapsed >= step.at && elapsed <= step.at + durationFor(step);
@@ -23,30 +25,34 @@ export function CinematicLayer({ event, onFinished }: CinematicLayerProps) {
     if (!event || event.completed) return;
     const startedAt = performance.now();
     let animationFrame = 0;
+    let exitTimer = 0;
     const tick = () => {
       const elapsed = performance.now() - startedAt;
       if (elapsed >= event.duration) {
-        setFrame({ elapsed: event.duration, event });
-        onFinished();
+        const hasLetterbox = event.steps.some((step) => step.type === "LETTERBOX");
+        setFrame({ elapsed: event.duration, event, exiting: hasLetterbox });
+        if (hasLetterbox) exitTimer = window.setTimeout(onFinished, letterboxExitDuration);
+        else onFinished();
         return;
       }
       setFrame({ elapsed, event });
       animationFrame = requestAnimationFrame(tick);
     };
     animationFrame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(animationFrame);
+    return () => { cancelAnimationFrame(animationFrame); window.clearTimeout(exitTimer); };
   }, [event, onFinished]);
 
   const view = useMemo(() => {
     const activeFrame = event && !event.completed && frame.event?.id === event.id ? frame : null;
     if (!activeFrame?.event) return null;
-    const steps = activeFrame.event.steps.filter((step) => isActive(step, activeFrame.elapsed));
+    const steps = activeFrame.exiting ? [] : activeFrame.event.steps.filter((step) => isActive(step, activeFrame.elapsed));
     const find = (type: CinematicStep["type"]) => steps.filter((step) => step.type === type);
     const shake = find("SCREEN_SHAKE").reduce((total, step) => total + (step.intensity ?? .35), 0);
     const flash = find("FLASH").at(-1) as (CinematicStep & { color?: string }) | undefined;
     const darken = find("DARKEN").at(-1);
     const vignette = find("VIGNETTE").at(-1);
-    const letterbox = find("LETTERBOX").at(-1);
+    const letterbox = activeFrame.event.steps.filter((step) => step.type === "LETTERBOX" && step.at <= activeFrame.elapsed).at(-1);
+    const letterboxExiting = Boolean(letterbox && (activeFrame.exiting || activeFrame.elapsed > letterbox.at + durationFor(letterbox)));
     const colorWash = find("COLOR_WASH").at(-1) as (CinematicStep & { color?: string }) | undefined;
     const blur = find("BLUR").at(-1);
     const interactionLocked = find("LOCK_INTERACTION").length > 0;
@@ -59,20 +65,23 @@ export function CinematicLayer({ event, onFinished }: CinematicLayerProps) {
       const progress = progressFor(uiStep, activeFrame.elapsed);
       uiOpacity = uiStep.type === "UI_FADE_OUT" ? 1 - progress : progress;
     }
-    return { shake, flash, darken, vignette, letterbox, colorWash, blur, title, titleOpacity, uiOpacity, interactionLocked };
+    return { shake, flash, darken, vignette, letterbox, letterboxExiting, colorWash, blur, title, titleOpacity, uiOpacity, interactionLocked };
   }, [event, frame]);
 
   useEffect(() => {
     const shell = document.querySelector<HTMLElement>(".tabletop-shell");
     if (!shell) return;
+    const page = document.documentElement;
     shell.classList.toggle("cinematic-screen-shake", Boolean(view?.shake));
     shell.classList.toggle("cinematic-ui-muted", (view?.uiOpacity ?? 1) < .2);
     shell.classList.toggle("cinematic-interaction-lock", Boolean(view?.interactionLocked));
     shell.classList.toggle("cinematic-map-blur", Boolean(view?.blur));
+    page.classList.toggle("cinematic-screen-shake-active", Boolean(view?.shake));
     shell.style.setProperty("--cinematic-shake", String(Math.min(1, view?.shake ?? 0) * 10) + "px");
     shell.style.setProperty("--cinematic-map-blur", String(Math.max(0, view?.blur?.intensity ?? 0) * 9) + "px");
     return () => {
       shell.classList.remove("cinematic-screen-shake", "cinematic-ui-muted", "cinematic-interaction-lock", "cinematic-map-blur");
+      page.classList.remove("cinematic-screen-shake-active");
       shell.style.removeProperty("--cinematic-shake");
       shell.style.removeProperty("--cinematic-map-blur");
     };
@@ -90,7 +99,7 @@ export function CinematicLayer({ event, onFinished }: CinematicLayerProps) {
   } as CSSProperties;
   const titleStyle = { "--cinematic-title-opacity": String(view.titleOpacity) } as CSSProperties;
 
-  return <div className="cinematic-layer" style={overlayStyle} aria-live="polite" aria-atomic="true">
+  return <div className={`cinematic-layer${view.letterboxExiting ? " cinematic-letterbox-exiting" : ""}`} style={overlayStyle} aria-live="polite" aria-atomic="true">
     <div className="cinematic-darkness" />
     <div className="cinematic-vignette" />
     <div className="cinematic-color-wash" />
