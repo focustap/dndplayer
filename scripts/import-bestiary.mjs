@@ -193,27 +193,27 @@ export function parseBestiaryMarkdown(markdown) {
   return monsters;
 }
 
-function templateRow(campaignId, monster) {
-  return { campaign_id: campaignId, name: monster.name, creature_size: monster.size, creature_type: monster.creatureType, max_hp: monster.maxHp, hp_formula: monster.hpFormula, ac: monster.ac, speed: monster.movement.walk, movement: monster.movement, initiative: monster.initiative, abilities: monster.abilities, saving_throws: monster.savingThrows, skills: monster.skills, damage_vulnerabilities: monster.damageVulnerabilities, damage_resistances: monster.damageResistances, damage_immunities: monster.damageImmunities, condition_immunities: monster.conditionImmunities, senses: monster.senses, passive_perception: monster.passivePerception, languages: monster.languages, traits: monster.traits, actions: monster.actions, bonus_actions: monster.bonusActions, reactions: monster.reactions, legendary_actions: monster.legendaryActions, legendary_action_uses: monster.legendaryActionUses, spellcasting: monster.spellcasting };
+function templateRow(monster) {
+  return { name: monster.name, creature_size: monster.size, creature_type: monster.creatureType, max_hp: monster.maxHp, hp_formula: monster.hpFormula, ac: monster.ac, speed: monster.movement.walk, movement: monster.movement, initiative: monster.initiative, abilities: monster.abilities, saving_throws: monster.savingThrows, skills: monster.skills, damage_vulnerabilities: monster.damageVulnerabilities, damage_resistances: monster.damageResistances, damage_immunities: monster.damageImmunities, condition_immunities: monster.conditionImmunities, senses: monster.senses, passive_perception: monster.passivePerception, languages: monster.languages, traits: monster.traits, actions: monster.actions, bonus_actions: monster.bonusActions, reactions: monster.reactions, legendary_actions: monster.legendaryActions, legendary_action_uses: monster.legendaryActionUses, spellcasting: monster.spellcasting };
 }
 
-function sqlForTemplates(campaignId, monsters) {
-  const rows = monsters.map((monster) => templateRow(campaignId, monster));
+function sqlForTemplates(monsters) {
+  const rows = monsters.map(templateRow);
   const payload = JSON.stringify(rows).replaceAll("$bestiary$", "$ bestiary $");
-  const columns = "campaign_id,name,creature_size,creature_type,max_hp,hp_formula,ac,speed,movement,initiative,abilities,saving_throws,skills,damage_vulnerabilities,damage_resistances,damage_immunities,condition_immunities,senses,passive_perception,languages,traits,actions,bonus_actions,reactions,legendary_actions,legendary_action_uses,spellcasting";
-  return `with source_rows as (select * from jsonb_populate_recordset(null::public.monster_templates, $bestiary$${payload}$bestiary$::jsonb)) insert into public.monster_templates (${columns}) select ${columns} from source_rows where not exists (select 1 from public.monster_templates existing where existing.campaign_id = source_rows.campaign_id and existing.name = source_rows.name);`;
+  const columns = "name,creature_size,creature_type,max_hp,hp_formula,ac,speed,movement,initiative,abilities,saving_throws,skills,damage_vulnerabilities,damage_resistances,damage_immunities,condition_immunities,senses,passive_perception,languages,traits,actions,bonus_actions,reactions,legendary_actions,legendary_action_uses,spellcasting";
+  return `with source_rows as (select * from jsonb_populate_recordset(null::public.monster_templates, $bestiary$${payload}$bestiary$::jsonb)) insert into public.monster_templates (${columns}) select ${columns} from source_rows where not exists (select 1 from public.monster_templates existing where existing.name = source_rows.name);`;
 }
 
-async function importTemplates(campaignId, monsters) {
+async function importTemplates(monsters) {
   const url = process.env.VITE_SUPABASE_URL;
   const key = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
   const accessToken = process.env.WAYFINDER_ACCESS_TOKEN;
-  if (!url || !key || !accessToken) throw new Error("Set VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY, and WAYFINDER_ACCESS_TOKEN to import. The token must belong to an OWNER or DM of the target campaign.");
+  if (!url || !key || !accessToken) throw new Error("Set VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY, and WAYFINDER_ACCESS_TOKEN to import. The token must belong to an OWNER or DM of any campaign.");
   const supabase = createClient(url, key, { global: { headers: { Authorization: `Bearer ${accessToken}` } } });
-  const { data: existing, error: readError } = await supabase.from("monster_templates").select("name").eq("campaign_id", campaignId);
+  const { data: existing, error: readError } = await supabase.from("monster_templates").select("name");
   if (readError) throw readError;
   const existingNames = new Set((existing ?? []).map((row) => row.name));
-  const rows = monsters.filter((monster) => !existingNames.has(monster.name)).map((monster) => templateRow(campaignId, monster));
+  const rows = monsters.filter((monster) => !existingNames.has(monster.name)).map(templateRow);
   if (!rows.length) return { inserted: 0, skipped: monsters.length };
   const { error: insertError } = await supabase.from("monster_templates").insert(rows);
   if (insertError) throw insertError;
@@ -222,7 +222,7 @@ async function importTemplates(campaignId, monsters) {
 
 async function main() {
   const [source, ...args] = process.argv.slice(2);
-  if (!source) throw new Error("Usage: node scripts/import-bestiary.mjs <bestiary.md> [--out <file>] [--summary] [--exclude <exact name>] [--campaign-id <uuid>]");
+  if (!source) throw new Error("Usage: node scripts/import-bestiary.mjs <bestiary.md> [--out <file>] [--summary] [--exclude <exact name>] [--apply]");
   let monsters = parseBestiaryMarkdown(await readFile(resolve(source), "utf8"));
   const excluded = args.flatMap((value, index) => value === "--exclude" ? [args[index + 1]] : []).filter(Boolean);
   const sourceNames = new Set(monsters.map((monster) => monster.name));
@@ -230,16 +230,15 @@ async function main() {
   monsters = monsters.filter((monster) => !excluded.includes(monster.name));
   const outIndex = args.indexOf("--out");
   if (outIndex !== -1) await writeFile(resolve(args[outIndex + 1]), `${JSON.stringify(monsters, null, 2)}\n`);
-  const campaignIndex = args.indexOf("--campaign-id");
-  if (campaignIndex !== -1) {
+  if (args.includes("--apply")) {
     if (!monsters.length) throw new Error("Refusing to import an empty source.");
-    console.log(JSON.stringify(await importTemplates(args[campaignIndex + 1], monsters), null, 2));
+    console.log(JSON.stringify(await importTemplates(monsters), null, 2));
     return;
   }
   const sqlIndex = args.indexOf("--sql");
   if (sqlIndex !== -1) {
     const [start = "0", end = String(monsters.length)] = (args[args.indexOf("--slice") + 1] ?? `0:${monsters.length}`).split(":");
-    console.log(sqlForTemplates(args[sqlIndex + 1], monsters.slice(Number(start), Number(end))));
+    console.log(sqlForTemplates(monsters.slice(Number(start), Number(end))));
     return;
   }
   if (args.includes("--summary")) console.log(JSON.stringify({ count: monsters.length, names: monsters.map((monster) => monster.name), validation: Object.fromEntries(["Bandit", "Basilisk", "Beholder", "Adult Red Dragon", "Animated Armor"].map((name) => { const monster = monsters.find((item) => item.name === name); return [name, monster ? { hp: monster.maxHp, actions: monster.actions.map((action) => action.name), legendaryActions: monster.legendaryActions.map((action) => action.name) } : null]; })) }, null, 2));

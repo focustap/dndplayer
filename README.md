@@ -116,7 +116,7 @@ Core tables:
 - Identity and campaigns: `profiles`, `campaigns`, `campaign_members`
 - Players: `characters`, `character_private`
 - Image scenes: `maps`, `scenes`, `scene_overlays`, `fog_regions`, `tokens`
-- Creatures: `monster_templates`, `monster_instances`, `conditions`
+- Creatures: global `monster_templates`, campaign-specific `monster_instances`, `conditions`
 - Preparation: `encounters`, `encounter_members`, `campaign_notes`
 - Combat: `combat_sessions`, `initiative_entries`
 - Realtime invalidation: `sync_events`

@@ -16,9 +16,10 @@ only the function permission required for policy evaluation.
 
 ## Data isolation
 
-- `monster_templates` and `monster_instances` have no player SELECT policy.
-  Monster HP, AC, abilities, notes, traits, and actions therefore never appear
-  in a player query or Realtime event.
+- `monster_templates` are a shared DM library: any OWNER/DM can read and manage
+  the reusable templates, while `monster_instances` remain campaign-specific.
+  Neither table has a player SELECT policy, so monster HP, AC, abilities,
+  notes, traits, and actions never appear in a player query or Realtime event.
 - `tokens` contains only map-safe presentation state. A player can read a token
   only when it is visible and belongs to the active scene. A visible monster
   token contains its display name and image, but no monster statistics.
