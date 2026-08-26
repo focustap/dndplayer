@@ -8,6 +8,7 @@ import { CreatureInspector } from "../features/tabletop/CreatureInspector";
 import { DMToolbar } from "../features/tabletop/DMToolbar";
 import { EncounterPanel } from "../features/tabletop/EncounterPanel";
 import { campaignSetupService } from "../services/campaignSetupService";
+import "./sceneNavigation.css";
 
 export function SceneBuilderPage() { const { sceneId = "", campaignId = "" } = useParams(); return <TabletopProvider playerView={false} sceneId={sceneId} builder><SceneBuilder campaignId={campaignId}/></TabletopProvider>; }
 
