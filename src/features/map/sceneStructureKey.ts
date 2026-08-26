@@ -1,4 +1,4 @@
-import type { FogRegion, Scene, SceneLink, SceneOverlay, Token } from "../../domain/types";
+import type { FogRegion, Scene, SceneDiscoverable, SceneLink, SceneOverlay, Token } from "../../domain/types";
 
 export interface SceneStructureSnapshot {
   scene: Scene;
@@ -6,6 +6,7 @@ export interface SceneStructureSnapshot {
   tokens: Token[];
   fogRegions: FogRegion[];
   sceneLinks: SceneLink[];
+  discoverables: SceneDiscoverable[];
   canDm: boolean;
   playerView: boolean;
 }
@@ -50,6 +51,7 @@ export function createSceneStructureKey(snapshot: SceneStructureSnapshot) {
     sceneLinks: [...snapshot.sceneLinks].sort((a, b) => a.id.localeCompare(b.id)).map((link) => ({
       id: link.id, sceneId: link.sceneId, destinationSceneId: link.destinationSceneId, label: link.label,
     })),
+    discoverables: [...snapshot.discoverables].sort((a,b)=>a.id.localeCompare(b.id)).map((item)=>({id:item.id,name:item.name,hidden:item.hidden,discoveredAt:item.discoveredAt})),
     // These modes affect which board objects exist. Selection/placement and monster
     // intel update incrementally; the fog tool is interaction state only.
     canDm: snapshot.canDm,

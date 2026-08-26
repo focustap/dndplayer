@@ -1,9 +1,9 @@
 import { Application, Assets, Container, FederatedPointerEvent, Graphics, Sprite, Text, TextStyle, Texture } from "pixi.js";
-import type { AttackAnimationEvent, AttackSelection, CinematicEvent, FogTool, Placement, Scene, SceneLink, SceneOverlay, Token } from "../../domain/types";
+import type { AttackAnimationEvent, AttackSelection, CinematicEvent, FogTool, Placement, Scene, SceneDiscoverable, SceneLink, SceneOverlay, Token } from "../../domain/types";
 import { createSceneStructureKey, type SceneStructureSnapshot } from "./sceneStructureKey";
 
 export interface EngineSnapshot extends SceneStructureSnapshot { builder: boolean; shiftIntel: boolean; activeFogTool: FogTool | null; placement: Placement | null; attackSelection: AttackSelection | null; attackEvent: AttackAnimationEvent | null; cinematicEvent: CinematicEvent | null; selectedTokenId: string | null; monsterIntel: Record<string, { hp: number; maxHp: number; ac: number }>; canMove(token: Token): boolean; }
-interface EngineCallbacks { onSelect(id: string | null): void; onMoveCommit(id: string, x: number, y: number): void; onOverlayCommit(id: string, x: number, y: number): void; onSceneLinkCommit(id: string, x: number, y: number): void; onSceneLinkActivate(id: string): void; onFogCommit(tool: FogTool, points: number[]): void; onPlace(x: number, y: number): void; onAttackTarget(id: string | null): void; onContext(id: string, x: number, y: number): void; }
+interface EngineCallbacks { onSelect(id: string | null): void; onMoveCommit(id: string, x: number, y: number): void; onOverlayCommit(id: string, x: number, y: number): void; onSceneLinkCommit(id: string, x: number, y: number): void; onSceneLinkActivate(id: string): void; onDiscover(id:string):void; onFogCommit(tool: FogTool, points: number[]): void; onPlace(x: number, y: number): void; onAttackTarget(id: string | null): void; onContext(id: string, x: number, y: number): void; }
 interface TokenMovementAnimation { display: Container; startX: number; startY: number; targetX: number; targetY: number; startedAt: number; }
 interface AttackEffect { id: string; preset: AttackAnimationEvent["preset"]; attacker: Container; target: Container; attackerX: number; attackerY: number; targetX: number; targetY: number; projectile: Graphics | null; burst: Graphics | null; startedAt: number; }
 interface CinematicImpact { ring: Graphics; animate: () => void; }
@@ -27,6 +27,7 @@ export class SceneEngine {
     if (snapshot.scene.gridType === "SQUARE") this.renderGrid(snapshot.scene);
     for (const overlay of snapshot.overlays.filter((o) => o.visible || snapshot.canDm)) await this.renderOverlay(overlay, snapshot.canDm);
     if (snapshot.canDm) for (const link of snapshot.sceneLinks) this.renderSceneLink(link);
+    for(const item of snapshot.discoverables.filter(item=>snapshot.canDm||(!item.hidden&&!item.discoveredAt)))this.renderDiscoverable(item,snapshot.canDm);
     for (const token of snapshot.tokens.filter((t) => snapshot.canDm || t.visible)) { await this.renderToken(token, snapshot); if (version !== this.renderVersion || this.destroyed) return; }
     this.renderLighting(snapshot.scene); if (snapshot.scene.fogEnabled) this.renderFog(snapshot); this.applyPositions(this.snapshot); this.applyIntel(this.snapshot); this.applySelection(this.snapshot); this.applyPlacement(this.snapshot); this.applyAttackEvent(this.snapshot);
   }
@@ -267,6 +268,7 @@ export class SceneEngine {
     c.on("pointerdown",(e:FederatedPointerEvent)=>{if(e.button!==0)return;e.stopPropagation();if(!this.snapshot?.builder){this.callbacks.onSceneLinkActivate(link.id);return;}const p=this.root.toLocal(e.global);const currentX=c.position.x,currentY=c.position.y;this.pointerCandidate={kind:"SCENE_LINK",id:link.id,startX:e.global.x,startY:e.global.y,originX:currentX,originY:currentY,dx:p.x-currentX,dy:p.y-currentY,display:c};});
     this.sceneLinkDisplays.set(link.id,c); this.root.addChild(c);
   }
+  private renderDiscoverable(item:SceneDiscoverable,canDm:boolean){const c=new Container();c.position.set(item.x,item.y);c.zIndex=270;c.eventMode="static";c.cursor=canDm?"pointer":"pointer";const marker=new Graphics().circle(0,0,15).fill({color:item.hidden?0x65513c:0x3c5b55,alpha:item.hidden?.46:.96}).stroke({color:item.hidden?0xe3b978:0xf0d48c,width:2});const icon=new Text({text:"✦",style:{fill:0xfff0bd,fontSize:20,fontWeight:"700"}});icon.anchor.set(.5);c.addChild(marker,icon);if(canDm){const label=new Text({text:`${item.hidden?"HIDDEN · ":""}${item.name}`,style:{fill:0xf4ead9,fontSize:11,fontWeight:"700",stroke:{color:0x0a0f0d,width:4}}});label.anchor.set(.5,0);label.position.set(0,20);c.addChild(label);}c.on("pointerdown",(e:FederatedPointerEvent)=>{if(e.button!==0)return;e.stopPropagation();if(!canDm&&!item.discoveredAt)this.callbacks.onDiscover(item.id);});this.root.addChild(c);}
   private async loadTokenTexture(url: string) {
     let pending = this.tokenTextures.get(url);
     if (!pending) { pending = Assets.load<Texture>(url).catch(() => null); this.tokenTextures.set(url, pending); }
