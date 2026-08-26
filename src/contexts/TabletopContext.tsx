@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useParams } from "react-router-dom";
-import type { AttackPreset, DiceRoll, FogRegion, FogTool, GridType, Placement, Scene, SceneOverlay, TabletopState, Token } from "../domain/types";
+import type { AttackPreset, DiceRoll, FogRegion, FogTool, GridType, Placement, Scene, SceneLink, SceneOverlay, TabletopState, Token } from "../domain/types";
 import { isDmRole } from "../domain/types";
 import { isSupabaseConfigured, supabase } from "../lib/supabase";
 import { asDiceRoll, tabletopService } from "../services/tabletopService";
@@ -11,6 +11,8 @@ interface TabletopActions {
   setFogTool(value: FogTool | null): void;
   togglePlayerPreview(): void;
   startPlacement(placement: Placement): void;
+  startPlayerPlacement(characterIds: string[]): void;
+  startSceneLinkPlacement(destinationSceneId: string, label: string): void;
   cancelPlacement(): void;
   startAttack(attackerTokenId: string, preset: AttackPreset): Promise<void>;
   targetAttack(targetTokenId: string | null): Promise<void>;
@@ -19,6 +21,10 @@ interface TabletopActions {
   placeToken(x: number, y: number): Promise<void>;
   updateSceneGrid(gridType: GridType, gridSize?: number): Promise<void>;
   updateScene(patch: Partial<Scene>): Promise<void>;
+  activateScene(sceneId: string): Promise<void>;
+  travelSceneLink(linkId: string): Promise<void>;
+  updateSceneLink(id: string, patch: Partial<Pick<SceneLink, "destinationSceneId" | "label" | "x" | "y">>): Promise<void>;
+  deleteSceneLink(id: string): Promise<void>;
   commitTokenMove(id: string, x: number, y: number): Promise<void>;
   deleteToken(id: string): Promise<void>;
   patchToken(id: string, patch: Partial<Token>): Promise<void>;
@@ -69,14 +75,20 @@ export function TabletopProvider({ children, playerView, sceneId, builder = fals
     setFogTool(value) { setState((s) => s ? { ...s, activeFogTool: value } : s); },
     togglePlayerPreview() { setState((s) => s ? { ...s, previewPlayerView: !s.previewPlayerView } : s); },
     startPlacement(placement) { const s=stateRef.current;if(!s||!isDmRole(s.role))return;setState(current=>current?{...current,placement,activeFogTool:null}:current); },
+    startPlayerPlacement(characterIds) { const s=stateRef.current;if(!s||!isDmRole(s.role))return;const ids=characterIds.filter(id=>!s.tokens.some(token=>token.type==="PLAYER"&&token.referenceId===id));if(!ids.length)return;setState(current=>current?{...current,placement:{kind:"CHARACTERS",referenceIds:ids,name:"Players",imageUrl:null},activeFogTool:null}:current); },
+    startSceneLinkPlacement(destinationSceneId,label) { const s=stateRef.current;if(!s||!isDmRole(s.role)||destinationSceneId===s.scene.id)return;setState(current=>current?{...current,placement:{kind:"SCENE_LINK",destinationSceneId,name:label.trim()||"Scene link",imageUrl:null},activeFogTool:null}:current); },
     cancelPlacement() { setState(current=>current?{...current,placement:null}:current); },
     async startAttack(attackerTokenId, preset) { const s=stateRef.current; const attacker=s?.tokens.find((token) => token.id === attackerTokenId); if (!s || !attacker) return; if (!isDmRole(s.role)) { const { data: { user } } = await supabase.auth.getUser(); if (attacker.type !== "PLAYER" || attacker.ownerUserId !== user?.id) return; } setState((current) => current ? { ...current, attackSelection: { attackerTokenId, preset }, placement: null, activeFogTool: null } : current); },
     cancelAttack() { setState((current) => current ? { ...current, attackSelection: null } : current); },
     async targetAttack(targetTokenId) { const s=stateRef.current; const selection=s?.attackSelection; if (!s || !selection) return; if (!targetTokenId || targetTokenId === selection.attackerTokenId) { setState((current) => current ? { ...current, attackSelection: null } : current); return; } const event=await tabletopService.triggerAttack(s.campaign.id,selection.attackerTokenId,targetTokenId,selection.preset); setState((current) => current ? { ...current, attackSelection: null, attackEvent: event } : current); },
     async rollDice(sides, quantity) { const s = stateRef.current; if (!s) throw new Error("No tabletop is open."); const roll = await tabletopService.rollDice(s.campaign.id, sides, quantity); setState((current) => current ? { ...current, diceRolls: [roll, ...current.diceRolls.filter((item) => item.id !== roll.id)].slice(0, 12) } : current); return roll; },
-    async placeToken(x,y) { const s=stateRef.current;const placement=s?.placement;if(!s||!placement||!isDmRole(s.role))return;const token=placement.kind==="CHARACTER"?await tabletopService.placeCharacterToken(s.scene.id,placement.referenceId,x,y):await tabletopService.placeMonsterToken(s.scene.id,placement.referenceId,x,y);setState(current=>current?{...current,tokens:[...current.tokens,token],placement:null}:current); },
+    async placeToken(x,y) { const s=stateRef.current;const placement=s?.placement;if(!s||!placement||!isDmRole(s.role))return;if(placement.kind==="SCENE_LINK"){const link=await tabletopService.addSceneLink(s.scene.id,placement.destinationSceneId,placement.name,x,y);setState(current=>current?{...current,sceneLinks:[...current.sceneLinks,link],placement:null}:current);return;}const merge=(tokens:Token[],token:Token)=>[...tokens.filter(existing=>existing.id!==token.id),token];if(placement.kind==="CHARACTERS"){const spacing=s.scene.gridSize*.65;const columns=Math.ceil(Math.sqrt(placement.referenceIds.length));const tokens=await Promise.all(placement.referenceIds.map((id,index)=>{const column=index%columns,row=Math.floor(index/columns);return tabletopService.placeCharacterToken(s.scene.id,id,x+(column-(columns-1)/2)*spacing,y+(row-(Math.ceil(placement.referenceIds.length/columns)-1)/2)*spacing);}));setState(current=>current?{...current,tokens:tokens.reduce(merge,current.tokens),placement:null}:current);return;}const token=placement.kind==="CHARACTER"?await tabletopService.placeCharacterToken(s.scene.id,placement.referenceId,x,y):await tabletopService.placeMonsterToken(s.scene.id,placement.referenceId,x,y);setState(current=>current?{...current,tokens:merge(current.tokens,token),placement:null}:current); },
     async updateSceneGrid(gridType, gridSize) { const s=stateRef.current;if(!s||!isDmRole(s.role))return;const size=Math.max(20,Math.min(240,Math.round(gridSize??s.scene.gridSize)));await tabletopService.updateSceneGrid(s.scene.id,gridType,size);setState(current=>current?{...current,scene:{...current.scene,gridType,gridSize:size}}:current); },
     async updateScene(patch) { const s=stateRef.current;if(!s||!isDmRole(s.role))return;await tabletopService.updateScene(s.scene.id,patch);setState(current=>current?{...current,scene:{...current.scene,...patch}}:current); },
+    async activateScene(sceneId) { const s=stateRef.current;if(!s||!isDmRole(s.role)||sceneId===s.scene.id&&s.scene.active&&s.scene.revealed)return;await tabletopService.activateAndRevealScene(sceneId);await reload(); },
+    async travelSceneLink(linkId) { const s=stateRef.current;const link=s?.sceneLinks.find(candidate=>candidate.id===linkId);if(!s||!link||!isDmRole(s.role))return;await tabletopService.activateAndRevealScene(link.destinationSceneId);await reload(); },
+    async updateSceneLink(id,patch) { const s=stateRef.current;if(!s||!isDmRole(s.role))return;await tabletopService.updateSceneLink(id,patch);setState(current=>current?{...current,sceneLinks:current.sceneLinks.map(link=>link.id===id?{...link,...patch}:link)}:current); },
+    async deleteSceneLink(id) { const s=stateRef.current;if(!s||!isDmRole(s.role))return;await tabletopService.deleteSceneLink(id);setState(current=>current?{...current,sceneLinks:current.sceneLinks.filter(link=>link.id!==id)}:current); },
     async commitTokenMove(id, x, y) { await tabletopService.moveToken(id, x, y); setState((current) => current ? { ...current, tokens: current.tokens.map((token) => token.id === id ? { ...token, x, y } : token) } : current); },
     async deleteToken(id) { const s = stateRef.current; if (!s || !isDmRole(s.role)) return; if (isSupabaseConfigured && campaignId !== "demo") { const { error } = await supabase.from("tokens").delete().eq("id", id); if (error) throw error; } setState((current) => current ? { ...current, selectedTokenId: current.selectedTokenId === id ? null : current.selectedTokenId, tokens: current.tokens.filter((t) => t.id !== id) } : current); },
     async patchToken(id, patch) { const s=stateRef.current;const referenceId=s?.tokens.find(t=>t.id===id)?.referenceId;await tabletopService.updateToken(id, patch);if(patch.visible!==undefined&&referenceId&&s?.monsterInstances.some(m=>m.id===referenceId)&&isSupabaseConfigured&&campaignId!=="demo"){const {error}=await supabase.from("monster_instances").update({visible:patch.visible}).eq("id",referenceId);if(error)throw error;} setState((current) => current ? { ...current, tokens: current.tokens.map((t) => t.id === id ? { ...t, ...patch } : t), monsterInstances: patch.visible === undefined ? current.monsterInstances : current.monsterInstances.map((m) => referenceId === m.id ? { ...m, visible: patch.visible! } : m) } : current); },

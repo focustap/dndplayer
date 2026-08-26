@@ -1,10 +1,11 @@
-import type { FogRegion, Scene, SceneOverlay, Token } from "../../domain/types";
+import type { FogRegion, Scene, SceneLink, SceneOverlay, Token } from "../../domain/types";
 
 export interface SceneStructureSnapshot {
   scene: Scene;
   overlays: SceneOverlay[];
   tokens: Token[];
   fogRegions: FogRegion[];
+  sceneLinks: SceneLink[];
   canDm: boolean;
   playerView: boolean;
 }
@@ -45,6 +46,9 @@ export function createSceneStructureKey(snapshot: SceneStructureSnapshot) {
     })),
     fogRegions: [...snapshot.fogRegions].sort((a, b) => a.id.localeCompare(b.id)).map((region) => ({
       id: region.id, sceneId: region.sceneId, mode: region.mode, shape: region.shape, points: region.points,
+    })),
+    sceneLinks: [...snapshot.sceneLinks].sort((a, b) => a.id.localeCompare(b.id)).map((link) => ({
+      id: link.id, sceneId: link.sceneId, destinationSceneId: link.destinationSceneId, label: link.label,
     })),
     // These modes affect which board objects exist. Selection/placement and monster
     // intel update incrementally; the fog tool is interaction state only.
