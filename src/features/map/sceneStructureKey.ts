@@ -1,8 +1,9 @@
-import type { Scene, SceneDiscoverable, SceneLink, SceneOverlay, Token } from "../../domain/types";
+import type { Scene, SceneDiscoverable, SceneLink, SceneOverlay, SceneZoneMarker, Token } from "../../domain/types";
 
 export interface SceneStructureSnapshot {
   scene: Scene;
   overlays: SceneOverlay[];
+  zoneMarkers: SceneZoneMarker[];
   tokens: Token[];
   sceneLinks: SceneLink[];
   discoverables: SceneDiscoverable[];
@@ -37,6 +38,9 @@ mapX: scene.mapX, mapY: scene.mapY,
       id: overlay.id, sceneId: overlay.sceneId, name: overlay.name, image: stableAssetIdentity(null, overlay.imageUrl),
       kind: overlay.kind, width: overlay.width, height: overlay.height, rotation: overlay.rotation,
       opacity: overlay.opacity, zIndex: overlay.zIndex, visible: overlay.visible, locked: overlay.locked,
+    })),
+    zoneMarkers: [...snapshot.zoneMarkers].sort((a,b)=>a.id.localeCompare(b.id)).map((marker)=>({
+      id:marker.id,label:marker.label,x:marker.x,y:marker.y,radiusFt:marker.radiusFt,color:marker.color,opacity:marker.opacity,visible:marker.visible,
     })),
 
     // These modes affect which board objects exist. Selection/placement and monster
