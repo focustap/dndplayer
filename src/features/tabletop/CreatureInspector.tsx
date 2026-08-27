@@ -25,8 +25,18 @@ function InspectorContent({ tokenId }: { tokenId: string }) {
   const token = state?.tokens.find((item) => item.id === tokenId);
   const monster = state?.monsterInstances.find((item) => item.id === token?.referenceId);
   const character = state?.characters.find((item) => item.id === token?.referenceId);
+  const npcTemplate = token?.type === "NPC"
+    ? state?.npcTemplates.find((item) => item.id === token.referenceId)
+    : undefined;
   if (!state || !token) return null;
 
+  const portraitUrl =
+    token.imageUrl ??
+    character?.imageUrl ??
+    monster?.template?.imageUrl ??
+    npcTemplate?.imageUrl ??
+    null;
+  const inspectorKind = monster?.template?.name ?? (token.type === "NPC" ? "NPC" : "Player character");
   const dm = isDmRole(state.role);
   const canCharacterEdit = Boolean(character && (dm || character.ownerId === user?.id));
   const canAnimate = dm || (token.type === "PLAYER" && token.ownerUserId === user?.id);
@@ -46,8 +56,10 @@ function InspectorContent({ tokenId }: { tokenId: string }) {
 
   return <aside className="inspector-panel">
     <div className="inspector-head">
-      <div className={`portrait ${token.type === "PLAYER" ? "hero" : ""}`}>{token.displayName[0]}</div>
-      <div><small>{token.type} · {token.visible ? "VISIBLE" : "HIDDEN"}</small><h2>{token.displayName}</h2><p>{monster?.template?.name ?? "Player character"}</p></div>
+      <div className={`portrait ${token.type === "PLAYER" ? "hero" : ""}`}>
+        {portraitUrl ? <img src={portraitUrl} alt="" /> : token.displayName[0]}
+      </div>
+      <div><small>{token.type} · {token.visible ? "VISIBLE" : "HIDDEN"}</small><h2>{token.displayName}</h2><p>{inspectorKind}</p></div>
       {dm && <button onClick={() => void actions.patchToken(token.id, { visible: !token.visible })} aria-label="Toggle visibility">{token.visible ? <Eye /> : <EyeOff />}</button>}
       {dm && <button className="danger" onClick={() => { if (confirm(`Delete ${token.displayName} from this scene?`)) void actions.deleteToken(token.id); }} aria-label={`Delete ${token.displayName}`} title="Delete token"><Trash2 /></button>}
     </div>
