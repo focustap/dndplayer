@@ -31,14 +31,8 @@ export function createSceneStructureKey(snapshot: SceneStructureSnapshot) {
       feetPerCell: scene.feetPerCell, gridColor: scene.gridColor, gridOpacity: scene.gridOpacity, gridLineWidth: scene.gridLineWidth,
 mapX: scene.mapX, mapY: scene.mapY,
       mapScale: scene.mapScale, gridOffsetX: scene.gridOffsetX, gridOffsetY: scene.gridOffsetY,
-      lighting: scene.lighting, playerCameraX: scene.playerCameraX, playerCameraY: scene.playerCameraY, playerCameraZoom: scene.playerCameraZoom,
+      playerCameraX: scene.playerCameraX, playerCameraY: scene.playerCameraY, playerCameraZoom: scene.playerCameraZoom,
     },
-    tokens: [...snapshot.tokens].sort((a, b) => a.id.localeCompare(b.id)).map((token) => ({
-      id: token.id, sceneId: token.sceneId, referenceId: token.referenceId, ownerUserId: token.ownerUserId,
-      type: token.type, displayName: token.displayName, image: stableAssetIdentity(token.imagePath, token.imageUrl),
-      size: token.size, rotation: token.rotation, visible: token.visible, locked: token.locked,
-      conditions: [...token.conditions].sort(),
-    })),
     overlays: [...snapshot.overlays].sort((a, b) => a.id.localeCompare(b.id)).map((overlay) => ({
       id: overlay.id, sceneId: overlay.sceneId, name: overlay.name, image: stableAssetIdentity(null, overlay.imageUrl),
       kind: overlay.kind, width: overlay.width, height: overlay.height, rotation: overlay.rotation,
