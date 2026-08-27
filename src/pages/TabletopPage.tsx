@@ -11,6 +11,7 @@ import { DiceRoller } from "../features/tabletop/DiceRoller";
 import { PlayerCreatureCard } from "../features/tabletop/PlayerCreatureCard";
 import { CinematicControls } from "../features/tabletop/CinematicControls";
 import { CinematicLayer } from "../features/tabletop/CinematicLayer";
+import { LiveAudio } from "../features/tabletop/LiveAudio";
 
 export function TabletopPage({ playerView = false }: { playerView?: boolean }) {
   return (
@@ -55,6 +56,7 @@ function TabletopSurface({ playerView }: { playerView: boolean }) {
   return (
     <main className={`tabletop-shell ${playerView ? "player-shell" : ""}`}>
       <InitiativeBar />
+      <LiveAudio />
       {!playerView && <EncounterPanel />}
       <section className="map-stage">
         <MapCanvas />
