@@ -37,7 +37,7 @@ function SceneBuilder({ campaignId }: { campaignId: string }) {
   const openPlayers = () => { setSelectedCharacters(availableCharacters.map(character => character.id)); setPlayerPicker(true); };
   const beginPlayerPlacement = () => { actions.startPlayerPlacement(selectedCharacters); setPlayerPicker(false); };
   const beginLinkPlacement = () => { if (!destinationSceneId) return; actions.startSceneLinkPlacement(destinationSceneId, linkLabel || destinationScenes.find(candidate => candidate.id === destinationSceneId)?.name || "Scene link"); };
-  const previewInteraction=state.previewPlayerView?state.tokenInteractions.find(item=>item.tokenId===state.selectedTokenId&&item.enabled):undefined;
+  const previewInteraction=state.tokenInteractions.find(item=>item.tokenId===state.activeInteractionTokenId&&item.enabled);
   const previewInteractionToken=previewInteraction?state.tokens.find(item=>item.id===previewInteraction.tokenId):undefined;
   return <main className="scene-builder">
     <LiveAudio />
