@@ -41,7 +41,7 @@ body{overflow-x:auto;overflow-y:auto}
 .token-size-control{margin:0 0 13px}.token-size-control select{width:100%;padding:9px;border:1px solid #39433e;background:#0f1311;color:#eee}.token-size-control small{color:#7f8983;font-size:8px}
 
 /* NPC interactions use a wide split layout: portrait on the left, dialogue/shop on the right. */
-.npc-interaction-backdrop{position:fixed;inset:0;z-index:1600;display:grid;place-items:center;padding:5vh 5vw;background:rgba(3,5,4,.9);backdrop-filter:blur(6px)}
+.npc-interaction-backdrop{position:fixed;inset:0;z-index:1600;display:grid;place-items:center;padding:5vh 5vw;background:rgba(3,5,4,.84)}
 .npc-interaction-modal{position:relative!important;display:grid!important;grid-template-columns:minmax(250px,38%) minmax(320px,62%);width:min(980px,92vw)!important;min-height:min(560px,80vh);max-height:88vh!important;padding:0!important;overflow:hidden;background:#101512!important;border:1px solid #a98452!important;box-shadow:0 26px 90px #000!important;color:#e9dfcb;align-items:stretch!important}
 .npc-interaction-close{position:absolute;z-index:5;right:10px;top:10px;width:34px;height:34px;display:grid;place-items:center;border:1px solid #5f5140;background:#171914e8;color:#ead8b7}
 .npc-interaction-close svg{width:16px}
