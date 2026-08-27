@@ -1,7 +1,7 @@
 import { Application, Assets, Container, FederatedPointerEvent, Graphics, Sprite, Text, TextStyle, Texture } from "pixi.js";
 import type { AttackAnimationEvent, AttackSelection, CinematicEvent, FogTool, Placement, Scene, SceneDiscoverable, SceneLink, SceneOverlay, Token, TokenMotionSegment, TokenPatrol } from "../../domain/types";
 import { createSceneStructureKey, type SceneStructureSnapshot } from "./sceneStructureKey";
-import { serverNowMs } from "../../services/tabletopService";
+import { PATROL_PRESENTATION_DELAY_MS, serverNowMs } from "../../services/tabletopService";
 
 export interface EngineSnapshot extends SceneStructureSnapshot { builder: boolean; shiftIntel: boolean; activeFogTool: FogTool | null; placement: Placement | null; patrolEdit: TokenPatrol | null; motionSegments: TokenMotionSegment[]; attackSelection: AttackSelection | null; attackEvent: AttackAnimationEvent | null; cinematicEvent: CinematicEvent | null; selectedTokenId: string | null; transientTokenIds: string[]; monsterIntel: Record<string, { hp: number; maxHp: number; ac: number }>; canMove(token: Token): boolean; canInteract(token:Token):boolean; }
 interface EngineCallbacks { onSelect(id: string | null): void; onMoveCommit(id: string, x: number, y: number): void; onTokenMove(id:string,x:number,y:number,final:boolean):void; onInteract(id:string):void; onOverlayCommit(id: string, x: number, y: number): void; onSceneLinkCommit(id: string, x: number, y: number): void; onDiscoverableCommit(id:string,x:number,y:number):void; onPatrolWaypointAdd(x:number,y:number):void; onPatrolWaypointMove(id:string,x:number,y:number):void; onPatrolWaypointDelete(id:string):void; onSceneLinkActivate(id: string): void; onDiscover(id:string):void; onFogCommit(tool: FogTool, points: number[]): void; onPlace(x: number, y: number): void; onAttackTarget(id: string | null): void; onContext(id: string, x: number, y: number): void; }
@@ -59,7 +59,7 @@ export class SceneEngine {
       if(!segment.active||this.dragging?.id===segment.tokenId)continue;
       const display=this.tokenDisplays.get(segment.tokenId);
       if(!display)continue;
-      const t=Math.max(0,Math.min(1,(serverNowMs()-Date.parse(segment.startedAt))/segment.durationMs));
+      const t=Math.max(0,Math.min(1,(serverNowMs()-PATROL_PRESENTATION_DELAY_MS-Date.parse(segment.startedAt))/segment.durationMs));
       const expectedX=segment.fromX+(segment.toX-segment.fromX)*t;
       const expectedY=segment.fromY+(segment.toY-segment.fromY)*t;
       let catchup=this.patrolVisualCatchups.get(segment.tokenId);
