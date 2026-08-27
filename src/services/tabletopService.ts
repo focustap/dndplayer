@@ -14,6 +14,11 @@ const asMotionSegment=(r:Record<string,unknown>):TokenMotionSegment=>({tokenId:S
 const asShopItem=(r:Record<string,unknown>):NpcShopItem=>({id:String(r.id),interactionId:String(r.interaction_id),name:String(r.name),description:String(r.description??""),priceGp:Number(r.price_gp),quantity:r.quantity===null||r.quantity===undefined?null:Number(r.quantity),sortOrder:Number(r.sort_order)});
 const asInteraction=(r:Record<string,unknown>):TokenInteraction=>{const legacy=String(r.dialogue_text??"");const rawPages=Array.isArray(r.dialogue_pages)?r.dialogue_pages:[];const dialoguePages=rawPages.map((page)=>String(page)).filter((page)=>page.trim().length>0);return {tokenId:String(r.token_id),campaignId:String(r.campaign_id),enabled:Boolean(r.enabled),type:r.type as TokenInteraction["type"],displayName:String(r.display_name??""),dialogueText:legacy,dialoguePages:dialoguePages.length?dialoguePages:(legacy.trim()?[legacy]:[]),shopItems:((r.npc_shop_items as Record<string,unknown>[]|null)??[]).map(asShopItem).sort((a,b)=>a.sortOrder-b.sortOrder)};};
 const signTokenImage = async (token: Token) => { if (!token.imagePath) return token; const { data }=await supabase.storage.from("campaign-assets").createSignedUrl(token.imagePath,60*60*12); return data?.signedUrl?{...token,imageUrl:data.signedUrl}:token; };
+const signMonsterTemplateImage = async (template: MonsterTemplate) => {
+  if (!template.imagePath) return template;
+  const { data } = await supabase.storage.from("campaign-assets").createSignedUrl(template.imagePath, 60 * 60 * 12);
+  return data?.signedUrl ? { ...template, imageUrl: data.signedUrl } : template;
+};
 const throwQueryError = (error: { message?: string } | null, fallback: string) => { if (error) throw new Error(error.message || fallback); };
 let serverClockOffsetMs = 0;
 let serverClockCalibratedAt = 0;
@@ -88,13 +93,13 @@ export const tabletopService = {
     let monsterInstances: MonsterInstance[] = [];
     if (role === "OWNER" || role === "DM") {
       const { data, error } = await supabase.from("monster_instances").select("*,monster_templates(*)").eq("campaign_id", campaignId); throwQueryError(error, "Unable to load placed monsters.");
-      monsterInstances = ((data ?? []) as Record<string, unknown>[]).map((r) => { const t = r.monster_templates as Record<string, unknown>; const template = asMonsterTemplate(t); return { id: String(r.id), campaignId, templateId: String(r.template_id), customName: String(r.custom_name), currentHp: Number(r.current_hp), maxHp: Number(r.max_hp), ac: Number(r.ac), conditions: (r.conditions as string[]) ?? [], visible: Boolean(r.visible), notes: String(r.notes ?? ""), dead: Boolean(r.dead), template }; });
+      monsterInstances = await Promise.all(((data ?? []) as Record<string, unknown>[]).map(async (r) => { const t = r.monster_templates as Record<string, unknown>; const template = await signMonsterTemplateImage(asMonsterTemplate(t)); return { id: String(r.id), campaignId, templateId: String(r.template_id), customName: String(r.custom_name), currentHp: Number(r.current_hp), maxHp: Number(r.max_hp), ac: Number(r.ac), conditions: (r.conditions as string[]) ?? [], visible: Boolean(r.visible), notes: String(r.notes ?? ""), dead: Boolean(r.dead), template }; }));
     }
     let combat: CombatSession = { id: "none", campaignId, sceneId: scene.id, active: false, round: 1, currentIndex: 0, entries: [] };
     if (combatRow) { const { data: entries, error } = await supabase.from("initiative_entries").select("*").eq("combat_session_id", combatRow.id).order("sort_order"); throwQueryError(error, "Unable to load initiative."); combat = { id: combatRow.id, campaignId, sceneId: scene.id, active: true, round: combatRow.round, currentIndex: combatRow.current_index, entries: (entries ?? []).map((e) => ({ id: e.id, combatSessionId: e.combat_session_id, tokenId: e.token_id, monsterInstanceId: e.monster_instance_id, characterId: e.character_id, name: e.name, imageUrl: e.image_url, initiative: e.initiative, sortOrder: e.sort_order, groupKey: e.group_key, groupCount: e.group_count })) }; }
     const characters: Character[] = ((characterRows ?? []) as Record<string, unknown>[]).map(asCharacter);
     const npcTemplates: NpcTemplate[] = await Promise.all(((npcTemplateRows ?? []) as Record<string,unknown>[]).map(asNpcTemplate).map(async(item)=>{if(!item.imagePath)return item;const {data}=await supabase.storage.from("campaign-assets").createSignedUrl(item.imagePath,60*60*12);return data?.signedUrl?{...item,imageUrl:data.signedUrl}:item;}));
-    const monsterTemplates: MonsterTemplate[] = ((templateRows ?? []) as Record<string, unknown>[]).map(asMonsterTemplate);
+    const monsterTemplates: MonsterTemplate[] = await Promise.all(((templateRows ?? []) as Record<string, unknown>[]).map(asMonsterTemplate).map(signMonsterTemplateImage));
     const overlays = await Promise.all(((overlayRows ?? []) as Record<string, unknown>[]).map(async (r) => { if (r.storage_path) { const { data: signed }=await supabase.storage.from("campaign-assets").createSignedUrl(String(r.storage_path),60*60*12); if(signed)r.image_url=signed.signedUrl; } return asOverlay(r); }));
     const tokens = await Promise.all(((tokenRows ?? []) as Record<string, unknown>[]).map(asToken).map(async (token) => {
       if (token.imagePath) return signTokenImage(token);
