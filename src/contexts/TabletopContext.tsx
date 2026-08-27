@@ -63,7 +63,7 @@ interface TabletopActions {
   travelSceneLink(linkId: string): Promise<void>;
   updateSceneLink(
     id: string,
-    patch: Partial<Pick<SceneLink, "destinationSceneId" | "label" | "x" | "y">>,
+    patch: Partial<Pick<SceneLink, "destinationSceneId" | "label" | "x" | "y" | "musicMode" | "musicTrackId" | "musicLoop" | "musicNextTrackId" | "musicNextLoop" | "ambienceMode" | "ambienceTrackId" | "ambienceLoop">>,
   ): Promise<void>;
   deleteSceneLink(id: string): Promise<void>;
   commitTokenMove(id: string, x: number, y: number): Promise<void>;
@@ -1063,7 +1063,7 @@ export function TabletopProvider({
         const s = stateRef.current;
         const link = s?.sceneLinks.find((candidate) => candidate.id === linkId);
         if (!s || !link || !isDmRole(s.role)) return;
-        await tabletopService.activateAndRevealScene(link.destinationSceneId);
+        await tabletopService.activateSceneLink(link.id);
         await reload();
       },
       async updateSceneLink(id, patch) {
