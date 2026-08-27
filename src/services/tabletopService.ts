@@ -13,6 +13,27 @@ const asShopItem=(r:Record<string,unknown>):NpcShopItem=>({id:String(r.id),inter
 const asInteraction=(r:Record<string,unknown>):TokenInteraction=>({tokenId:String(r.token_id),campaignId:String(r.campaign_id),enabled:Boolean(r.enabled),type:r.type as TokenInteraction["type"],displayName:String(r.display_name??""),dialogueText:String(r.dialogue_text??""),shopItems:((r.npc_shop_items as Record<string,unknown>[]|null)??[]).map(asShopItem).sort((a,b)=>a.sortOrder-b.sortOrder)});
 const signTokenImage = async (token: Token) => { if (!token.imagePath) return token; const { data }=await supabase.storage.from("campaign-assets").createSignedUrl(token.imagePath,60*60*12); return data?.signedUrl?{...token,imageUrl:data.signedUrl}:token; };
 const throwQueryError = (error: { message?: string } | null, fallback: string) => { if (error) throw new Error(error.message || fallback); };
+let serverClockOffsetMs = 0;
+let serverClockCalibratedAt = 0;
+let serverClockCalibration: Promise<void> | null = null;
+export const serverNowMs = () => Date.now() + serverClockOffsetMs;
+export const getServerClockOffsetMs = () => serverClockOffsetMs;
+const ensureServerClock = async () => {
+  if (!isSupabaseConfigured || Date.now() - serverClockCalibratedAt < 60_000) return;
+  if (serverClockCalibration) return serverClockCalibration;
+  serverClockCalibration = (async () => {
+    const started = Date.now();
+    const { data, error } = await supabase.rpc("wayfinder_server_now");
+    const ended = Date.now();
+    if (error) throw error;
+    const raw = Array.isArray(data) ? data[0] : data;
+    const serverTime = Date.parse(String(raw));
+    if (!Number.isFinite(serverTime)) throw new Error("Invalid server clock response.");
+    serverClockOffsetMs = serverTime - (started + ended) / 2;
+    serverClockCalibratedAt = ended;
+  })().finally(() => { serverClockCalibration = null; });
+  return serverClockCalibration;
+};
 const publicCharacterFields = "id,campaign_id,owner_id,name,image_url,image_path,current_hp,max_hp,temp_hp,ac,speed,strength,dexterity,constitution,intelligence,wisdom,charisma,passive_perception,passive_investigation,passive_insight,conditions";
 const asCharacter = (r: Record<string, unknown>): Character => ({ id: String(r.id), campaignId: String(r.campaign_id), ownerId: String(r.owner_id), name: String(r.name), imageUrl: r.image_url ? String(r.image_url) : null, imagePath: r.image_path ? String(r.image_path) : null, currentHp: Number(r.current_hp), maxHp: Number(r.max_hp), tempHp: Number(r.temp_hp ?? 0), ac: Number(r.ac), speed: Number(r.speed), abilities: { str: Number(r.strength ?? 10), dex: Number(r.dexterity ?? 10), con: Number(r.constitution ?? 10), int: Number(r.intelligence ?? 10), wis: Number(r.wisdom ?? 10), cha: Number(r.charisma ?? 10) }, passivePerception: Number(r.passive_perception), passiveInvestigation: Number(r.passive_investigation), passiveInsight: Number(r.passive_insight), notes: "", conditions: (r.conditions as string[]) ?? [] });
 const asAttackEvent = (row: Record<string, unknown>): AttackAnimationEvent => ({ id: String(row.id), campaignId: String(row.campaign_id), attackerTokenId: String(row.attacker_token_id), targetTokenId: String(row.target_token_id), preset: row.preset as AttackPreset, createdAt: String(row.created_at) });
@@ -30,6 +51,7 @@ export const tabletopService = {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError) throw userError;
     if (!user) throw new Error("Sign in is required to open this tabletop.");
+    try { await ensureServerClock(); } catch (clockError) { console.warn("Unable to calibrate Wayfinder server clock", clockError); }
     const [{ data: membership, error: memberError }, { data: campaign, error: campaignError }, { data: sceneRow, error: sceneError }] = await Promise.all([
       // Members can read the campaign roster. Filter to the signed-in user's row
       // before calling single(), otherwise a second player makes this query plural.
