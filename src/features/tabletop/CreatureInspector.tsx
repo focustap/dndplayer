@@ -1,5 +1,5 @@
 import { ChevronRight, Eye, EyeOff, Plus, RotateCcw, Trash2, X } from "lucide-react";
-import { useRef, useState } from "react";
+import { useRef, useState, type CSSProperties } from "react";
 import { CONDITION_OPTIONS, isDmRole, type AbilityScores, type AttackPreset, type Character, type MonsterAction, type MonsterTemplate } from "../../domain/types";
 import { useTabletop } from "../../contexts/TabletopContext";
 import { useAuth } from "../../contexts/AuthContext";
@@ -73,7 +73,7 @@ function InspectorContent({ tokenId }: { tokenId: string }) {
         ["WIZARD","Wizard"],
       ] as [AttackPreset,string][]).map(([preset,label]) => <button className={attackPreset === preset ? "active" : ""} key={preset} onClick={() => setAttackPreset(preset)}>{label}</button>)}</div>
       {attackPreset==="WIZARD"&&<div className="wizard-color-row" aria-label="Wizard spell color">
-        {["#8d7cff","#4aa8ff","#5ce1e6","#67d17a","#ff5f63","#ff9a45","#f5f2ff"].map(color=><button key={color} type="button" className={attackColor===color?"active":""} style={{"--spell-color":color} as React.CSSProperties} onClick={()=>setAttackColor(color)} aria-label={`Use ${color} spell color`}/>)}
+        {["#8d7cff","#4aa8ff","#5ce1e6","#67d17a","#ff5f63","#ff9a45","#f5f2ff"].map(color=><button key={color} type="button" className={attackColor===color?"active":""} style={{"--spell-color":color} as CSSProperties} onClick={()=>setAttackColor(color)} aria-label={`Use ${color} spell color`}/>)}
       </div>}
       <button className="attack-start" onClick={() => void actions.startAttack(token.id, attackPreset, attackPreset==="WIZARD"?attackColor:null)}>{state.attackSelection?.attackerTokenId === token.id ? "Choose a target on the map" : "Animate ability"}</button>
     </section>}
