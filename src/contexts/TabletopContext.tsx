@@ -174,6 +174,7 @@ export function TabletopProvider({
   const moveSequences = useRef(new Map<string, number>());
   const receivedSequences = useRef(new Map<string, number>());
   const reloadGeneration = useRef(0);
+  const syncReloadTimer = useRef<number | null>(null);
   const patrolCheckpointing = useRef(new Set<string>());
   const patrolStarting = useRef(new Set<string>());
   const patrolResumeAt = useRef(new Map<string, number>());
@@ -239,6 +240,14 @@ export function TabletopProvider({
       if (generation === reloadGeneration.current) setLoading(false);
     }
   }, [campaignId, playerView, sceneId]);
+  const scheduleReload = useCallback(() => {
+    if (syncReloadTimer.current !== null) return;
+    syncReloadTimer.current = window.setTimeout(() => {
+      syncReloadTimer.current = null;
+      void reload();
+    }, 100);
+  }, [reload]);
+
   const beginPatrolSegment = useCallback(
     async (patrolId: string) => {
       if (
@@ -369,7 +378,40 @@ export function TabletopProvider({
           table: "sync_events",
           filter: `campaign_id=eq.${campaignId}`,
         },
-        () => void reload(),
+        (payload) => {
+          const event = payload.new as {
+            event_type?: string;
+            entity_id?: string | null;
+          };
+          const type = event.event_type ?? "";
+          const entityId = event.entity_id ?? null;
+          const current = stateRef.current;
+
+          // Patrol motion has its own lightweight realtime path. Reloading the
+          // entire tabletop for every segment/start/checkpoint is extremely
+          // expensive when many NPCs are moving at once.
+          if (type === "token_motion_segments") return;
+
+          if (type === "token_patrols") {
+            if (playerView) return;
+            const patrol = entityId
+              ? current?.patrols.find((item) => item.id === entityId)
+              : null;
+            if (patrol?.active) return;
+          }
+
+          if (type === "tokens" && entityId) {
+            const activePatrol = current?.patrols.some(
+              (item) => item.tokenId === entityId && item.active,
+            );
+            const activeSegment = current?.motionSegments.some(
+              (item) => item.tokenId === entityId && item.active,
+            );
+            if (activePatrol || activeSegment) return;
+          }
+
+          scheduleReload();
+        },
       )
       .on(
         "postgres_changes",
@@ -485,7 +527,7 @@ export function TabletopProvider({
         movementChannelRef.current = null;
       void supabase.removeChannel(channel);
     };
-  }, [campaignId, reload]);
+  }, [campaignId, playerView, reload, scheduleReload]);
   useEffect(() => {
     if (!patrolRole || !isDmRole(patrolRole)) return;
     let disposed = false;
@@ -578,6 +620,13 @@ export function TabletopProvider({
       window.clearInterval(interval);
     };
   }, [patrolRole, reload, beginPatrolSegment]);
+
+  useEffect(() => () => {
+    if (syncReloadTimer.current !== null) {
+      window.clearTimeout(syncReloadTimer.current);
+      syncReloadTimer.current = null;
+    }
+  }, []);
 
   const actions = useMemo<TabletopActions>(
     () => ({
