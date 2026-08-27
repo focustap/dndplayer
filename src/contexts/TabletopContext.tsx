@@ -179,6 +179,8 @@ export function TabletopProvider({
   const receivedSequences = useRef(new Map<string, number>());
   const reloadGeneration = useRef(0);
   const syncReloadTimer = useRef<number | null>(null);
+  const fastSceneReloadTimer = useRef<number | null>(null);
+  const sceneSwitchSyncQuietUntil = useRef(0);
   const patrolCheckpointing = useRef(new Set<string>());
   const patrolStarting = useRef(new Set<string>());
   const patrolResumeAt = useRef(new Map<string, number>());
@@ -256,6 +258,22 @@ export function TabletopProvider({
       void reload();
     }, 220);
   }, [reload]);
+  const scheduleFastSceneReload = useCallback(() => {
+    if (fastSceneReloadTimer.current !== null)
+      window.clearTimeout(fastSceneReloadTimer.current);
+    fastSceneReloadTimer.current = window.setTimeout(() => {
+      fastSceneReloadTimer.current = null;
+      const current = stateRef.current;
+      if (!current) {
+        void reload();
+        return;
+      }
+      void tabletopService
+        .loadSceneState(campaignId, null, current, playerView)
+        .then((next) => setState(next))
+        .catch(() => void reload());
+    }, 60);
+  }, [campaignId, playerView, reload]);
 
   const beginPatrolSegment = useCallback(
     async (patrolId: string) => {
@@ -398,6 +416,17 @@ export function TabletopProvider({
           const type = event.event_type ?? "";
           const entityId = event.entity_id ?? null;
           const current = stateRef.current;
+
+          // Scene travel is a hot path. Players can refresh only the destination
+          // scene, while the DM that initiated the switch ignores the duplicate
+          // scene-sync events emitted by the activation RPC.
+          if (type === "scenes") {
+            if (!playerView && Date.now() < sceneSwitchSyncQuietUntil.current) return;
+            if (playerView && current) {
+              scheduleFastSceneReload();
+              return;
+            }
+          }
 
           // Patrol motion has its own lightweight realtime path. Reloading the
           // entire tabletop for every segment/start/checkpoint is extremely
@@ -542,7 +571,7 @@ export function TabletopProvider({
         movementChannelRef.current = null;
       void supabase.removeChannel(channel);
     };
-  }, [campaignId, playerView, reload, scheduleReload]);
+  }, [campaignId, playerView, reload, scheduleReload, scheduleFastSceneReload]);
   useEffect(() => {
     if (!patrolRole || !isDmRole(patrolRole)) return;
     let disposed = false;
@@ -641,6 +670,10 @@ export function TabletopProvider({
     if (syncReloadTimer.current !== null) {
       window.clearTimeout(syncReloadTimer.current);
       syncReloadTimer.current = null;
+    }
+    if (fastSceneReloadTimer.current !== null) {
+      window.clearTimeout(fastSceneReloadTimer.current);
+      fastSceneReloadTimer.current = null;
     }
   }, []);
 
@@ -1128,15 +1161,35 @@ export function TabletopProvider({
           (sceneId === s.scene.id && s.scene.active && s.scene.revealed)
         )
           return;
-        await tabletopService.activateAndRevealScene(sceneId);
-        await reload();
+        sceneSwitchSyncQuietUntil.current = Date.now() + 2000;
+        try {
+          await Promise.all([
+            tabletopService.activateAndRevealScene(sceneId),
+            tabletopService.prefetchSceneMaps([sceneId]),
+          ]);
+          const next = await tabletopService.loadSceneState(campaignId, sceneId, s, false);
+          setState(next);
+        } catch (error) {
+          await reload();
+          throw error;
+        }
       },
       async travelSceneLink(linkId) {
         const s = stateRef.current;
         const link = s?.sceneLinks.find((candidate) => candidate.id === linkId);
         if (!s || !link || !isDmRole(s.role)) return;
-        await tabletopService.activateSceneLink(link.id);
-        await reload();
+        sceneSwitchSyncQuietUntil.current = Date.now() + 2000;
+        try {
+          await Promise.all([
+            tabletopService.activateSceneLink(link.id),
+            tabletopService.prefetchSceneMaps([link.destinationSceneId]),
+          ]);
+          const next = await tabletopService.loadSceneState(campaignId, link.destinationSceneId, s, false);
+          setState(next);
+        } catch (error) {
+          await reload();
+          throw error;
+        }
       },
       async updateSceneLink(id, patch) {
         const s = stateRef.current;
