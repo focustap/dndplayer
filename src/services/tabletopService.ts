@@ -52,6 +52,29 @@ const publicCharacterFields = "id,campaign_id,owner_id,name,image_url,image_path
 const asCharacter = (r: Record<string, unknown>): Character => ({ id: String(r.id), campaignId: String(r.campaign_id), ownerId: String(r.owner_id), name: String(r.name), imageUrl: r.image_url ? String(r.image_url) : null, imagePath: r.image_path ? String(r.image_path) : null, currentHp: Number(r.current_hp), maxHp: Number(r.max_hp), tempHp: Number(r.temp_hp ?? 0), ac: Number(r.ac), speed: Number(r.speed), abilities: { str: Number(r.strength ?? 10), dex: Number(r.dexterity ?? 10), con: Number(r.constitution ?? 10), int: Number(r.intelligence ?? 10), wis: Number(r.wisdom ?? 10), cha: Number(r.charisma ?? 10) }, passivePerception: Number(r.passive_perception), passiveInvestigation: Number(r.passive_investigation), passiveInsight: Number(r.passive_insight), notes: "", conditions: (r.conditions as string[]) ?? [] });
 const asAttackEvent = (row: Record<string, unknown>): AttackAnimationEvent => ({ id: String(row.id), campaignId: String(row.campaign_id), attackerTokenId: String(row.attacker_token_id), targetTokenId: String(row.target_token_id), preset: row.preset as AttackPreset, color: row.color ? String(row.color) : null, createdAt: String(row.created_at) });
 const asMonsterTemplate = (r: Record<string, unknown>): MonsterTemplate => ({ id:String(r.id),name:String(r.name),imageUrl:r.image_url?String(r.image_url):null,imagePath:r.image_path?String(r.image_path):null,creatureSize:String(r.creature_size ?? "Medium"),creatureType:String(r.creature_type ?? ""),maxHp:Number(r.max_hp),hpFormula:r.hp_formula?String(r.hp_formula):null,ac:Number(r.ac),speed:Number(r.speed),movement:(r.movement as MonsterTemplate["movement"]) ?? {walk:Number(r.speed),fly:0,swim:0,climb:0,burrow:0,hover:false},initiative:(r.initiative as MonsterTemplate["initiative"]) ?? {modifier:null,score:null},abilities:r.abilities as MonsterTemplate["abilities"],savingThrows:(r.saving_throws as MonsterTemplate["savingThrows"]) ?? {},skills:(r.skills as MonsterTemplate["skills"]) ?? {},damageVulnerabilities:(r.damage_vulnerabilities as string[]|null) ?? [],damageResistances:(r.damage_resistances as string[]|null) ?? [],damageImmunities:(r.damage_immunities as string[]|null) ?? [],conditionImmunities:(r.condition_immunities as string[]|null) ?? [],senses:(r.senses as MonsterTemplate["senses"]) ?? [],passivePerception:r.passive_perception===null||r.passive_perception===undefined?null:Number(r.passive_perception),languages:(r.languages as string[]|null) ?? [],notes:String(r.notes ?? ""),traits:(r.traits as MonsterTemplate["traits"]) ?? [],actions:(r.actions as MonsterTemplate["actions"]) ?? [],bonusActions:(r.bonus_actions as MonsterTemplate["bonusActions"]) ?? [],reactions:(r.reactions as MonsterTemplate["reactions"]) ?? [],legendaryActions:(r.legendary_actions as MonsterTemplate["legendaryActions"]) ?? [],legendaryActionUses:r.legendary_action_uses===null||r.legendary_action_uses===undefined?null:Number(r.legendary_action_uses),spellcasting:(r.spellcasting as MonsterTemplate["spellcasting"]) ?? [] });
+const asMonsterInstance = async (r: Record<string, unknown>): Promise<MonsterInstance> => {
+  const relation = r.monster_templates;
+  const templateRow = Array.isArray(relation)
+    ? (relation[0] as Record<string, unknown> | undefined)
+    : (relation as Record<string, unknown> | null | undefined);
+  const template = templateRow
+    ? await signMonsterTemplateImage(asMonsterTemplate(templateRow))
+    : undefined;
+  return {
+    id: String(r.id),
+    campaignId: String(r.campaign_id),
+    templateId: String(r.template_id),
+    customName: String(r.custom_name),
+    currentHp: Number(r.current_hp),
+    maxHp: Number(r.max_hp),
+    ac: Number(r.ac),
+    conditions: (r.conditions as string[]) ?? [],
+    visible: Boolean(r.visible),
+    notes: String(r.notes ?? ""),
+    dead: Boolean(r.dead),
+    template,
+  };
+};
 export const asDiceRoll = (row: Record<string, unknown>): DiceRoll => {
   const profile = row.profiles as Record<string, unknown> | Record<string, unknown>[] | null;
   const displayName = Array.isArray(profile) ? profile[0]?.display_name : profile?.display_name;
@@ -100,7 +123,7 @@ export const tabletopService = {
     let monsterInstances: MonsterInstance[] = [];
     if (role === "OWNER" || role === "DM") {
       const { data, error } = await supabase.from("monster_instances").select("*,monster_templates(*)").eq("campaign_id", campaignId); throwQueryError(error, "Unable to load placed monsters.");
-      monsterInstances = await Promise.all(((data ?? []) as Record<string, unknown>[]).map(async (r) => { const t = r.monster_templates as Record<string, unknown>; const template = await signMonsterTemplateImage(asMonsterTemplate(t)); return { id: String(r.id), campaignId, templateId: String(r.template_id), customName: String(r.custom_name), currentHp: Number(r.current_hp), maxHp: Number(r.max_hp), ac: Number(r.ac), conditions: (r.conditions as string[]) ?? [], visible: Boolean(r.visible), notes: String(r.notes ?? ""), dead: Boolean(r.dead), template }; }));
+      monsterInstances = await Promise.all(((data ?? []) as Record<string, unknown>[]).map(asMonsterInstance));
     }
     let combat: CombatSession = { id: "none", campaignId, sceneId: scene.id, active: false, round: 1, currentIndex: 0, entries: [] };
     if (combatRow) { const { data: entries, error } = await supabase.from("initiative_entries").select("*").eq("combat_session_id", combatRow.id).order("sort_order"); throwQueryError(error, "Unable to load initiative."); combat = { id: combatRow.id, campaignId, sceneId: scene.id, active: true, round: combatRow.round, currentIndex: combatRow.current_index, entries: (entries ?? []).map((e) => ({ id: e.id, combatSessionId: e.combat_session_id, tokenId: e.token_id, monsterInstanceId: e.monster_instance_id, characterId: e.character_id, name: e.name, imageUrl: e.image_url, initiative: e.initiative, sortOrder: e.sort_order, groupKey: e.group_key, groupCount: e.group_count })) }; }
@@ -139,7 +162,35 @@ export const tabletopService = {
   async updateSceneLink(id: string, patch: Partial<Pick<SceneLink,"destinationSceneId"|"label"|"x"|"y"|"musicMode"|"musicTrackId"|"musicLoop"|"musicNextTrackId"|"musicNextLoop"|"ambienceMode"|"ambienceTrackId"|"ambienceLoop">>) { if(!isSupabaseConfigured)return; const payload:Record<string,unknown>={}; if(patch.destinationSceneId!==undefined)payload.destination_scene_id=patch.destinationSceneId; if(patch.label!==undefined)payload.label=patch.label; if(patch.x!==undefined)payload.x=patch.x; if(patch.y!==undefined)payload.y=patch.y; if(patch.musicMode!==undefined)payload.music_mode=patch.musicMode; if(patch.musicTrackId!==undefined)payload.music_track_id=patch.musicTrackId; if(patch.musicLoop!==undefined)payload.music_loop=patch.musicLoop; if(patch.musicNextTrackId!==undefined)payload.music_next_track_id=patch.musicNextTrackId; if(patch.musicNextLoop!==undefined)payload.music_next_loop=patch.musicNextLoop; if(patch.ambienceMode!==undefined)payload.ambience_mode=patch.ambienceMode; if(patch.ambienceTrackId!==undefined)payload.ambience_track_id=patch.ambienceTrackId; if(patch.ambienceLoop!==undefined)payload.ambience_loop=patch.ambienceLoop; const {error}=await supabase.from("scene_links").update(payload).eq("id",id); if(error)throw error; },
   async deleteSceneLink(id: string) { if(!isSupabaseConfigured)return; const {error}=await supabase.from("scene_links").delete().eq("id",id); if(error)throw error; },
   async placeCharacterToken(sceneId: string, characterId: string, x: number, y: number) { const { data, error } = await supabase.rpc("place_character_token", { p_scene_id: sceneId, p_character_id: characterId, p_x: x, p_y: y }); if (error) throw error; if (!data) throw new Error("Character placement returned no token."); return signTokenImage(asToken(data as Record<string, unknown>)); },
-  async placeMonsterToken(sceneId: string, templateId: string, x: number, y: number) { const { data, error } = await supabase.rpc("place_monster_token", { p_scene_id: sceneId, p_template_id: templateId, p_x: x, p_y: y }); if (error) throw error; if (!data) throw new Error("Monster placement returned no token."); return signTokenImage(asToken(data as Record<string, unknown>)); },
+  async placeMonsterToken(sceneId: string, templateId: string, x: number, y: number) {
+    const { data, error } = await supabase.rpc("place_monster_token", {
+      p_scene_id: sceneId,
+      p_template_id: templateId,
+      p_x: x,
+      p_y: y,
+    });
+    if (error) throw error;
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row) throw new Error("Monster placement returned no token.");
+
+    const token = await signTokenImage(asToken(row as Record<string, unknown>));
+    if (!token.referenceId)
+      throw new Error("Monster placement returned a token without an instance.");
+
+    const { data: instanceRow, error: instanceError } = await supabase
+      .from("monster_instances")
+      .select("*,monster_templates(*)")
+      .eq("id", token.referenceId)
+      .single();
+    if (instanceError) throw instanceError;
+    if (!instanceRow)
+      throw new Error("Placed monster instance could not be loaded.");
+
+    return {
+      token,
+      instance: await asMonsterInstance(instanceRow as Record<string, unknown>),
+    };
+  },
   async placeNpcToken(sceneId:string,templateId:string,x:number,y:number){const {data,error}=await supabase.rpc("place_npc_token",{p_scene_id:sceneId,p_template_id:templateId,p_x:x,p_y:y});if(error)throw error;const row=Array.isArray(data)?data[0]:data;if(!row)throw new Error("NPC placement returned no token.");return signTokenImage(asToken(row as Record<string,unknown>));},
   async updateToken(tokenId: string, patch: Partial<Pick<Token,"visible"|"rotation"|"size"|"locked"|"conditions"|"imageUrl">>) {
     if (!isSupabaseConfigured) return;

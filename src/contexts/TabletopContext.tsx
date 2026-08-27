@@ -927,6 +927,30 @@ export function TabletopProvider({
           );
           return;
         }
+        if (placement.kind === "MONSTER") {
+          const placed = await tabletopService.placeMonsterToken(
+            s.scene.id,
+            placement.referenceId,
+            x,
+            y,
+          );
+          setState((current) =>
+            current
+              ? {
+                  ...current,
+                  tokens: merge(current.tokens, placed.token),
+                  monsterInstances: [
+                    ...current.monsterInstances.filter(
+                      (instance) => instance.id !== placed.instance.id,
+                    ),
+                    placed.instance,
+                  ],
+                  placement: null,
+                }
+              : current,
+          );
+          return;
+        }
         const token =
           placement.kind === "CHARACTER"
             ? await tabletopService.placeCharacterToken(
@@ -935,19 +959,12 @@ export function TabletopProvider({
                 x,
                 y,
               )
-            : placement.kind === "NPC"
-              ? await tabletopService.placeNpcToken(
-                  s.scene.id,
-                  placement.referenceId,
-                  x,
-                  y,
-                )
-              : await tabletopService.placeMonsterToken(
-                  s.scene.id,
-                  placement.referenceId,
-                  x,
-                  y,
-                );
+            : await tabletopService.placeNpcToken(
+                s.scene.id,
+                placement.referenceId,
+                x,
+                y,
+              );
         setState((current) =>
           current
             ? {

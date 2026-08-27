@@ -37,7 +37,7 @@ function InspectorContent({ tokenId }: { tokenId: string }) {
     monster?.template?.imageUrl ??
     npcTemplate?.imageUrl ??
     null;
-  const inspectorKind = monster?.template?.name ?? (token.type === "NPC" ? "NPC" : "Player character");
+  const inspectorKind = monster?.template?.name ?? (token.type === "MONSTER" ? "Monster" : token.type === "NPC" ? "NPC" : "Player character");
   const dm = isDmRole(state.role);
   const canCharacterEdit = Boolean(character && (dm || character.ownerId === user?.id));
   const canAnimate = dm || (token.type === "PLAYER" && token.ownerUserId === user?.id);
