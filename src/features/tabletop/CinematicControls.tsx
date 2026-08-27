@@ -52,7 +52,7 @@ export function CinematicControls() {
         <button onClick={() => play("Flash", 420, [{ at: 0, duration: 360, type: "FLASH", color: "#fff3c5" }])}><Flashlight />Flash</button>
         <button disabled={!selected} onClick={() => selected && play("Focus selected token", 1000, focusSelected)}><Crosshair />Focus selected</button>
         <button disabled={!selected} onClick={() => selected && play("Token impact", 560, impactSelected)}><Crosshair />Token impact</button>
-        <button className="cinematic-dread" onClick={() => play("Dread", 1800, [{ at: 0, duration: 1600, type: "LETTERBOX", intensity: .78 }, { at: 0, duration: 1600, type: "DARKEN", intensity: .48 }, { at: 80, duration: 1520, type: "VIGNETTE", intensity: .82 }, { at: 260, duration: 920, type: "SCREEN_SHAKE", intensity: .17 }])}><ShieldAlert />Dread</button>
+        <button className={`cinematic-dread${state.dreadActive ? " active" : ""}`} onClick={() => play(state.dreadActive ? "Dread off" : "Dread", 100, [])}><ShieldAlert />{state.dreadActive ? "Dread ON" : "Dread"}</button>
         <button className="cinematic-blood" onClick={() => play("Blood pulse", 1100, [{ at: 0, duration: 1020, type: "LETTERBOX", intensity: .55 }, { at: 0, duration: 1020, type: "COLOR_WASH", color: "#a61522", intensity: .62 }, { at: 80, duration: 780, type: "SCREEN_SHAKE", intensity: .32 }, { at: 180, duration: 280, type: "FLASH", color: "#e25555" }])}><Flashlight />Blood pulse</button>
         <button disabled={!selected} className="cinematic-power" onClick={() => selected && play("Power surge", 1200, powerSurge)}><Crosshair />Power surge</button>
         <button disabled={!selected} className="boss-entrance" onClick={() => void playBossEntrance()}><Clapperboard />Boss entrance demo</button>
