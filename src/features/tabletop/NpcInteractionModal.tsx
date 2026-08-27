@@ -1,4 +1,5 @@
-import { X } from "lucide-react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import type { Token, TokenInteraction } from "../../domain/types";
 
 export function NpcInteractionModal({
@@ -15,6 +16,18 @@ export function NpcInteractionModal({
   const showDialogue = interaction.type === "DIALOGUE" || interaction.type === "BOTH";
   const showShop = interaction.type === "SHOP" || interaction.type === "BOTH";
   const name = interaction.displayName.trim() || token.displayName;
+  const dialoguePages = useMemo(() => {
+    const pages = interaction.dialoguePages?.map((page) => page.trim()).filter(Boolean) ?? [];
+    if (pages.length) return pages;
+    return interaction.dialogueText.trim() ? [interaction.dialogueText.trim()] : [""];
+  }, [interaction.dialoguePages, interaction.dialogueText]);
+  const [pageIndex, setPageIndex] = useState(0);
+
+  useEffect(() => {
+    setPageIndex(0);
+  }, [interaction.tokenId, dialoguePages.length]);
+
+  const page = dialoguePages[Math.min(pageIndex, dialoguePages.length - 1)] ?? "";
 
   return (
     <div
@@ -26,6 +39,10 @@ export function NpcInteractionModal({
       }}
       onKeyDown={(event) => {
         if (event.key === "Escape") onClose();
+        if (showDialogue && event.key === "ArrowRight" && pageIndex < dialoguePages.length - 1)
+          setPageIndex((current) => current + 1);
+        if (showDialogue && event.key === "ArrowLeft" && pageIndex > 0)
+          setPageIndex((current) => current - 1);
       }}
     >
       <section
@@ -56,8 +73,33 @@ export function NpcInteractionModal({
         <div className="npc-interaction-content">
           {showDialogue && (
             <section className="npc-dialogue-panel">
-              <small>DIALOGUE</small>
-              <p>{interaction.dialogueText.trim() || "…"}</p>
+              <div className="npc-dialogue-heading">
+                <small>DIALOGUE</small>
+                {dialoguePages.length > 1 && (
+                  <span>{pageIndex + 1} / {dialoguePages.length}</span>
+                )}
+              </div>
+              <p>{page || "…"}</p>
+              {dialoguePages.length > 1 && (
+                <div className="npc-dialogue-nav">
+                  <button
+                    type="button"
+                    disabled={pageIndex === 0}
+                    onClick={() => setPageIndex((current) => Math.max(0, current - 1))}
+                  >
+                    <ChevronLeft />
+                    Previous
+                  </button>
+                  <button
+                    type="button"
+                    disabled={pageIndex >= dialoguePages.length - 1}
+                    onClick={() => setPageIndex((current) => Math.min(dialoguePages.length - 1, current + 1))}
+                  >
+                    Next
+                    <ChevronRight />
+                  </button>
+                </div>
+              )}
             </section>
           )}
 
