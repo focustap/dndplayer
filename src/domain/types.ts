@@ -5,7 +5,7 @@ export type OverlayKind = "PROP" | "EFFECT";
 export type AttackPreset = "MELEE" | "RANGED" | "SPELL";
 
 export interface Campaign { id: string; name: string; joinCode: string; ownerId: string; role: CampaignRole; memberCount: number; updatedAt: string; }
-export type SceneLighting = "BRIGHT" | "DIM" | "DARK";
+export type SceneLighting = "DAY" | "MIDDAY" | "NIGHT";
 export interface Scene { id: string; campaignId: string; mapId: string | null; name: string; mapUrl: string | null; width: number; height: number; gridType: GridType; gridSize: number; feetPerCell: number; gridColor: string; gridOpacity: number; gridLineWidth: number; active: boolean; revealed: boolean; mapX: number; mapY: number; mapScale: number; gridOffsetX: number; gridOffsetY: number; lighting: SceneLighting; playerCameraX: number | null; playerCameraY: number | null; playerCameraZoom: number; }
 export interface SceneOverlay { id: string; sceneId: string; name: string; imageUrl: string; kind: OverlayKind; x: number; y: number; width: number; height: number; rotation: number; opacity: number; zIndex: number; visible: boolean; locked: boolean; }
 export type SceneLinkAudioMode = "KEEP" | "PLAY" | "STOP";
