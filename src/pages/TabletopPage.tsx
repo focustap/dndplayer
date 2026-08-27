@@ -141,6 +141,7 @@ function TabletopSurface({ playerView }: { playerView: boolean }) {
       )}
       <CinematicLayer
         event={state.cinematicEvent}
+        dreadActive={state.dreadActive}
         onFinished={actions.finishCinematic}
       />
       {npc && (
