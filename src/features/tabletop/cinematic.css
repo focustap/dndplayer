@@ -32,6 +32,7 @@ html.cinematic-screen-shake-active, html.cinematic-screen-shake-active body { ov
 .cinematic-action-grid button:disabled { cursor: not-allowed; opacity: .43; }
 .cinematic-action-grid .boss-entrance { background: #38261f; border-color: #8f6648; grid-column: span 2; }
 .cinematic-action-grid .cinematic-dread { background: #202225; border-color: #69707b; }
+.cinematic-action-grid .cinematic-dread.active { background: #101214; border-color: #d1b173; box-shadow: inset 0 0 0 1px rgba(209,177,115,.2), 0 0 16px rgba(0,0,0,.7); color: #f1d8a4; }
 .cinematic-action-grid .cinematic-blood { background: #3b1e22; border-color: #a44b50; }
 .cinematic-action-grid .cinematic-power { background: #27203f; border-color: #8e75ce; }
 .cinematic-action-grid svg, .cinematic-restore svg { height: 14px; width: 14px; }
