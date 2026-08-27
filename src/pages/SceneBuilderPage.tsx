@@ -7,6 +7,7 @@ import { MapCanvas } from "../features/map/MapCanvas";
 import { CreatureInspector } from "../features/tabletop/CreatureInspector";
 import { DMToolbar } from "../features/tabletop/DMToolbar";
 import { EncounterPanel } from "../features/tabletop/EncounterPanel";
+import { LiveAudio } from "../features/tabletop/LiveAudio";
 import { campaignSetupService } from "../services/campaignSetupService";
 import "./sceneNavigation.css";
 
@@ -32,6 +33,7 @@ function SceneBuilder({ campaignId }: { campaignId: string }) {
   const beginPlayerPlacement = () => { actions.startPlayerPlacement(selectedCharacters); setPlayerPicker(false); };
   const beginLinkPlacement = () => { if (!destinationSceneId) return; actions.startSceneLinkPlacement(destinationSceneId, linkLabel || destinationScenes.find(candidate => candidate.id === destinationSceneId)?.name || "Scene link"); };
   return <main className="scene-builder">
+    <LiveAudio />
     <header className="scene-builder-header"><Link to={`/campaign/${campaignId}`}><ArrowLeft/>Campaign setup</Link><div><small>DM-ONLY SCENE BUILDER</small><h1>{scene.name}</h1><p>{scene.active ? scene.revealed ? "LIVE · REVEALED TO PLAYERS" : "LIVE · HIDDEN FROM PLAYERS" : "DRAFT · PLAYERS CONTINUE ON THE CURRENT LIVE SCENE"}</p></div><div className="scene-builder-actions"><button className="secondary-action" onClick={() => void makeLive()}>Make Live</button><button className="secondary-action" onClick={() => void reveal(!scene.revealed)}>{scene.revealed ? <><EyeOff/>Hide Scene</> : <><Eye/>Reveal Scene</>}</button><button className="launch-table" onClick={() => navigate(`/campaign/${campaignId}/dm`)}><Layers3/><span><small>GAMEPLAY</small>OPEN TABLE</span></button></div></header>
     <aside className="builder-sidebar">
       <section><p className="eyebrow">MAP TRANSFORM</p><NumberField label="Horizontal position" value={scene.mapX} onChange={value => number("mapX", value)}/><NumberField label="Vertical position" value={scene.mapY} onChange={value => number("mapY", value)}/><NumberField label="Map scale" value={scene.mapScale} min={.1} max={4} step={.05} onChange={value => number("mapScale", value)}/></section>
