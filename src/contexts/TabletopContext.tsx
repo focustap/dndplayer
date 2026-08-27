@@ -446,107 +446,95 @@ export function TabletopProvider({
   }, [campaignId, reload]);
   useEffect(() => {
     if (!patrolRole || !isDmRole(patrolRole)) return;
-    const current = stateRef.current;
-    if (!current) return;
-    const timers: number[] = [];
-    for (const patrol of current.patrols) {
-      if (
-        !patrol.active ||
-        patrol.waypoints.length < 2 ||
-        (patrol.pauseDuringCombat && current.combat.active) ||
-        patrolCheckpointing.current.has(patrol.id)
-      )
-        continue;
-      const token = current.tokens.find((item) => item.id === patrol.tokenId);
-      if (!token) continue;
-      const segment = current.motionSegments.find(
-        (item) => item.tokenId === token.id && item.active,
-      );
-      if (!segment) {
-        const delay = Math.max(
-          0,
-          (patrolResumeAt.current.get(patrol.id) ?? 0) - Date.now(),
+    let disposed = false;
+
+    const drivePatrols = async () => {
+      if (disposed) return;
+      const current = stateRef.current;
+      if (!current) return;
+      const now = Date.now();
+
+      for (const patrol of current.patrols) {
+        if (
+          !patrol.active ||
+          patrol.waypoints.length < 2 ||
+          (patrol.pauseDuringCombat && current.combat.active) ||
+          patrolCheckpointing.current.has(patrol.id) ||
+          patrolStarting.current.has(patrol.id)
+        )
+          continue;
+
+        const token = current.tokens.find((item) => item.id === patrol.tokenId);
+        if (!token) continue;
+
+        const segment = current.motionSegments.find(
+          (item) => item.tokenId === token.id && item.active,
         );
-        timers.push(
-          window.setTimeout(
-            () => void beginPatrolSegment(patrol.id),
-            delay,
-          ),
-        );
-        continue;
-      }
 
-      const remaining = Math.max(
-        0,
-        Date.parse(segment.startedAt) + segment.durationMs - Date.now(),
-      );
-      timers.push(
-        window.setTimeout(() => {
-          const live = stateRef.current;
-          const activePatrol = live?.patrols.find(
-            (item) => item.id === patrol.id,
-          );
-          if (!live || !activePatrol) return;
-          const liveSegment = live.motionSegments.find(
-            (item) => item.tokenId === activePatrol.tokenId && item.active,
-          );
-          if (!liveSegment || liveSegment.revision !== segment.revision) return;
+        if (!segment) {
+          if ((patrolResumeAt.current.get(patrol.id) ?? 0) <= now)
+            void beginPatrolSegment(patrol.id);
+          continue;
+        }
 
-          patrolCheckpointing.current.add(activePatrol.id);
-          void tabletopService
-            .completePatrolSegment(activePatrol.id, liveSegment.revision)
-            .then((updatedPatrol) => {
-              if (updatedPatrol.active)
-                patrolResumeAt.current.set(
-                  updatedPatrol.id,
-                  Date.now() + updatedPatrol.waypointPauseMs,
-                );
-              else patrolResumeAt.current.delete(updatedPatrol.id);
+        const endsAt =
+          Date.parse(segment.startedAt) + Math.max(1, segment.durationMs);
+        if (now < endsAt) continue;
 
-              setState((currentState) =>
-                currentState
-                  ? {
-                      ...currentState,
-                      tokens: currentState.tokens.map((item) =>
-                        item.id === activePatrol.tokenId
-                          ? {
-                              ...item,
-                              x: liveSegment.toX,
-                              y: liveSegment.toY,
-                            }
-                          : item,
-                      ),
-                      motionSegments: currentState.motionSegments.filter(
-                        (item) => item.tokenId !== activePatrol.tokenId,
-                      ),
-                      patrols: currentState.patrols.map((item) =>
-                        item.id === updatedPatrol.id
-                          ? { ...item, ...updatedPatrol }
-                          : item,
-                      ),
-                    }
-                  : currentState,
+        patrolCheckpointing.current.add(patrol.id);
+        void tabletopService
+          .completePatrolSegment(patrol.id, segment.revision)
+          .then((updatedPatrol) => {
+            if (disposed) return;
+            if (updatedPatrol.active)
+              patrolResumeAt.current.set(
+                updatedPatrol.id,
+                Date.now() + updatedPatrol.waypointPauseMs,
               );
-            })
-            .catch((error) => {
-              console.error("Failed to complete patrol segment", error);
-              void reload();
-            })
-            .finally(() => {
-              patrolCheckpointing.current.delete(activePatrol.id);
-            });
-        }, remaining),
-      );
-    }
-    return () => timers.forEach(window.clearTimeout);
-  }, [
-    state?.patrols,
-    state?.motionSegments,
-    state?.combat.active,
-    patrolRole,
-    reload,
-    beginPatrolSegment,
-  ]);
+            else patrolResumeAt.current.delete(updatedPatrol.id);
+
+            setState((currentState) =>
+              currentState
+                ? {
+                    ...currentState,
+                    tokens: currentState.tokens.map((item) =>
+                      item.id === patrol.tokenId
+                        ? { ...item, x: segment.toX, y: segment.toY }
+                        : item,
+                    ),
+                    motionSegments: currentState.motionSegments.filter(
+                      (item) =>
+                        !(
+                          item.tokenId === patrol.tokenId &&
+                          item.revision === segment.revision
+                        ),
+                    ),
+                    patrols: currentState.patrols.map((item) =>
+                      item.id === updatedPatrol.id
+                        ? { ...item, ...updatedPatrol }
+                        : item,
+                    ),
+                  }
+                : currentState,
+            );
+          })
+          .catch((error) => {
+            console.error("Failed to complete patrol segment", error);
+            void reload();
+          })
+          .finally(() => {
+            patrolCheckpointing.current.delete(patrol.id);
+          });
+      }
+    };
+
+    void drivePatrols();
+    const interval = window.setInterval(() => void drivePatrols(), 250);
+    return () => {
+      disposed = true;
+      window.clearInterval(interval);
+    };
+  }, [patrolRole, reload, beginPatrolSegment]);
 
   const actions = useMemo<TabletopActions>(
     () => ({
