@@ -1,23 +1,20 @@
-import { Brush, CloudFog, Eye, EyeOff, Grid3X3, ImagePlus, Layers3, Lock, MousePointer2, RotateCcw, SquareDashed, Trash2, Unlock, X } from "lucide-react";
+import { Eye, EyeOff, Grid3X3, ImagePlus, Layers3, Lock, MousePointer2, Trash2, Unlock, X } from "lucide-react";
 import { useRef, useState } from "react";
-import type { FogTool } from "../../domain/types";
 import { useTabletop } from "../../contexts/TabletopContext";
 
 export function DMToolbar() {
   const { state, actions, builder } = useTabletop();
-  const [panel, setPanel] = useState<"grid" | "fog" | "layers" | null>(null);
+  const [panel, setPanel] = useState<"grid" | "layers" | null>(null);
   const [gridSize, setGridSize] = useState(80);
   const input = useRef<HTMLInputElement>(null);
   if (!state) return null;
 
-  const chooseFog = (tool: FogTool) => actions.setFogTool(state.activeFogTool === tool ? null : tool);
   const commitGrid = (size = gridSize) => void actions.updateSceneGrid("SQUARE", size);
 
   return <>
     <nav className="dm-toolbar" aria-label="DM tools">
-      {builder&&<><button className={!state.activeFogTool ? "active" : ""} title="Select" onClick={() => actions.setFogTool(null)}><MousePointer2 /></button>
+      {builder&&<><button className="active" title="Select" onClick={() => setPanel(null)}><MousePointer2 /></button>
       <button className={panel === "grid" ? "active" : ""} title="Grid settings" onClick={() => { if (panel !== "grid") setGridSize(state.scene.gridSize); setPanel(panel === "grid" ? null : "grid"); }}><Grid3X3 /></button>
-      <button className={panel === "fog" ? "active" : ""} title="Fog tools" onClick={() => setPanel(panel === "fog" ? null : "fog")}><CloudFog /></button>
       <button className={panel === "layers" ? "active" : ""} title="Scene layers" onClick={() => setPanel(panel === "layers" ? null : "layers")}><Layers3 /></button>
       <span /></>}
       <button className={state.previewPlayerView ? "active" : ""} title="Preview player view" onClick={actions.togglePlayerPreview}><Eye /></button>
@@ -28,17 +25,6 @@ export function DMToolbar() {
       <label className="grid-toggle"><input type="checkbox" checked={state.scene.gridType === "SQUARE"} onChange={event => void actions.updateSceneGrid(event.target.checked ? "SQUARE" : "GRIDLESS", gridSize)} />Show square grid</label>
       {state.scene.gridType === "SQUARE" && <label className="grid-size"><span>Cell size <b>{gridSize}px</b></span><input type="range" min="20" max="240" step="4" value={gridSize} onChange={event => setGridSize(Number(event.target.value))} onPointerUp={event => commitGrid(Number(event.currentTarget.value))} onKeyUp={event => { if (event.key.startsWith("Arrow")) commitGrid(Number(event.currentTarget.value)); }} /></label>}
       <p>Grid settings are saved to this scene for everyone at the table.</p>
-    </div>}
-    {builder&&panel === "fog" && <div className="tool-popover fog-popover">
-      <div className="popover-title"><span><CloudFog />Fog of war</span><button onClick={() => setPanel(null)}><X /></button></div>
-      <div className="fog-tools">
-        <Tool active={state.activeFogTool === "REVEAL_BRUSH"} icon={<Brush />} label="Reveal brush" onClick={() => chooseFog("REVEAL_BRUSH")} />
-        <Tool active={state.activeFogTool === "REVEAL_RECT"} icon={<SquareDashed />} label="Reveal rectangle" onClick={() => chooseFog("REVEAL_RECT")} />
-        <Tool active={state.activeFogTool === "HIDE_BRUSH"} icon={<Brush />} label="Hide brush" onClick={() => chooseFog("HIDE_BRUSH")} />
-        <Tool active={state.activeFogTool === "HIDE_RECT"} icon={<SquareDashed />} label="Hide rectangle" onClick={() => chooseFog("HIDE_RECT")} />
-      </div>
-      <p>{state.activeFogTool ? "Drag on the map to paint fog." : "Choose a tool, then draw directly on the scene."}</p>
-      <div className="fog-reset"><button onClick={() => void actions.resetFog(true)}><EyeOff />Cover scene</button><button onClick={() => void actions.resetFog(false)}><RotateCcw />Clear fog</button></div>
     </div>}
     {builder&&panel === "layers" && <div className="tool-popover layers-popover">
       <div className="popover-title"><span><Layers3 />Scene layers</span><button onClick={() => setPanel(null)}><X /></button></div>
@@ -54,5 +40,3 @@ export function DMToolbar() {
     </div>}
   </>;
 }
-
-function Tool({ active, icon, label, onClick }: { active: boolean; icon: React.ReactNode; label: string; onClick(): void }) { return <button className={active ? "active" : ""} onClick={onClick}>{icon}<span>{label}</span></button>; }
