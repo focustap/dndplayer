@@ -611,7 +611,7 @@ export function TabletopProvider({
     };
 
     void drivePatrols();
-    const interval = window.setInterval(() => void drivePatrols(), 250);
+    const interval = window.setInterval(() => void drivePatrols(), 40);
     return () => {
       disposed = true;
       window.clearInterval(interval);
