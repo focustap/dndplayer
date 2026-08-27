@@ -100,7 +100,8 @@ export const tabletopService = {
       if (token.imageUrl) return token;
       const characterImage = token.type === "PLAYER" ? characters.find((character) => character.id === token.referenceId)?.imageUrl : null;
       const monsterImage = token.type === "MONSTER" ? monsterInstances.find((monster) => monster.id === token.referenceId)?.template?.imageUrl : null;
-      return signTokenImage({ ...token, imageUrl: characterImage ?? monsterImage ?? null });
+      const npcImage = token.type === "NPC" ? npcTemplates.find((npc) => npc.id === token.referenceId)?.imageUrl : null;
+      return { ...token, imageUrl: characterImage ?? monsterImage ?? npcImage ?? null };
     }));
     const signDiscoverable=async(item:SceneDiscoverable)=>{if(!item.storagePath)return item;const {data}=await supabase.storage.from("campaign-assets").createSignedUrl(item.storagePath,60*60*12);return data?.signedUrl?{...item,imageUrl:data.signedUrl}:item;};
     const treasure=await Promise.all(((treasureRows??[]) as Record<string,unknown>[]).map(asDiscoverable).map(signDiscoverable));
