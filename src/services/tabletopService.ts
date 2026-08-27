@@ -127,7 +127,26 @@ export const tabletopService = {
   async placeCharacterToken(sceneId: string, characterId: string, x: number, y: number) { const { data, error } = await supabase.rpc("place_character_token", { p_scene_id: sceneId, p_character_id: characterId, p_x: x, p_y: y }); if (error) throw error; if (!data) throw new Error("Character placement returned no token."); return signTokenImage(asToken(data as Record<string, unknown>)); },
   async placeMonsterToken(sceneId: string, templateId: string, x: number, y: number) { const { data, error } = await supabase.rpc("place_monster_token", { p_scene_id: sceneId, p_template_id: templateId, p_x: x, p_y: y }); if (error) throw error; if (!data) throw new Error("Monster placement returned no token."); return signTokenImage(asToken(data as Record<string, unknown>)); },
   async placeNpcToken(sceneId:string,templateId:string,x:number,y:number){const {data,error}=await supabase.rpc("place_npc_token",{p_scene_id:sceneId,p_template_id:templateId,p_x:x,p_y:y});if(error)throw error;const row=Array.isArray(data)?data[0]:data;if(!row)throw new Error("NPC placement returned no token.");return signTokenImage(asToken(row as Record<string,unknown>));},
-  async updateToken(tokenId: string, patch: Partial<Pick<Token,"visible"|"rotation"|"size"|"locked"|"conditions"|"imageUrl">>) { if (isSupabaseConfigured) { const payload: Record<string, unknown> = {}; if (patch.visible !== undefined) payload.visible = patch.visible; if (patch.rotation !== undefined) payload.rotation = patch.rotation; if (patch.size !== undefined) payload.size = patch.size; if (patch.locked !== undefined) payload.locked = patch.locked; if (patch.conditions !== undefined) payload.conditions = patch.conditions; if (patch.imageUrl !== undefined) payload.image_url = patch.imageUrl; const { error } = await supabase.from("tokens").update(payload).eq("id", tokenId); if (error) throw error; } },
+  async updateToken(tokenId: string, patch: Partial<Pick<Token,"visible"|"rotation"|"size"|"locked"|"conditions"|"imageUrl">>) {
+    if (!isSupabaseConfigured) return;
+    const payload: Record<string, unknown> = {};
+    if (patch.visible !== undefined) payload.visible = patch.visible;
+    if (patch.rotation !== undefined) payload.rotation = patch.rotation;
+    if (patch.locked !== undefined) payload.locked = patch.locked;
+    if (patch.conditions !== undefined) payload.conditions = patch.conditions;
+    if (patch.imageUrl !== undefined) payload.image_url = patch.imageUrl;
+    if (Object.keys(payload).length) {
+      const { error } = await supabase.from("tokens").update(payload).eq("id", tokenId);
+      if (error) throw error;
+    }
+    if (patch.size !== undefined) {
+      const { error } = await supabase.rpc("set_token_size_and_default", {
+        p_token_id: tokenId,
+        p_size: patch.size,
+      });
+      if (error) throw error;
+    }
+  },
   async adjustMonsterHp(instanceId: string, amount: number, mode: "DAMAGE"|"HEAL") { if (isSupabaseConfigured) { const { error } = await supabase.rpc("adjust_monster_hp", { p_instance_id: instanceId, p_amount: amount, p_mode: mode }); if (error) throw error; } },
   async setMonsterHp(instanceId: string, currentHp: number, maxHp: number) { if (isSupabaseConfigured) { const { error } = await supabase.from("monster_instances").update({ current_hp: currentHp, max_hp: maxHp, dead: currentHp === 0 }).eq("id", instanceId); if (error) throw error; } },
   async adjustCharacterHp(characterId: string, amount: number, mode: "DAMAGE"|"HEAL") { const { data, error } = await supabase.rpc("adjust_character_hp", { p_character_id: characterId, p_amount: amount, p_mode: mode }); if (error) throw error; if (!data) throw new Error("Character HP adjustment returned no character."); return asCharacter(data as Record<string, unknown>); },
