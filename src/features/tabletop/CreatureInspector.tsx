@@ -1,6 +1,6 @@
 import { ChevronRight, Eye, EyeOff, Plus, RotateCcw, Trash2, X } from "lucide-react";
 import { useRef, useState, type CSSProperties } from "react";
-import { CONDITION_OPTIONS, isDmRole, type AbilityScores, type AttackPreset, type Character, type MonsterAction, type MonsterTemplate } from "../../domain/types";
+import { CONDITION_OPTIONS, isDmRole, type AbilityScores, type AttackPreset, type Character, type MonsterAction, type MonsterInstance, type MonsterTemplate } from "../../domain/types";
 import { useTabletop } from "../../contexts/TabletopContext";
 import { useAuth } from "../../contexts/AuthContext";
 
@@ -112,17 +112,51 @@ function InspectorContent({ tokenId }: { tokenId: string }) {
       {monster && <button onClick={() => setConditionOpen(!conditionOpen)}><Plus />Add</button>}
     </div>
     {conditionOpen && monster && <div className="condition-picker">{CONDITION_OPTIONS.filter((condition) => !monster.conditions.includes(condition)).map((condition) => <button key={condition} onClick={() => { void actions.toggleCondition(monster.id, condition); setConditionOpen(false); }}>{condition}</button>)}</div>}
-    {monster?.template && <MonsterMechanics template={monster.template} notes={monster.notes} />}
+    {monster?.template && <MonsterMechanics monster={monster} canEdit={dm} onSaveOverrides={(hpFormulaOverride, damageDiceOverrides) => void actions.setMonsterOverrides(monster.id, hpFormulaOverride, damageDiceOverrides)} />}
   </aside>;
 }
 
-function MonsterMechanics({ template, notes }: { template: MonsterTemplate; notes: string }) {
+function MonsterMechanics({ monster, canEdit, onSaveOverrides }: { monster: MonsterInstance; canEdit: boolean; onSaveOverrides(hpFormulaOverride: string | null, damageDiceOverrides: Record<string, string>): void }) {
+  const template = monster.template!;
+  const [hpFormula, setHpFormula] = useState(monster.hpFormulaOverride ?? "");
+  const [damageDice, setDamageDice] = useState<Record<string, string>>(monster.damageDiceOverrides ?? {});
   const movement = Object.entries(template.movement).filter(([kind, value]) => kind !== "hover" && value).map(([kind, value]) => `${kind === "walk" ? "Walk" : kind[0].toUpperCase() + kind.slice(1)} ${value} ft`);
   if (template.movement.hover) movement.push("Hover");
   const defenses = [["VULNERABLE", template.damageVulnerabilities], ["RESIST", template.damageResistances], ["IMMUNE", template.damageImmunities], ["CONDITION IMMUNE", template.conditionImmunities]].filter(([, values]) => values.length) as [string, string[]][];
+  const actionGroups: [string, string, MonsterAction[]][] = [
+    ["traits", "Traits", template.traits],
+    ["actions", "Actions", template.actions],
+    ["bonusActions", "Bonus actions", template.bonusActions],
+    ["reactions", "Reactions", template.reactions],
+    ["legendaryActions", "Legendary actions", template.legendaryActions],
+  ];
+  const damageRows = actionGroups.flatMap(([group, groupLabel, actions]) =>
+    actions.flatMap((action, actionIndex) =>
+      (action.damage ?? []).map((damage, damageIndex) => ({
+        key: actionDamageKey(group, actionIndex, damageIndex),
+        label: `${groupLabel} · ${action.name}${(action.damage?.length ?? 0) > 1 ? ` · Damage ${damageIndex + 1}` : ""}`,
+        baseDice: damage.dice,
+      })),
+    ),
+  );
+  const saveOverrides = () => onSaveOverrides(hpFormula.trim() || null, damageDice);
+  const resetOverrides = () => {
+    setHpFormula("");
+    setDamageDice({});
+    onSaveOverrides(null, {});
+  };
   return <>
     <p className="section-label">{template.creatureSize.toUpperCase()} {template.creatureType.toUpperCase()}</p>
-    <div className="mechanics-facts"><span><small>HP FORMULA</small><b>{template.hpFormula ?? "—"}</b></span><span><small>INITIATIVE</small><b>{template.initiative.modifier === null ? "—" : `${template.initiative.modifier >= 0 ? "+" : ""}${template.initiative.modifier}`}</b></span><span><small>PASSIVE</small><b>{template.passivePerception ?? "—"}</b></span></div>
+    <div className="mechanics-facts"><span><small>HP FORMULA</small><b>{monster.hpFormulaOverride ?? template.hpFormula ?? "—"}</b></span><span><small>INITIATIVE</small><b>{template.initiative.modifier === null ? "—" : `${template.initiative.modifier >= 0 ? "+" : ""}${template.initiative.modifier}`}</b></span><span><small>PASSIVE</small><b>{template.passivePerception ?? "—"}</b></span></div>
+    {canEdit && <section className="monster-instance-overrides">
+      <p className="section-label">INSTANCE OVERRIDES</p>
+      <p className="dm-notes">Only this placed monster changes. Duplicating its token copies these values; the Bestiary template stays untouched.</p>
+      <div className="direct-hp monster-override-fields">
+        <label>Hit dice<input value={hpFormula} placeholder={template.hpFormula ?? "e.g. 4d10 + 8"} onChange={(event) => setHpFormula(event.target.value)} /></label>
+        {damageRows.map((row) => <label key={row.key}>{row.label}<input value={damageDice[row.key] ?? ""} placeholder={row.baseDice} onChange={(event) => setDamageDice((current) => ({ ...current, [row.key]: event.target.value }))} /></label>)}
+      </div>
+      <div className="hp-actions"><button onClick={saveOverrides}>SAVE OVERRIDES</button><button onClick={resetOverrides}>RESET TO BESTIARY</button></div>
+    </section>}
     <p className="section-label">ABILITIES</p>
     <div className="abilities">{Object.entries(template.abilities).map(([ability, value]) => <span key={ability}><small>{ability.toUpperCase()}</small><b>{value}</b></span>)}</div>
     {(movement.length || Object.keys(template.savingThrows).length || Object.keys(template.skills).length || defenses.length || template.senses.length || template.languages.length) && <section className="monster-reference">
@@ -133,19 +167,37 @@ function MonsterMechanics({ template, notes }: { template: MonsterTemplate; note
       {template.senses.length > 0 && <p><b>Senses</b>{template.senses.map((sense) => `${sense.name}${sense.range ? ` ${sense.range} ${sense.unit ?? "ft"}` : ""}`).join(", ")}</p>}
       {template.languages.length > 0 && <p><b>Languages</b>{template.languages.join(", ")}</p>}
     </section>}
-    <ActionSection title="TRAITS" actions={template.traits} />
-    <ActionSection title="ACTIONS" actions={template.actions} />
-    <ActionSection title="BONUS ACTIONS" actions={template.bonusActions} />
-    <ActionSection title="REACTIONS" actions={template.reactions} />
-    <ActionSection title={template.legendaryActionUses ? `LEGENDARY ACTIONS · ${template.legendaryActionUses} USES` : "LEGENDARY ACTIONS"} actions={template.legendaryActions} />
+    <ActionSection title="TRAITS" group="traits" actions={template.traits} damageDiceOverrides={monster.damageDiceOverrides} />
+    <ActionSection title="ACTIONS" group="actions" actions={template.actions} damageDiceOverrides={monster.damageDiceOverrides} />
+    <ActionSection title="BONUS ACTIONS" group="bonusActions" actions={template.bonusActions} damageDiceOverrides={monster.damageDiceOverrides} />
+    <ActionSection title="REACTIONS" group="reactions" actions={template.reactions} damageDiceOverrides={monster.damageDiceOverrides} />
+    <ActionSection title={template.legendaryActionUses ? `LEGENDARY ACTIONS · ${template.legendaryActionUses} USES` : "LEGENDARY ACTIONS"} group="legendaryActions" actions={template.legendaryActions} damageDiceOverrides={monster.damageDiceOverrides} />
     {template.spellcasting.length > 0 && <section className="monster-reference"><p><b>Spellcasting</b>{template.spellcasting.map((spellcasting) => `${spellcasting.ability ?? ""}${spellcasting.saveDc ? ` · DC ${spellcasting.saveDc}` : ""}${spellcasting.attackBonus ? ` · +${spellcasting.attackBonus} to hit` : ""}`).join(" · ")}</p>{template.spellcasting.flatMap((spellcasting) => spellcasting.spells).map((entry) => <p key={entry.frequency}><b>{entry.frequency}</b>{entry.spells.join(", ")}</p>)}</section>}
-    {notes && <><p className="section-label">DM NOTES</p><p className="dm-notes">{notes}</p></>}
+    {monster.notes && <><p className="section-label">DM NOTES</p><p className="dm-notes">{monster.notes}</p></>}
   </>;
 }
 
-function ActionSection({ title, actions }: { title: string; actions: MonsterAction[] }) {
+function actionDamageKey(group: string, actionIndex: number, damageIndex: number) {
+  return `${group}:${actionIndex}:${damageIndex}`;
+}
+
+function withDamageOverrides(action: MonsterAction, group: string, actionIndex: number, overrides: Record<string, string>) {
+  if (!action.damage?.length) return action;
+  return {
+    ...action,
+    damage: action.damage.map((damage, damageIndex) => {
+      const override = overrides[actionDamageKey(group, actionIndex, damageIndex)]?.trim();
+      return override ? { ...damage, dice: override } : damage;
+    }),
+  };
+}
+
+function ActionSection({ title, actions, group, damageDiceOverrides }: { title: string; actions: MonsterAction[]; group: string; damageDiceOverrides: Record<string, string> }) {
   if (!actions.length) return null;
-  return <><p className="section-label">{title}</p>{actions.map((action, index) => <details className="action-row" key={`${title}-${action.name}-${index}`}><summary><span><b>{action.name}</b><small>{actionSummary(action)}</small></span><ChevronRight /></summary><p>{action.description}</p>{action.variants?.map((variant, variantIndex) => <details className="action-variant" key={`${variant.name}-${variantIndex}`}><summary>{variant.name}</summary><p>{variant.description}</p></details>)}</details>)}</>;
+  return <><p className="section-label">{title}</p>{actions.map((action, index) => {
+    const effectiveAction = withDamageOverrides(action, group, index, damageDiceOverrides);
+    return <details className="action-row" key={`${title}-${action.name}-${index}`}><summary><span><b>{action.name}</b><small>{actionSummary(effectiveAction)}</small></span><ChevronRight /></summary><p>{action.description}</p>{action.variants?.map((variant, variantIndex) => <details className="action-variant" key={`${variant.name}-${variantIndex}`}><summary>{variant.name}</summary><p>{variant.description}</p></details>)}</details>;
+  })}</>;
 }
 
 function actionSummary(action: MonsterAction) {
