@@ -248,6 +248,7 @@ export const tabletopService = {
       { data: patrolRows, error: patrolError },
       { data: motionRows, error: motionError },
       { data: zoneMarkerRows, error: zoneMarkerError },
+      { data: interactionRows, error: interactionError },
     ] = await Promise.all([
       supabase.from("tokens").select("id,scene_id,reference_id,owner_user_id,type,display_name,image_url,image_path,x,y,size,rotation,visible,locked,conditions").eq("scene_id", scene.id),
       supabase.from("scene_overlays").select("*").eq("scene_id", scene.id).order("z_index"),
@@ -257,6 +258,7 @@ export const tabletopService = {
       dm ? supabase.from("token_patrols").select("*").eq("scene_id", scene.id) : Promise.resolve({ data: [], error: null }),
       supabase.from("token_motion_segments").select("*").eq("scene_id", scene.id).eq("active", true),
       supabase.from("scene_zone_markers").select("*").eq("scene_id", scene.id).order("created_at"),
+      supabase.from("token_interactions").select("token_id,campaign_id,enabled,type,display_name,dialogue_text,dialogue_pages,npc_shop_items(*)").eq("campaign_id", campaignId),
     ]);
     throwQueryError(tokenError, "Unable to load scene tokens.");
     throwQueryError(overlayError, "Unable to load scene overlays.");
@@ -266,6 +268,7 @@ export const tabletopService = {
     throwQueryError(patrolError, "Unable to load scene patrols.");
     throwQueryError(motionError, "Unable to load scene motion.");
     throwQueryError(zoneMarkerError, "Unable to load floor markers.");
+    throwQueryError(interactionError, "Unable to load NPC interactions.");
 
     let monsterInstances = base.monsterInstances;
     if (dm) {
@@ -318,6 +321,7 @@ export const tabletopService = {
       motionSegments: ((motionRows ?? []) as Record<string, unknown>[]).map(asMotionSegment),
       patrols: ((patrolRows ?? []) as Record<string, unknown>[]).map(asPatrol),
       patrolEditTokenId: null,
+      tokenInteractions: ((interactionRows ?? []) as Record<string, unknown>[]).map(asInteraction),
       monsterInstances,
       combat,
       selectedTokenId: null,
