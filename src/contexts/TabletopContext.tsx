@@ -14,8 +14,6 @@ import type {
   Character,
   CinematicEvent,
   DiceRoll,
-  FogRegion,
-  FogTool,
   GridType,
   NpcShopItem,
   Placement,
@@ -42,7 +40,6 @@ import {
 interface TabletopActions {
   selectToken(id: string | null): void;
   setShiftIntel(value: boolean): void;
-  setFogTool(value: FogTool | null): void;
   togglePlayerPreview(): void;
   startPlacement(placement: Placement): void;
   startPlayerPlacement(characterIds: string[]): void;
@@ -134,8 +131,6 @@ interface TabletopActions {
     shopItems?: Omit<NpcShopItem, "id" | "interactionId">[],
   ): Promise<void>;
   interactWithNpc(tokenId: string): Promise<void>;
-  addFog(tool: FogTool, points: number[]): Promise<void>;
-  resetFog(covered: boolean): Promise<void>;
   reload(): Promise<void>;
 }
 interface TabletopValue {
@@ -223,7 +218,6 @@ export function TabletopProvider({
           ),
           selectedTokenId: current.selectedTokenId,
           patrolEditTokenId: current.patrolEditTokenId,
-          activeFogTool: current.activeFogTool,
           previewPlayerView: current.previewPlayerView,
           shiftIntel: current.shiftIntel,
           attackSelection: current.attackSelection,
@@ -636,9 +630,6 @@ export function TabletopProvider({
       setShiftIntel(value) {
         setState((s) => (s ? { ...s, shiftIntel: value } : s));
       },
-      setFogTool(value) {
-        setState((s) => (s ? { ...s, activeFogTool: value } : s));
-      },
       togglePlayerPreview() {
         setState((s) =>
           s ? { ...s, previewPlayerView: !s.previewPlayerView } : s,
@@ -648,7 +639,7 @@ export function TabletopProvider({
         const s = stateRef.current;
         if (!s || !isDmRole(s.role)) return;
         setState((current) =>
-          current ? { ...current, placement, activeFogTool: null } : current,
+          current ? { ...current, placement } : current,
         );
       },
       startPlayerPlacement(characterIds) {
@@ -671,7 +662,6 @@ export function TabletopProvider({
                   name: "Players",
                   imageUrl: null,
                 },
-                activeFogTool: null,
               }
             : current,
         );
@@ -690,7 +680,6 @@ export function TabletopProvider({
                   name: label.trim() || "Scene link",
                   imageUrl: null,
                 },
-                activeFogTool: null,
               }
             : current,
         );
@@ -719,7 +708,6 @@ export function TabletopProvider({
                 ...current,
                 attackSelection: { attackerTokenId, preset },
                 placement: null,
-                activeFogTool: null,
               }
             : current,
         );
@@ -1844,37 +1832,6 @@ export function TabletopProvider({
                 overlays: current.overlays.filter(
                   (overlay) => overlay.id !== id,
                 ),
-              }
-            : current,
-        );
-      },
-      async addFog(tool, points) {
-        const s = stateRef.current;
-        if (!s) return;
-        const region: FogRegion = {
-          id: crypto.randomUUID(),
-          sceneId: s.scene.id,
-          mode: tool.startsWith("REVEAL") ? "REVEAL" : "HIDE",
-          shape: tool.endsWith("RECT") ? "RECT" : "BRUSH",
-          points,
-        };
-        await tabletopService.addFogRegion(region);
-        setState((current) =>
-          current
-            ? { ...current, fogRegions: [...current.fogRegions, region] }
-            : current,
-        );
-      },
-      async resetFog(covered) {
-        const s = stateRef.current;
-        if (!s) return;
-        await tabletopService.resetFog(s.scene.id, covered);
-        setState((current) =>
-          current
-            ? {
-                ...current,
-                scene: { ...current.scene, fogCovered: covered },
-                fogRegions: [],
               }
             : current,
         );
