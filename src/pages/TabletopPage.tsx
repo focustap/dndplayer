@@ -12,6 +12,7 @@ import { PlayerCreatureCard } from "../features/tabletop/PlayerCreatureCard";
 import { CinematicControls } from "../features/tabletop/CinematicControls";
 import { CinematicLayer } from "../features/tabletop/CinematicLayer";
 import { LiveAudio } from "../features/tabletop/LiveAudio";
+import { NpcInteractionModal } from "../features/tabletop/NpcInteractionModal";
 
 export function TabletopPage({ playerView = false }: { playerView?: boolean }) {
   return (
@@ -146,45 +147,12 @@ function TabletopSurface({ playerView }: { playerView: boolean }) {
         dreadActive={state.dreadActive}
         onFinished={actions.finishCinematic}
       />
-      {npc && (
-        <div
-          className="discovery-viewer"
-          role="button"
-          tabIndex={0}
-          onClick={(event) => {
-            if (event.target === event.currentTarget) actions.selectToken(null);
-          }}
-          onKeyDown={(event) => {
-            if (event.key === "Escape" || event.key === "Enter" || event.key === " ") actions.selectToken(null);
-          }}
-        >
-          <section
-            className="npc-interaction-modal"
-            role="dialog"
-            aria-modal="true"
-          >
-            <button onClick={() => actions.selectToken(null)}>
-              <X />
-            </button>
-            {npcToken?.imageUrl && <img src={npcToken.imageUrl} alt="" />}
-            <small>INTERACT</small>
-            <h2>{npc.displayName || npcToken?.displayName}</h2>
-            {(npc.type === "DIALOGUE" || npc.type === "BOTH") && (
-              <p>{npc.dialogueText}</p>
-            )}
-            {(npc.type === "SHOP" || npc.type === "BOTH") && (
-              <div className="npc-shop">
-                {npc.shopItems.map((item) => (
-                  <article key={item.id}>
-                    <b>{item.name}</b>
-                    <span>{item.priceGp} gp</span>
-                    <p>{item.description}</p>
-                  </article>
-                ))}
-              </div>
-            )}
-          </section>
-        </div>
+      {npc && npcToken && (
+        <NpcInteractionModal
+          interaction={npc}
+          token={npcToken}
+          onClose={() => actions.selectToken(null)}
+        />
       )}
       {viewer && (
         <div
