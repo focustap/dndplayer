@@ -65,15 +65,16 @@ function InspectorContent({ tokenId }: { tokenId: string }) {
       {dm && <button className="danger" onClick={() => { if (confirm(`Delete ${token.displayName} from this scene?`)) void actions.deleteToken(token.id); }} aria-label={`Delete ${token.displayName}`} title="Delete token"><Trash2 /></button>}
     </div>
     {canAnimate && <section className={`attack-controls ${token.type==="PLAYER"?"signature-attacks":""}`}>
-      <small>{token.type==="PLAYER"?"SIGNATURE ANIMATION":"ATTACK ANIMATION"}</small>
-      <div>{((token.type==="PLAYER"
-        ? [["SNEAK_ATTACK","Sneak"],["SMITE","Smite"],["DRUID","Druid"],["WIZARD","Wizard"]]
-        : [["MELEE","Melee"],["RANGED","Ranged"],["SPELL","Spell"]]
-      ) as [AttackPreset,string][]).map(([preset,label]) => <button className={attackPreset === preset ? "active" : ""} key={preset} onClick={() => setAttackPreset(preset)}>{label}</button>)}</div>
+      <small>ATTACK ANIMATION</small>
+      <div>{([["MELEE","Melee"],["RANGED","Ranged"],["SPELL","Spell"]] as [AttackPreset,string][]).map(([preset,label]) => <button className={attackPreset === preset ? "active" : ""} key={preset} onClick={() => setAttackPreset(preset)}>{label}</button>)}</div>
+      {token.type==="PLAYER"&&<>
+        <small className="attack-subhead">SIGNATURE ANIMATION</small>
+        <div className="signature-grid">{([["SNEAK_ATTACK","Sneak"],["SMITE","Smite"],["DRUID","Druid"],["WIZARD","Wizard"]] as [AttackPreset,string][]).map(([preset,label]) => <button className={attackPreset === preset ? "active" : ""} key={preset} onClick={() => setAttackPreset(preset)}>{label}</button>)}</div>
+      </>}
       {token.type==="PLAYER"&&attackPreset==="WIZARD"&&<div className="wizard-color-row" aria-label="Wizard spell color">
         {["#8d7cff","#4aa8ff","#5ce1e6","#67d17a","#ff5f63","#ff9a45","#f5f2ff"].map(color=><button key={color} type="button" className={attackColor===color?"active":""} style={{"--spell-color":color} as CSSProperties} onClick={()=>setAttackColor(color)} aria-label={`Use ${color} spell color`}/>)}
       </div>}
-      <button className="attack-start" onClick={() => void actions.startAttack(token.id, attackPreset, attackPreset==="WIZARD"?attackColor:null)}>{state.attackSelection?.attackerTokenId === token.id ? "Choose a target on the map" : token.type==="PLAYER"?"Animate ability":"Animate attack"}</button>
+      <button className="attack-start" onClick={() => void actions.startAttack(token.id, attackPreset, attackPreset==="WIZARD"?attackColor:null)}>{state.attackSelection?.attackerTokenId === token.id ? "Choose a target on the map" : attackPreset==="SNEAK_ATTACK"||attackPreset==="SMITE"||attackPreset==="DRUID"||attackPreset==="WIZARD"?"Animate ability":"Animate attack"}</button>
     </section>}
     <div className="stat-trio"><Stat label="ARMOR" value={String(ac)} /><Stat label="SPEED" value={`${speed} ft`} /><Stat label="SIZE" value={monster?.template?.creatureSize ? `${monster.template.creatureSize} · ${token.size}×` : `${token.size}×`} /></div>
     {dm && <label className="form-field token-size-control">
