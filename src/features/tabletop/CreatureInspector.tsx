@@ -56,7 +56,7 @@ function InspectorContent({ tokenId }: { tokenId: string }) {
     {dm && <label className="form-field token-size-control">
       <span>TOKEN SIZE ON MAP</span>
       <select value={String(token.size)} onChange={(event) => void actions.patchToken(token.id, { size: Number(event.target.value) })}>
-        <option value="0.5">Tiny · 0.5×</option>
+        <option value="0.8">Tiny · 0.8×</option>
         <option value="1">Small / Medium · 1×</option>
         <option value="2">Large · 2×</option>
         <option value="3">Huge · 3×</option>
