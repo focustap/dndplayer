@@ -8,7 +8,7 @@ import {
   Volume2,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { useTabletop } from "../../contexts/TabletopContext";
 import { isDmRole } from "../../domain/types";
 import { supabase } from "../../lib/supabase";
@@ -54,7 +54,7 @@ function useSyncedChannel({
   onEnded,
   setNeedsUnlock,
 }: {
-  element: React.RefObject<HTMLAudioElement | null>;
+  element: RefObject<HTMLAudioElement | null>;
   playback: Playback | null;
   track: CampaignAudioTrack | null;
   volume: number;
