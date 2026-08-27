@@ -168,6 +168,7 @@ export function TabletopProvider({
   const movementChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(
     null,
   );
+  const movementSourceId = useRef(crypto.randomUUID());
   const moveSequences = useRef(new Map<string, number>());
   const receivedSequences = useRef(new Map<string, number>());
   const reloadGeneration = useRef(0);
@@ -184,7 +185,7 @@ export function TabletopProvider({
       void channel.send({
         type: "broadcast",
         event: "token-move",
-        payload: { tokenId: id, x, y, sequence, final },
+        payload: { tokenId: id, x, y, sequence, final, sourceId: movementSourceId.current },
       });
     },
     [],
@@ -343,6 +344,7 @@ export function TabletopProvider({
           y?: number;
           sequence?: number;
           final?: boolean;
+          sourceId?: string;
         };
         if (
           !p.tokenId ||
@@ -355,9 +357,10 @@ export function TabletopProvider({
           sequence = p.sequence as number,
           x = p.x as number,
           y = p.y as number;
-        const last = receivedSequences.current.get(tokenId) ?? -1;
+        const sourceKey = `${p.sourceId ?? "legacy"}:${tokenId}`;
+        const last = receivedSequences.current.get(sourceKey) ?? -1;
         if (sequence <= last) return;
-        receivedSequences.current.set(tokenId, sequence);
+        receivedSequences.current.set(sourceKey, sequence);
         setState((current) =>
           current
             ? {
