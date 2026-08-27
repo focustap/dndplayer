@@ -154,6 +154,21 @@ export const tabletopService = {
   async discover(id:string){const {data,error}=await supabase.rpc("discover_scene_discoverable",{p_discoverable_id:id});if(error)throw error;const item=asDiscoverable(data as Record<string,unknown>);if(!item.storagePath)return item;const {data:signed}=await supabase.storage.from("campaign-assets").createSignedUrl(item.storagePath,60*60*12);return signed?.signedUrl?{...item,imageUrl:signed.signedUrl}:item;},
   async triggerAttack(campaignId: string, attackerTokenId: string, targetTokenId: string, preset: AttackPreset): Promise<AttackAnimationEvent> { const local: AttackAnimationEvent = { id: crypto.randomUUID(), campaignId, attackerTokenId, targetTokenId, preset, createdAt: new Date().toISOString() }; if (!isSupabaseConfigured) return local; const { data, error } = await supabase.from("tabletop_animation_events").insert({ campaign_id: campaignId, attacker_token_id: attackerTokenId, target_token_id: targetTokenId, preset }).select("id,campaign_id,attacker_token_id,target_token_id,preset,created_at").single(); if (error) throw error; return asAttackEvent(data as Record<string, unknown>); },
   async triggerCinematic(campaignId: string,name: string,duration: number,steps: CinematicEvent["steps"]): Promise<CinematicEvent> { const local={id:crypto.randomUUID(),campaignId,name,duration,steps,createdAt:new Date().toISOString()};if(!isSupabaseConfigured)return local;const {data,error}=await supabase.from("tabletop_cinematic_events").insert({campaign_id:campaignId,name,duration,steps}).select("id,campaign_id,name,duration,steps,created_at").single();if(error)throw error;return asCinematicEvent(data as Record<string,unknown>); },
+  async resetDreadOnTableLaunch(campaignId: string) {
+    if (!isSupabaseConfigured) return;
+    const { data, error } = await supabase
+      .from("tabletop_cinematic_events")
+      .select("name")
+      .eq("campaign_id", campaignId)
+      .in("name", ["Dread", "Dread off"])
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw error;
+    if (data?.name === "Dread") {
+      await this.triggerCinematic(campaignId, "Dread off", 100, []);
+    }
+  },
   async hydrateDiceRollerName(roll: DiceRoll): Promise<DiceRoll> {
     if (roll.rollerRole !== "PLAYER" || roll.rollerDisplayName) return roll;
     const { data, error } = await supabase.from("profiles").select("display_name").eq("id", roll.rollerUserId).maybeSingle();
