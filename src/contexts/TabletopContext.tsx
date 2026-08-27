@@ -26,6 +26,7 @@ import type {
   TabletopState,
   Token,
   TokenInteraction,
+  TokenMotionSegment,
   TokenPatrol,
 } from "../domain/types";
 import { isDmRole } from "../domain/types";
@@ -189,6 +190,15 @@ export function TabletopProvider({
     },
     [],
   );
+  const sendPatrolSegment = useCallback((segment: TokenMotionSegment) => {
+    const channel = movementChannelRef.current;
+    if (!channel) return;
+    void channel.send({
+      type: "broadcast",
+      event: "patrol-segment",
+      payload: segment,
+    });
+  }, []);
   const reload = useCallback(async () => {
     const generation = ++reloadGeneration.current;
     try {
@@ -267,6 +277,7 @@ export function TabletopProvider({
               }
             : live,
         );
+        sendPatrolSegment(segment);
       } catch (error) {
         console.error("Failed to ensure patrol segment", error);
         setError("Unable to continue patrol movement.");
@@ -275,7 +286,7 @@ export function TabletopProvider({
         patrolStarting.current.delete(patrolId);
       }
     },
-    [reload],
+    [reload, sendPatrolSegment],
   );
   useEffect(() => {
     void reload();
@@ -284,6 +295,35 @@ export function TabletopProvider({
     if (!isSupabaseConfigured || campaignId === "demo") return;
     const channel = supabase
       .channel(`campaign-sync:${campaignId}`)
+      .on("broadcast", { event: "patrol-segment" }, (message) => {
+        const p = message.payload as Partial<TokenMotionSegment>;
+        if (
+          !p.tokenId ||
+          !p.sceneId ||
+          !Number.isFinite(p.fromX) ||
+          !Number.isFinite(p.fromY) ||
+          !Number.isFinite(p.toX) ||
+          !Number.isFinite(p.toY) ||
+          !p.startedAt ||
+          !Number.isFinite(p.durationMs) ||
+          !Number.isFinite(p.revision)
+        )
+          return;
+        const segment = p as TokenMotionSegment;
+        setState((current) =>
+          current && current.scene.id === segment.sceneId
+            ? {
+                ...current,
+                motionSegments: [
+                  ...current.motionSegments.filter(
+                    (item) => item.tokenId !== segment.tokenId,
+                  ),
+                  segment,
+                ],
+              }
+            : current,
+        );
+      })
       .on("broadcast", { event: "token-move" }, (message) => {
         const p = message.payload as {
           tokenId?: string;
