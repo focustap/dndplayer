@@ -303,8 +303,17 @@ export function LiveAudio() {
       >
         <Music />
         <span>
-          <small>{playback?.playing ? "NOW PLAYING" : ambience?.playing ? "AMBIENCE" : "AUDIO"}</small>
-          <b>{currentTrack?.name ?? ambienceTrack?.name ?? "Music & ambience"}</b>
+          {dm ? (
+            <>
+              <small>{playback?.playing ? "NOW PLAYING" : ambience?.playing ? "AMBIENCE" : "AUDIO"}</small>
+              <b>{currentTrack?.name ?? ambienceTrack?.name ?? "Music & ambience"}</b>
+            </>
+          ) : (
+            <>
+              <small>VOLUME</small>
+              <b>Table volume</b>
+            </>
+          )}
         </span>
       </button>
 
@@ -315,6 +324,7 @@ export function LiveAudio() {
             <button onClick={() => setOpen(false)} aria-label="Close audio panel"><X /></button>
           </header>
 
+          {dm && <>
           <div className="audio-channel-title">MUSIC</div>
           <div className="audio-now-playing">
             <small>{playback?.playing ? "NOW PLAYING" : playback?.trackId ? "PAUSED" : "STOPPED"}</small>
@@ -445,6 +455,8 @@ export function LiveAudio() {
               </label>
             </div>
           )}
+
+          </>}
 
           <div className="audio-volume-grid">
             <VolumeSlider label="Master" value={volumes.master} onChange={(value) => setVolume("master", value)} />
