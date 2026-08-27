@@ -82,18 +82,23 @@ begin
     raise exception 'Token size must be greater than 0 and no more than 8.';
   end if;
 
-  select t.*, s.campaign_id
-  into v_token, v_campaign_id
-  from public.tokens t
-  join public.scenes s on s.id = t.scene_id
-  where t.id = p_token_id
-  for update of t;
+  select *
+  into v_token
+  from public.tokens
+  where id = p_token_id
+  for update;
 
   if v_token.id is null then
     raise exception 'Token not found';
   end if;
 
-  if not (select private.has_campaign_role(v_campaign_id,array['OWNER','DM'])) then
+  select campaign_id
+  into v_campaign_id
+  from public.scenes
+  where id = v_token.scene_id;
+
+  if v_campaign_id is null
+     or not (select private.has_campaign_role(v_campaign_id,array['OWNER','DM'])) then
     raise exception 'DM permission required';
   end if;
 
