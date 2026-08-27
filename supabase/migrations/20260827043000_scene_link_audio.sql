@@ -15,16 +15,8 @@ alter table public.scene_links
   add column ambience_loop boolean not null default true,
   add constraint scene_links_music_mode_check check (music_mode in ('KEEP','PLAY','STOP')),
   add constraint scene_links_ambience_mode_check check (ambience_mode in ('KEEP','PLAY','STOP')),
-  add constraint scene_links_music_track_check check (
-    (music_mode = 'PLAY' and music_track_id is not null)
-    or (music_mode <> 'PLAY' and music_track_id is null)
-  ),
   add constraint scene_links_music_next_track_check check (
     music_next_track_id is null or music_mode = 'PLAY'
-  ),
-  add constraint scene_links_ambience_track_check check (
-    (ambience_mode = 'PLAY' and ambience_track_id is not null)
-    or (ambience_mode <> 'PLAY' and ambience_track_id is null)
   );
 
 create table public.campaign_ambience_state (
@@ -460,6 +452,10 @@ begin
     raise exception 'Scene link destination is invalid';
   end if;
 
+  if v_link.music_mode = 'PLAY' and v_link.music_track_id is null then
+    raise exception 'Scene link music track is missing';
+  end if;
+
   if v_link.music_track_id is not null and not exists (
     select 1 from public.campaign_audio_tracks t
     where t.id = v_link.music_track_id and t.campaign_id = v_campaign_id
@@ -472,6 +468,10 @@ begin
     where t.id = v_link.music_next_track_id and t.campaign_id = v_campaign_id
   ) then
     raise exception 'Scene link queued music track is invalid';
+  end if;
+
+  if v_link.ambience_mode = 'PLAY' and v_link.ambience_track_id is null then
+    raise exception 'Scene link ambience track is missing';
   end if;
 
   if v_link.ambience_track_id is not null and not exists (
