@@ -138,6 +138,7 @@ interface TabletopActions {
     shopItems?: Omit<NpcShopItem, "id" | "interactionId">[],
   ): Promise<void>;
   interactWithNpc(tokenId: string): Promise<void>;
+  previewNpcInteraction(tokenId: string): void;
   closeNpcInteraction(): void;
   reload(): Promise<void>;
 }
@@ -1404,6 +1405,22 @@ export function TabletopProvider({
                   ),
                   next,
                 ],
+              }
+            : current,
+        );
+      },
+      previewNpcInteraction(tokenId) {
+        const s = stateRef.current;
+        const interaction = s?.tokenInteractions.find(
+          (item) => item.tokenId === tokenId && item.enabled,
+        );
+        if (!s || !interaction) return;
+        setState((current) =>
+          current
+            ? {
+                ...current,
+                selectedTokenId: tokenId,
+                activeInteractionTokenId: tokenId,
               }
             : current,
         );
