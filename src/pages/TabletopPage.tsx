@@ -46,11 +46,10 @@ function TabletopSurface({ playerView }: { playerView: boolean }) {
     actions.closeDiscovery();
     setLocalItem(null);
   };
-  const npc = playerView
-    ? state.tokenInteractions.find(
-        (item) => item.tokenId === state.selectedTokenId && item.enabled,
-      )
-    : undefined;
+  const npc = state.tokenInteractions.find(
+    (item) =>
+      item.tokenId === state.activeInteractionTokenId && item.enabled,
+  );
   const npcToken = npc
     ? state.tokens.find((item) => item.id === npc.tokenId)
     : undefined;
@@ -151,7 +150,7 @@ function TabletopSurface({ playerView }: { playerView: boolean }) {
         <NpcInteractionModal
           interaction={npc}
           token={npcToken}
-          onClose={() => actions.selectToken(null)}
+          onClose={actions.closeNpcInteraction}
         />
       )}
       {viewer && (

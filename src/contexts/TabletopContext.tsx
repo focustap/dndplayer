@@ -137,6 +137,7 @@ interface TabletopActions {
     shopItems?: Omit<NpcShopItem, "id" | "interactionId">[],
   ): Promise<void>;
   interactWithNpc(tokenId: string): Promise<void>;
+  closeNpcInteraction(): void;
   reload(): Promise<void>;
 }
 interface TabletopValue {
@@ -224,6 +225,7 @@ export function TabletopProvider({
             tokens.some((token) => token.id === id),
           ),
           selectedTokenId: current.selectedTokenId,
+          activeInteractionTokenId: current.activeInteractionTokenId,
           patrolEditTokenId: current.patrolEditTokenId,
           previewPlayerView: current.previewPlayerView,
           shiftIntel: current.shiftIntel,
@@ -1336,11 +1338,18 @@ export function TabletopProvider({
         );
       },
       async interactWithNpc(tokenId) {
+        const s = stateRef.current;
+        const interaction = s?.tokenInteractions.find(
+          (item) => item.tokenId === tokenId && item.enabled,
+        );
+        if (!s || !interaction) return;
         const token = await tabletopService.interactWithNpc(tokenId);
         setState((current) =>
           current
             ? {
                 ...current,
+                selectedTokenId: tokenId,
+                activeInteractionTokenId: tokenId,
                 tokens: current.tokens.map((item) =>
                   item.id === tokenId
                     ? { ...item, x: token.x, y: token.y }
@@ -1352,6 +1361,20 @@ export function TabletopProvider({
                 patrols: current.patrols.map((item) =>
                   item.tokenId === tokenId ? { ...item, active: false } : item,
                 ),
+              }
+            : current,
+        );
+      },
+      closeNpcInteraction() {
+        setState((current) =>
+          current
+            ? {
+                ...current,
+                activeInteractionTokenId: null,
+                selectedTokenId:
+                  current.selectedTokenId === current.activeInteractionTokenId
+                    ? null
+                    : current.selectedTokenId,
               }
             : current,
         );
