@@ -45,6 +45,15 @@ export function EncounterPanel() {
         const character = state.characters.find(
           (item) => item.id === token.referenceId,
         );
+        const npcTemplate = token.type === "NPC"
+          ? state.npcTemplates.find((item) => item.id === token.referenceId)
+          : undefined;
+        const portraitUrl =
+          token.imageUrl ??
+          character?.imageUrl ??
+          monster?.template?.imageUrl ??
+          npcTemplate?.imageUrl ??
+          null;
         const detail = monster
           ? `${monster.currentHp} / ${monster.maxHp} HP · AC ${monster.ac}`
           : character
@@ -63,8 +72,12 @@ export function EncounterPanel() {
             className={`creature-row ${state.selectedTokenId === token.id ? "selected" : ""}`}
             onClick={() => actions.selectToken(token.id)}
           >
-            <i className={token.type === "PLAYER" ? "hero" : ""}>
-              {token.displayName[0]}
+            <i className={`creature-portrait ${token.type === "PLAYER" ? "hero" : ""}`}>
+              {portraitUrl ? (
+                <img src={portraitUrl} alt="" />
+              ) : (
+                token.displayName[0]
+              )}
             </i>
             <span>
               <b>{token.displayName}</b>
