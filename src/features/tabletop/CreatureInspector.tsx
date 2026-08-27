@@ -69,7 +69,7 @@ function InspectorContent({ tokenId }: { tokenId: string }) {
       <div>{([["MELEE","Melee"],["RANGED","Ranged"],["SPELL","Spell"]] as [AttackPreset,string][]).map(([preset,label]) => <button className={attackPreset === preset ? "active" : ""} key={preset} onClick={() => setAttackPreset(preset)}>{label}</button>)}</div>
       {token.type==="PLAYER"&&<>
         <small className="attack-subhead">SIGNATURE ANIMATION</small>
-        <div>{([["SNEAK_ATTACK","Sneak"],["SMITE","Smite"],["DRUID","Druid"],["WIZARD","Wizard"]] as [AttackPreset,string][]).map(([preset,label]) => <button className={attackPreset === preset ? "active" : ""} key={preset} onClick={() => setAttackPreset(preset)}>{label}</button>)}</div>
+        <div className="signature-grid">{([["SNEAK_ATTACK","Sneak"],["SMITE","Smite"],["DRUID","Druid"],["WIZARD","Wizard"]] as [AttackPreset,string][]).map(([preset,label]) => <button className={attackPreset === preset ? "active" : ""} key={preset} onClick={() => setAttackPreset(preset)}>{label}</button>)}</div>
       </>}
       {token.type==="PLAYER"&&attackPreset==="WIZARD"&&<div className="wizard-color-row" aria-label="Wizard spell color">
         {["#8d7cff","#4aa8ff","#5ce1e6","#67d17a","#ff5f63","#ff9a45","#f5f2ff"].map(color=><button key={color} type="button" className={attackColor===color?"active":""} style={{"--spell-color":color} as CSSProperties} onClick={()=>setAttackColor(color)} aria-label={`Use ${color} spell color`}/>)}
