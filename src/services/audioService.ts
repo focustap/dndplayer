@@ -9,7 +9,7 @@ export interface CampaignAudioTrack {
   createdAt: string;
 }
 
-export interface CampaignAudioPlayback {
+interface CampaignChannelPlayback {
   campaignId: string;
   trackId: string | null;
   playing: boolean;
@@ -19,6 +19,13 @@ export interface CampaignAudioPlayback {
   revision: number;
   updatedAt: string;
 }
+
+export interface CampaignAudioPlayback extends CampaignChannelPlayback {
+  nextTrackId: string | null;
+  nextLoop: boolean;
+}
+
+export type CampaignAmbiencePlayback = CampaignChannelPlayback;
 
 type Row = Record<string, unknown>;
 
@@ -31,7 +38,7 @@ const asTrack = (row: Row, url = ""): CampaignAudioTrack => ({
   createdAt: String(row.created_at),
 });
 
-const asPlayback = (row: Row): CampaignAudioPlayback => ({
+const asBasePlayback = (row: Row): CampaignChannelPlayback => ({
   campaignId: String(row.campaign_id),
   trackId: row.track_id ? String(row.track_id) : null,
   playing: Boolean(row.playing),
@@ -42,6 +49,14 @@ const asPlayback = (row: Row): CampaignAudioPlayback => ({
   updatedAt: String(row.updated_at ?? ""),
 });
 
+const asPlayback = (row: Row): CampaignAudioPlayback => ({
+  ...asBasePlayback(row),
+  nextTrackId: row.next_track_id ? String(row.next_track_id) : null,
+  nextLoop: Boolean(row.next_loop ?? true),
+});
+
+const asAmbience = (row: Row): CampaignAmbiencePlayback => asBasePlayback(row);
+
 const fail = (error: { message?: string } | null, fallback: string) => {
   if (error) throw new Error(error.message || fallback);
 };
@@ -51,39 +66,49 @@ const signTrack = async (row: Row) => {
   const { data, error } = await supabase.storage
     .from("campaign-audio")
     .createSignedUrl(path, 60 * 60 * 24);
-  fail(error, "Could not open campaign music.");
+  fail(error, "Could not open campaign audio.");
   return asTrack(row, data?.signedUrl ?? "");
 };
 
 export const campaignAudioService = {
   async load(campaignId: string) {
-    const [{ data: rows, error: trackError }, { data: state, error: stateError }] =
-      await Promise.all([
-        supabase
-          .from("campaign_audio_tracks")
-          .select("*")
-          .eq("campaign_id", campaignId)
-          .order("name"),
-        supabase
-          .from("campaign_audio_state")
-          .select("*")
-          .eq("campaign_id", campaignId)
-          .maybeSingle(),
-      ]);
+    const [
+      { data: rows, error: trackError },
+      { data: state, error: stateError },
+      { data: ambience, error: ambienceError },
+    ] = await Promise.all([
+      supabase
+        .from("campaign_audio_tracks")
+        .select("*")
+        .eq("campaign_id", campaignId)
+        .order("name"),
+      supabase
+        .from("campaign_audio_state")
+        .select("*")
+        .eq("campaign_id", campaignId)
+        .maybeSingle(),
+      supabase
+        .from("campaign_ambience_state")
+        .select("*")
+        .eq("campaign_id", campaignId)
+        .maybeSingle(),
+    ]);
 
-    fail(trackError, "Could not load campaign music.");
+    fail(trackError, "Could not load campaign audio.");
     fail(stateError, "Could not load current music state.");
+    fail(ambienceError, "Could not load current ambience state.");
 
     const tracks = await Promise.all(((rows ?? []) as Row[]).map(signTrack));
     return {
       tracks,
       playback: state ? asPlayback(state as Row) : null,
+      ambience: ambience ? asAmbience(ambience as Row) : null,
     };
   },
 
   async uploadTrack(campaignId: string, file: File) {
     if (!file.name.toLowerCase().endsWith(".mp3")) {
-      throw new Error("Wayfinder music uploads must be MP3 files.");
+      throw new Error("Wayfinder audio uploads must be MP3 files.");
     }
     if (file.size > 50 * 1024 * 1024) {
       throw new Error("MP3 files must be 50 MB or smaller.");
@@ -95,7 +120,7 @@ export const campaignAudioService = {
     const { error: uploadError } = await supabase.storage
       .from("campaign-audio")
       .upload(path, file, { contentType: "audio/mpeg" });
-    fail(uploadError, "Music upload failed.");
+    fail(uploadError, "Audio upload failed.");
 
     const name = file.name.replace(/\.[^.]+$/, "").trim() || "Untitled track";
     const { data, error } = await supabase
@@ -106,8 +131,8 @@ export const campaignAudioService = {
 
     if (error || !data) {
       void supabase.storage.from("campaign-audio").remove([path]);
-      fail(error, "Could not save uploaded music.");
-      throw new Error("Could not save uploaded music.");
+      fail(error, "Could not save uploaded audio.");
+      throw new Error("Could not save uploaded audio.");
     }
 
     return signTrack(data as Row);
@@ -118,7 +143,7 @@ export const campaignAudioService = {
       .from("campaign_audio_tracks")
       .delete()
       .eq("id", track.id);
-    fail(error, "Could not delete music track.");
+    fail(error, "Could not delete audio track.");
 
     const { error: assetError } = await supabase.storage
       .from("campaign-audio")
@@ -142,5 +167,49 @@ export const campaignAudioService = {
     const row = Array.isArray(data) ? data[0] : data;
     if (!row) throw new Error("Music control returned no state.");
     return asPlayback(row as Row);
+  },
+
+  async queueMusic(
+    campaignId: string,
+    nextTrackId: string | null,
+    nextLoop = true,
+  ) {
+    const { data, error } = await supabase.rpc("queue_campaign_audio", {
+      p_campaign_id: campaignId,
+      p_next_track_id: nextTrackId,
+      p_next_loop: nextLoop,
+    });
+    fail(error, "Could not update the music queue.");
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row) throw new Error("Music queue returned no state.");
+    return asPlayback(row as Row);
+  },
+
+  async advanceMusic(campaignId: string) {
+    const { data, error } = await supabase.rpc("advance_campaign_audio", {
+      p_campaign_id: campaignId,
+    });
+    fail(error, "Could not advance queued music.");
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row) throw new Error("Music advance returned no state.");
+    return asPlayback(row as Row);
+  },
+
+  async controlAmbience(
+    campaignId: string,
+    action: "PLAY" | "PAUSE" | "STOP" | "LOOP",
+    trackId?: string | null,
+    loop?: boolean,
+  ) {
+    const { data, error } = await supabase.rpc("control_campaign_ambience", {
+      p_campaign_id: campaignId,
+      p_action: action,
+      p_track_id: trackId ?? null,
+      p_loop: loop ?? null,
+    });
+    fail(error, "Could not update campaign ambience.");
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row) throw new Error("Ambience control returned no state.");
+    return asAmbience(row as Row);
   },
 };
