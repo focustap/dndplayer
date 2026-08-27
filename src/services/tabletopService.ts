@@ -72,6 +72,8 @@ const asMonsterInstance = async (r: Record<string, unknown>): Promise<MonsterIns
     visible: Boolean(r.visible),
     notes: String(r.notes ?? ""),
     dead: Boolean(r.dead),
+    hpFormulaOverride: r.hp_formula_override ? String(r.hp_formula_override) : null,
+    damageDiceOverrides: (r.damage_dice_overrides as Record<string, string> | null) ?? {},
     template,
   };
 };
@@ -214,6 +216,7 @@ export const tabletopService = {
   },
   async adjustMonsterHp(instanceId: string, amount: number, mode: "DAMAGE"|"HEAL") { if (isSupabaseConfigured) { const { error } = await supabase.rpc("adjust_monster_hp", { p_instance_id: instanceId, p_amount: amount, p_mode: mode }); if (error) throw error; } },
   async setMonsterHp(instanceId: string, currentHp: number, maxHp: number) { if (isSupabaseConfigured) { const { error } = await supabase.from("monster_instances").update({ current_hp: currentHp, max_hp: maxHp, dead: currentHp === 0 }).eq("id", instanceId); if (error) throw error; } },
+  async setMonsterOverrides(instanceId: string, hpFormulaOverride: string | null, damageDiceOverrides: Record<string, string>) { if (isSupabaseConfigured) { const { error } = await supabase.from("monster_instances").update({ hp_formula_override: hpFormulaOverride, damage_dice_overrides: damageDiceOverrides }).eq("id", instanceId); if (error) throw error; } },
   async adjustCharacterHp(characterId: string, amount: number, mode: "DAMAGE"|"HEAL") { const { data, error } = await supabase.rpc("adjust_character_hp", { p_character_id: characterId, p_amount: amount, p_mode: mode }); if (error) throw error; if (!data) throw new Error("Character HP adjustment returned no character."); return asCharacter(data as Record<string, unknown>); },
   async setCharacterCombat(characterId: string, currentHp: number, maxHp: number, tempHp: number, ac: number) { const { data, error } = await supabase.rpc("set_character_combat", { p_character_id: characterId, p_current_hp: currentHp, p_max_hp: maxHp, p_temp_hp: tempHp, p_ac: ac }); if (error) throw error; if (!data) throw new Error("Character combat update returned no character."); return asCharacter(data as Record<string, unknown>); },
   async setCharacterAbilities(characterId: string, abilities: Character["abilities"]) { const { data, error } = await supabase.rpc("set_character_abilities", { p_character_id: characterId, p_strength: abilities.str, p_dexterity: abilities.dex, p_constitution: abilities.con, p_intelligence: abilities.int, p_wisdom: abilities.wis, p_charisma: abilities.cha }); if (error) throw error; if (!data) throw new Error("Character ability update returned no character."); return asCharacter(data as Record<string, unknown>); },
