@@ -78,6 +78,7 @@ interface TabletopActions {
     mode: "DAMAGE" | "HEAL",
   ): Promise<void>;
   setHp(instanceId: string, currentHp: number, maxHp: number): Promise<void>;
+  setMonsterOverrides(instanceId: string, hpFormulaOverride: string | null, damageDiceOverrides: Record<string, string>): Promise<void>;
   adjustCharacterHp(
     characterId: string,
     amount: number,
@@ -1499,6 +1500,27 @@ export function TabletopProvider({
             : s,
         );
       },
+      async setMonsterOverrides(instanceId, hpFormulaOverride, damageDiceOverrides) {
+        const formula = hpFormulaOverride?.trim() || null;
+        const cleaned = Object.fromEntries(
+          Object.entries(damageDiceOverrides)
+            .map(([key, value]) => [key, value.trim()] as const)
+            .filter(([, value]) => Boolean(value)),
+        );
+        await tabletopService.setMonsterOverrides(instanceId, formula, cleaned);
+        setState((current) =>
+          current
+            ? {
+                ...current,
+                monsterInstances: current.monsterInstances.map((monster) =>
+                  monster.id === instanceId
+                    ? { ...monster, hpFormulaOverride: formula, damageDiceOverrides: cleaned }
+                    : monster,
+                ),
+              }
+            : current,
+        );
+      },
       async adjustCharacterHp(characterId, amount, mode) {
         const s = stateRef.current;
         const character = s?.characters.find(
@@ -1898,6 +1920,8 @@ export function TabletopProvider({
                 visible: monster.visible,
                 notes: monster.notes,
                 dead: monster.dead,
+                hp_formula_override: monster.hpFormulaOverride,
+                damage_dice_overrides: monster.damageDiceOverrides,
               });
             if (error) throw error;
           }
