@@ -52,7 +52,18 @@ function InspectorContent({ tokenId }: { tokenId: string }) {
       {dm && <button className="danger" onClick={() => { if (confirm(`Delete ${token.displayName} from this scene?`)) void actions.deleteToken(token.id); }} aria-label={`Delete ${token.displayName}`} title="Delete token"><Trash2 /></button>}
     </div>
     {canAnimate && <section className="attack-controls"><small>ATTACK ANIMATION</small><div>{(["MELEE", "RANGED", "SPELL"] as AttackPreset[]).map((preset) => <button className={attackPreset === preset ? "active" : ""} key={preset} onClick={() => setAttackPreset(preset)}>{preset}</button>)}</div><button className="attack-start" onClick={() => void actions.startAttack(token.id, attackPreset)}>{state.attackSelection?.attackerTokenId === token.id ? "Choose a target on the map" : "Animate attack"}</button></section>}
-    <div className="stat-trio"><Stat label="ARMOR" value={String(ac)} /><Stat label="SPEED" value={`${speed} ft`} /><Stat label="SIZE" value={monster?.template?.creatureSize ?? `${token.size}×`} /></div>
+    <div className="stat-trio"><Stat label="ARMOR" value={String(ac)} /><Stat label="SPEED" value={`${speed} ft`} /><Stat label="SIZE" value={monster?.template?.creatureSize ? `${monster.template.creatureSize} · ${token.size}×` : `${token.size}×`} /></div>
+    {dm && <label className="form-field token-size-control">
+      <span>TOKEN SIZE ON MAP</span>
+      <select value={String(token.size)} onChange={(event) => void actions.patchToken(token.id, { size: Number(event.target.value) })}>
+        <option value="0.5">Tiny · 0.5×</option>
+        <option value="1">Small / Medium · 1×</option>
+        <option value="2">Large · 2×</option>
+        <option value="3">Huge · 3×</option>
+        <option value="4">Gargantuan · 4×</option>
+      </select>
+      <small>Changes only this token's map footprint.</small>
+    </label>}
     {character && <CharacterAbilityScores character={character} canEdit={canCharacterEdit} onSave={(abilities) => void actions.setCharacterAbilities(character.id, abilities)} />}
     <section className="hp-card">
       <div className="hp-title"><span>HIT POINTS</span><strong>{current} <i>/ {max}</i></strong></div>
