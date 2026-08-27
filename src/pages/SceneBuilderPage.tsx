@@ -2,12 +2,13 @@ import { ArrowLeft, Eye, EyeOff, Grid3X3, Layers3, Link2, Pause, Play, Route, Su
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { TabletopProvider, useTabletop } from "../contexts/TabletopContext";
-import { isDmRole, type PatrolMode, type Scene, type SceneLighting, type SceneLink } from "../domain/types";
+import { isDmRole, type NpcShopItem, type PatrolMode, type Scene, type SceneLighting, type SceneLink } from "../domain/types";
 import { MapCanvas } from "../features/map/MapCanvas";
 import { CreatureInspector } from "../features/tabletop/CreatureInspector";
 import { DMToolbar } from "../features/tabletop/DMToolbar";
 import { EncounterPanel } from "../features/tabletop/EncounterPanel";
 import { LiveAudio } from "../features/tabletop/LiveAudio";
+import { NpcInteractionModal } from "../features/tabletop/NpcInteractionModal";
 import { campaignSetupService } from "../services/campaignSetupService";
 import { campaignAudioService, type CampaignAudioTrack } from "../services/audioService";
 import { supabase } from "../lib/supabase";
@@ -92,6 +93,75 @@ function SceneLinkEditor({ link, scenes, tracks }: { link: SceneLink; scenes: Sc
 function PatrolPanel(){const {state,actions}=useTabletop();if(!state)return null;const token=state.tokens.find(item=>item.id===state.selectedTokenId);if(!token||(token.type!=="MONSTER"&&token.type!=="NPC"))return null;const patrol=state.patrols.find(item=>item.tokenId===token.id);const resume=()=>{if(!patrol)return;const nearest=patrol.waypoints.reduce((best,point,index)=>Math.hypot(point.x-token.x,point.y-token.y)<Math.hypot(patrol.waypoints[best].x-token.x,patrol.waypoints[best].y-token.y)?index:best,0);void actions.patchPatrol(patrol.id,{active:!patrol.active,currentWaypoint:nearest});};return <section className="builder-placement patrol-panel"><p className="eyebrow"><Route/>PATROL PATH {patrol?.active&&<small>· PATROLLING</small>}</p>{!patrol?<><p className="builder-help">Give this {token.type.toLowerCase()} a persistent route for the live scene.</p><button className="secondary-action compact" onClick={()=>void actions.createPatrol(token.id)}><Route/>Create Patrol Path</button></>:<><div className="patrol-actions"><button className="secondary-action compact" onClick={()=>actions.setPatrolEditing(state.patrolEditTokenId===token.id?null:token.id)}>{state.patrolEditTokenId===token.id?"Finish / Save":"Edit Path"}</button><button className="secondary-action compact" disabled={patrol.waypoints.length<2} onClick={resume}>{patrol.active?<Pause/>:<Play/>}{patrol.active?"Pause":"Start"}</button><button className="icon-button" title="Clear path" onClick={()=>void actions.patchPatrol(patrol.id,{waypoints:[],active:false,currentWaypoint:0})}><Trash2/></button></div><label className="builder-select"><span>Mode</span><select value={patrol.mode} onChange={event=>void actions.patchPatrol(patrol.id,{mode:event.target.value as PatrolMode})}><option value="LOOP">Loop</option><option value="PING_PONG">Ping-Pong</option><option value="ONCE">Once</option></select></label><NumberField label="Movement speed" value={patrol.speed} min={10} max={1000} onChange={value=>void actions.patchPatrol(patrol.id,{speed:Number(value)})}/><NumberField label="Pause at waypoints (ms)" value={patrol.waypointPauseMs} min={0} max={60000} step={100} onChange={value=>void actions.patchPatrol(patrol.id,{waypointPauseMs:Number(value)})}/><label className="builder-toggle"><input type="checkbox" checked={patrol.pauseDuringCombat} onChange={event=>void actions.patchPatrol(patrol.id,{pauseDuringCombat:event.target.checked})}/>Pause during combat</label><p className="builder-help">{state.patrolEditTokenId===token.id?"Click map to add waypoints. Drag circles to move; right-click a circle to remove it.":`${patrol.waypoints.length} waypoint${patrol.waypoints.length===1?"":"s"} saved.`}</p></>}</section>;}
 
 
-function NpcInteractionEditor(){const {state,actions}=useTabletop();if(!state)return null;const token=state.tokens.find(item=>item.id===state.selectedTokenId);if(!token||(token.type!=="NPC"&&token.type!=="MONSTER"))return null;const interaction=state.tokenInteractions.find(item=>item.tokenId===token.id);const patch=(value:Parameters<typeof actions.updateTokenInteraction>[1])=>void actions.updateTokenInteraction(token.id,value);return <section className="builder-placement"><p className="eyebrow">NPC INTERACTION</p><label className="builder-toggle"><input type="checkbox" checked={interaction?.enabled??false} onChange={event=>patch({enabled:event.target.checked})}/>Interactable</label><label className="builder-select"><span>Type</span><select value={interaction?.type??"DIALOGUE"} onChange={event=>patch({type:event.target.value as "DIALOGUE"|"SHOP"|"BOTH"})}><option value="DIALOGUE">Dialogue</option><option value="SHOP">Shop</option><option value="BOTH">Both</option></select></label><label className="builder-select"><span>Display name</span><input defaultValue={interaction?.displayName??token.displayName} onBlur={event=>patch({displayName:event.target.value})}/></label><label className="builder-select"><span>Dialogue</span><textarea defaultValue={interaction?.dialogueText??""} onBlur={event=>patch({dialogueText:event.target.value})}/></label><p className="builder-help">Enabled NPCs are interactable on player tables. Shop purchasing remains display-only.</p></section>;}
+function NpcInteractionEditor(){
+  const {state,actions}=useTabletop();
+  const token=state?.tokens.find(item=>item.id===state.selectedTokenId);
+  const interaction=token?state?.tokenInteractions.find(item=>item.tokenId===token.id):undefined;
+  const [shopDraft,setShopDraft]=useState<Omit<NpcShopItem,"id"|"interactionId">[]>([]);
+  const [preview,setPreview]=useState(false);
+
+  useEffect(()=>{
+    setShopDraft((interaction?.shopItems??[]).map((item,index)=>({
+      name:item.name,
+      description:item.description,
+      priceGp:item.priceGp,
+      quantity:item.quantity,
+      sortOrder:index,
+    })));
+    setPreview(false);
+  },[token?.id]);
+
+  if(!state||!token||(token.type!=="NPC"&&token.type!=="MONSTER"))return null;
+
+  const patch=(value:Parameters<typeof actions.updateTokenInteraction>[1])=>void actions.updateTokenInteraction(token.id,value);
+  const saveShop=(items=shopDraft)=>{
+    const normalized=items.map((item,index)=>({...item,sortOrder:index}));
+    setShopDraft(normalized);
+    void actions.updateTokenInteraction(token.id,{},normalized);
+  };
+  const updateShopItem=(index:number,value:Partial<Omit<NpcShopItem,"id"|"interactionId">>)=>{
+    setShopDraft(current=>current.map((item,itemIndex)=>itemIndex===index?{...item,...value}:item));
+  };
+  const addShopItem=()=>{
+    const next=[...shopDraft,{name:"New item",description:"",priceGp:0,quantity:null,sortOrder:shopDraft.length}];
+    saveShop(next);
+  };
+  const removeShopItem=(index:number)=>saveShop(shopDraft.filter((_,itemIndex)=>itemIndex!==index));
+  const type=interaction?.type??"DIALOGUE";
+  const effectiveInteraction=interaction??{
+    tokenId:token.id,
+    campaignId:state.campaign.id,
+    enabled:false,
+    type:"DIALOGUE" as const,
+    displayName:token.displayName,
+    dialogueText:"",
+    shopItems:[],
+  };
+
+  return <section className="builder-placement npc-interaction-editor">
+    <p className="eyebrow">NPC INTERACTION</p>
+    <label className="builder-toggle"><input type="checkbox" checked={interaction?.enabled??false} onChange={event=>patch({enabled:event.target.checked})}/>Interactable</label>
+    <label className="builder-select"><span>Type</span><select value={type} onChange={event=>patch({type:event.target.value as "DIALOGUE"|"SHOP"|"BOTH"})}><option value="DIALOGUE">Dialogue</option><option value="SHOP">Shop</option><option value="BOTH">Dialogue + Shop</option></select></label>
+    <label className="builder-select"><span>Display name</span><input key={`${token.id}-name`} defaultValue={interaction?.displayName||token.displayName} onBlur={event=>patch({displayName:event.target.value})}/></label>
+    {(type==="DIALOGUE"||type==="BOTH")&&<label className="builder-select"><span>Dialogue</span><textarea key={`${token.id}-dialogue`} defaultValue={interaction?.dialogueText??""} placeholder="What does this NPC say?" onBlur={event=>patch({dialogueText:event.target.value})}/></label>}
+
+    {(type==="SHOP"||type==="BOTH")&&<div className="npc-shop-editor">
+      <div className="npc-shop-editor-heading"><span>SHOP ITEMS</span><button type="button" onClick={addShopItem}>+ Add item</button></div>
+      {shopDraft.length?shopDraft.map((item,index)=><article key={index}>
+        <div className="npc-shop-editor-row">
+          <input aria-label={`Shop item ${index+1} name`} value={item.name} placeholder="Item name" onChange={event=>updateShopItem(index,{name:event.target.value})} onBlur={()=>saveShop()}/>
+          <input aria-label={`Shop item ${index+1} price`} type="number" min="0" step="1" value={item.priceGp} onChange={event=>updateShopItem(index,{priceGp:Math.max(0,Number(event.target.value)||0)})} onBlur={()=>saveShop()}/>
+          <button type="button" aria-label={`Remove ${item.name}`} onClick={()=>removeShopItem(index)}><Trash2/></button>
+        </div>
+        <textarea value={item.description} placeholder="Description" onChange={event=>updateShopItem(index,{description:event.target.value})} onBlur={()=>saveShop()}/>
+        <label className="npc-shop-quantity"><span>Quantity</span><input type="number" min="0" placeholder="∞" value={item.quantity??""} onChange={event=>updateShopItem(index,{quantity:event.target.value===""?null:Math.max(0,Number(event.target.value)||0)})} onBlur={()=>saveShop()}/><small>Blank = unlimited</small></label>
+      </article>):<p className="builder-help">No shop items yet. Add one and it will appear to players when they click this NPC.</p>}
+    </div>}
+
+    <button className="builder-preview" disabled={!interaction?.enabled} onClick={()=>setPreview(true)}>Preview player interaction</button>
+    <p className="builder-help">Players click an enabled NPC to open its interaction. Shops currently display items and prices; they do not automatically spend player gold.</p>
+    {preview&&<NpcInteractionModal interaction={{...effectiveInteraction,shopItems:shopDraft.map((item,index)=>({id:`preview-${index}`,interactionId:token.id,...item,sortOrder:index}))}} token={token} preview onClose={()=>setPreview(false)}/>}
+  </section>;
+}
 
 function NumberField({ label, value, onChange, min, max, step = 1 }: { label: string; value: number; onChange(value: string): void; min?: number; max?: number; step?: number }) { return <label className="builder-field"><span>{label}</span><input type="number" value={value} min={min} max={max} step={step} onChange={event => onChange(event.target.value)}/></label>; }
