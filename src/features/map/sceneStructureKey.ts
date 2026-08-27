@@ -42,6 +42,13 @@ mapX: scene.mapX, mapY: scene.mapY,
     zoneMarkers: [...snapshot.zoneMarkers].sort((a,b)=>a.id.localeCompare(b.id)).map((marker)=>({
       id:marker.id,label:marker.label,x:marker.x,y:marker.y,radiusFt:marker.radiusFt,color:marker.color,opacity:marker.opacity,visible:marker.visible,
     })),
+    discoverables: [...snapshot.discoverables].sort((a,b)=>a.id.localeCompare(b.id)).map((item)=>({
+      id:item.id,
+      sceneId:item.sceneId,
+      name:item.name,
+      hidden:item.hidden,
+      discoveredAt:item.discoveredAt,
+    })),
 
     // These modes affect which board objects exist. Selection/placement and monster
     // Intel updates incrementally.
