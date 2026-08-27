@@ -14,16 +14,67 @@ const asPatrol = (r: Record<string, unknown>): TokenPatrol => ({ id:String(r.id)
 const asMotionSegment=(r:Record<string,unknown>):TokenMotionSegment=>({tokenId:String(r.token_id),sceneId:String(r.scene_id),fromX:Number(r.from_x),fromY:Number(r.from_y),toX:Number(r.to_x),toY:Number(r.to_y),startedAt:String(r.started_at),durationMs:Number(r.duration_ms),revision:Number(r.revision),active:Boolean(r.active)});
 const asShopItem=(r:Record<string,unknown>):NpcShopItem=>({id:String(r.id),interactionId:String(r.interaction_id),name:String(r.name),description:String(r.description??""),priceGp:Number(r.price_gp),quantity:r.quantity===null||r.quantity===undefined?null:Number(r.quantity),sortOrder:Number(r.sort_order)});
 const asInteraction=(r:Record<string,unknown>):TokenInteraction=>{const legacy=String(r.dialogue_text??"");const rawPages=Array.isArray(r.dialogue_pages)?r.dialogue_pages:[];const dialoguePages=rawPages.map((page)=>String(page)).filter((page)=>page.trim().length>0);return {tokenId:String(r.token_id),campaignId:String(r.campaign_id),enabled:Boolean(r.enabled),type:r.type as TokenInteraction["type"],displayName:String(r.display_name??""),dialogueText:legacy,dialoguePages:dialoguePages.length?dialoguePages:(legacy.trim()?[legacy]:[]),shopItems:((r.npc_shop_items as Record<string,unknown>[]|null)??[]).map(asShopItem).sort((a,b)=>a.sortOrder-b.sortOrder)};};
-const signTokenImage = async (token: Token) => { if (!token.imagePath) return token; const { data }=await supabase.storage.from("campaign-assets").createSignedUrl(token.imagePath,60*60*12); return data?.signedUrl?{...token,imageUrl:data.signedUrl}:token; };
+const SIGNED_ASSET_CACHE_MS = 11 * 60 * 60 * 1000;
+const signedAssetCache = new Map<string, { url: string; expiresAt: number }>();
+const signedAssetInflight = new Map<string, Promise<string | null>>();
+const mapStoragePathCache = new Map<string, string | null>();
+const prefetchedImages = new Map<string, HTMLImageElement>();
+
+const getSignedAssetUrl = async (path: string): Promise<string | null> => {
+  const cached = signedAssetCache.get(path);
+  if (cached && cached.expiresAt > Date.now()) return cached.url;
+  const inflight = signedAssetInflight.get(path);
+  if (inflight) return inflight;
+  const request = (async () => {
+    const { data, error } = await supabase.storage.from("campaign-assets").createSignedUrl(path, 60 * 60 * 12);
+    if (error || !data?.signedUrl) return null;
+    signedAssetCache.set(path, { url: data.signedUrl, expiresAt: Date.now() + SIGNED_ASSET_CACHE_MS });
+    return data.signedUrl;
+  })().finally(() => signedAssetInflight.delete(path));
+  signedAssetInflight.set(path, request);
+  return request;
+};
+
+const getMapStoragePath = async (mapId: string): Promise<string | null> => {
+  if (mapStoragePathCache.has(mapId)) return mapStoragePathCache.get(mapId) ?? null;
+  const { data, error } = await supabase.from("maps").select("storage_path").eq("id", mapId).single();
+  if (error) throw error;
+  const path = data?.storage_path ? String(data.storage_path) : null;
+  mapStoragePathCache.set(mapId, path);
+  return path;
+};
+
+const hydrateSceneMap = async (scene: Scene): Promise<Scene> => {
+  if (!scene.mapId) return scene;
+  const path = await getMapStoragePath(scene.mapId);
+  if (!path) return scene;
+  const url = await getSignedAssetUrl(path);
+  return url ? { ...scene, mapUrl: url } : scene;
+};
+
+const prefetchImage = (url: string | null) => {
+  if (!url || typeof Image === "undefined" || prefetchedImages.has(url)) return;
+  const image = new Image();
+  image.decoding = "async";
+  prefetchedImages.set(url, image);
+  image.onload = image.onerror = () => prefetchedImages.delete(url);
+  image.src = url;
+};
+
+const signTokenImage = async (token: Token) => {
+  if (!token.imagePath) return token;
+  const url = await getSignedAssetUrl(token.imagePath);
+  return url ? { ...token, imageUrl: url } : token;
+};
 const signCharacterImage = async (character: Character) => {
   if (!character.imagePath) return character;
-  const { data } = await supabase.storage.from("campaign-assets").createSignedUrl(character.imagePath, 60 * 60 * 12);
-  return data?.signedUrl ? { ...character, imageUrl: data.signedUrl } : character;
+  const url = await getSignedAssetUrl(character.imagePath);
+  return url ? { ...character, imageUrl: url } : character;
 };
 const signMonsterTemplateImage = async (template: MonsterTemplate) => {
   if (!template.imagePath) return template;
-  const { data } = await supabase.storage.from("campaign-assets").createSignedUrl(template.imagePath, 60 * 60 * 12);
-  return data?.signedUrl ? { ...template, imageUrl: data.signedUrl } : template;
+  const url = await getSignedAssetUrl(template.imagePath);
+  return url ? { ...template, imageUrl: url } : template;
 };
 const throwQueryError = (error: { message?: string } | null, fallback: string) => { if (error) throw new Error(error.message || fallback); };
 let serverClockOffsetMs = 0;
@@ -101,8 +152,7 @@ export const tabletopService = {
         : supabase.from("scenes").select("*").eq("campaign_id", campaignId).eq("active", true).maybeSingle(),
     ]);
     if (memberError) throw memberError; if (!membership) throw new Error("You are not a member of this campaign."); if (campaignError) throw campaignError; if (sceneError) throw sceneError; if (!sceneRow) throw new Error(playerView?"The DM has hidden the current scene.":"No live scene is selected.");
-    const role = membership.role as CampaignRole; const scene = asScene(sceneRow as Record<string, unknown>);
-    if (scene.mapId) { const { data: map } = await supabase.from("maps").select("storage_path").eq("id",scene.mapId).single(); if (map?.storage_path) { const { data: signed } = await supabase.storage.from("campaign-assets").createSignedUrl(map.storage_path,60*60*12); if (signed) scene.mapUrl=signed.signedUrl; } }
+    const role = membership.role as CampaignRole; const scene = await hydrateSceneMap(asScene(sceneRow as Record<string, unknown>));
     const [{ data: tokenRows, error: tokenError }, { data: overlayRows, error: overlayError }, { data: characterRows, error: characterError }, { data: combatRow, error: combatError }, { data: templateRows, error: templateError }, { data: diceRows, error: diceError }, { data: linkRows, error: linkError }, { data: sceneRows, error: scenesError }, {data: discoverableRows,error:discoverableError}, {data:treasureRows,error:treasureError}, {data:patrolRows,error:patrolError}, {data:motionRows,error:motionError}, {data:interactionRows,error:interactionError}, {data:dreadRow,error:dreadError}, {data:npcTemplateRows,error:npcTemplateError}, {data:zoneMarkerRows,error:zoneMarkerError}] = await Promise.all([
       supabase.from("tokens").select("id,scene_id,reference_id,owner_user_id,type,display_name,image_url,image_path,x,y,size,rotation,visible,locked,conditions").eq("scene_id", scene.id),
       supabase.from("scene_overlays").select("*").eq("scene_id", scene.id).order("z_index"),
@@ -130,9 +180,9 @@ export const tabletopService = {
     let combat: CombatSession = { id: "none", campaignId, sceneId: scene.id, active: false, round: 1, currentIndex: 0, entries: [] };
     if (combatRow) { const { data: entries, error } = await supabase.from("initiative_entries").select("*").eq("combat_session_id", combatRow.id).order("sort_order"); throwQueryError(error, "Unable to load initiative."); combat = { id: combatRow.id, campaignId, sceneId: scene.id, active: true, round: combatRow.round, currentIndex: combatRow.current_index, entries: (entries ?? []).map((e) => ({ id: e.id, combatSessionId: e.combat_session_id, tokenId: e.token_id, monsterInstanceId: e.monster_instance_id, characterId: e.character_id, name: e.name, imageUrl: e.image_url, initiative: e.initiative, sortOrder: e.sort_order, groupKey: e.group_key, groupCount: e.group_count })) }; }
     const characters: Character[] = await Promise.all(((characterRows ?? []) as Record<string, unknown>[]).map(asCharacter).map(signCharacterImage));
-    const npcTemplates: NpcTemplate[] = await Promise.all(((npcTemplateRows ?? []) as Record<string,unknown>[]).map(asNpcTemplate).map(async(item)=>{if(!item.imagePath)return item;const {data}=await supabase.storage.from("campaign-assets").createSignedUrl(item.imagePath,60*60*12);return data?.signedUrl?{...item,imageUrl:data.signedUrl}:item;}));
+    const npcTemplates: NpcTemplate[] = await Promise.all(((npcTemplateRows ?? []) as Record<string,unknown>[]).map(asNpcTemplate).map(async(item)=>{if(!item.imagePath)return item;const url=await getSignedAssetUrl(item.imagePath);return url?{...item,imageUrl:url}:item;}));
     const monsterTemplates: MonsterTemplate[] = await Promise.all(((templateRows ?? []) as Record<string, unknown>[]).map(asMonsterTemplate).map(signMonsterTemplateImage));
-    const overlays = await Promise.all(((overlayRows ?? []) as Record<string, unknown>[]).map(async (r) => { if (r.storage_path) { const { data: signed }=await supabase.storage.from("campaign-assets").createSignedUrl(String(r.storage_path),60*60*12); if(signed)r.image_url=signed.signedUrl; } return asOverlay(r); }));
+    const overlays = await Promise.all(((overlayRows ?? []) as Record<string, unknown>[]).map(async (r) => { if (r.storage_path) { const url=await getSignedAssetUrl(String(r.storage_path)); if(url)r.image_url=url; } return asOverlay(r); }));
     const tokens = await Promise.all(((tokenRows ?? []) as Record<string, unknown>[]).map(asToken).map(async (token) => {
       if (token.imagePath) return signTokenImage(token);
       if (token.imageUrl) return token;
@@ -141,9 +191,12 @@ export const tabletopService = {
       const npcImage = token.type === "NPC" ? npcTemplates.find((npc) => npc.id === token.referenceId)?.imageUrl : null;
       return { ...token, imageUrl: characterImage ?? monsterImage ?? npcImage ?? null };
     }));
-    const signDiscoverable=async(item:SceneDiscoverable)=>{if(!item.storagePath)return item;const {data}=await supabase.storage.from("campaign-assets").createSignedUrl(item.storagePath,60*60*12);return data?.signedUrl?{...item,imageUrl:data.signedUrl}:item;};
+    const signDiscoverable=async(item:SceneDiscoverable)=>{if(!item.storagePath)return item;const url=await getSignedAssetUrl(item.storagePath);return url?{...item,imageUrl:url}:item;};
     const treasure=await Promise.all(((treasureRows??[]) as Record<string,unknown>[]).map(asDiscoverable).map(signDiscoverable));
-    return { campaign: { id: campaign.id, name: campaign.name, joinCode: campaign.join_code, ownerId: campaign.owner_id, role, memberCount: 0, updatedAt: campaign.updated_at }, role, scene, scenes: ((sceneRows ?? []) as Record<string, unknown>[]).map(asScene), sceneLinks: ((linkRows ?? []) as Record<string, unknown>[]).map(asSceneLink), discoverables:((discoverableRows??[]) as Record<string,unknown>[]).map(asDiscoverable),treasure,discoveryReveal:null, overlays, zoneMarkers:((zoneMarkerRows??[]) as Record<string,unknown>[]).map(asZoneMarker), tokens, transientTokenIds:[],motionSegments:((motionRows??[]) as Record<string,unknown>[]).map(asMotionSegment),tokenInteractions:((interactionRows??[]) as Record<string,unknown>[]).map(asInteraction), patrols:((patrolRows??[]) as Record<string,unknown>[]).map(asPatrol),patrolEditTokenId:null, characters, npcTemplates, monsterTemplates, monsterInstances, combat, diceRolls: ((diceRows ?? []) as Record<string, unknown>[]).map(asDiceRoll), selectedTokenId: null, activeInteractionTokenId: null, placement: null, attackSelection: null, attackEvent: null, cinematicEvent: null, dreadActive: dreadRow?.name === "Dread", previewPlayerView: false, shiftIntel: false, connected: true };
+    const loadedState: TabletopState = { campaign: { id: campaign.id, name: campaign.name, joinCode: campaign.join_code, ownerId: campaign.owner_id, role, memberCount: 0, updatedAt: campaign.updated_at }, role, scene, scenes: ((sceneRows ?? []) as Record<string, unknown>[]).map(asScene), sceneLinks: ((linkRows ?? []) as Record<string, unknown>[]).map(asSceneLink), discoverables:((discoverableRows??[]) as Record<string,unknown>[]).map(asDiscoverable),treasure,discoveryReveal:null, overlays, zoneMarkers:((zoneMarkerRows??[]) as Record<string,unknown>[]).map(asZoneMarker), tokens, transientTokenIds:[],motionSegments:((motionRows??[]) as Record<string,unknown>[]).map(asMotionSegment),tokenInteractions:((interactionRows??[]) as Record<string,unknown>[]).map(asInteraction), patrols:((patrolRows??[]) as Record<string,unknown>[]).map(asPatrol),patrolEditTokenId:null, characters, npcTemplates, monsterTemplates, monsterInstances, combat, diceRolls: ((diceRows ?? []) as Record<string, unknown>[]).map(asDiceRoll), selectedTokenId: null, activeInteractionTokenId: null, placement: null, attackSelection: null, attackEvent: null, cinematicEvent: null, dreadActive: dreadRow?.name === "Dread", previewPlayerView: false, shiftIntel: false, connected: true };
+    prefetchImage(scene.mapUrl);
+    if (role === "OWNER" || role === "DM") void tabletopService.prefetchSceneMaps(loadedState.sceneLinks.map((link) => link.destinationSceneId));
+    return loadedState;
   },
   async moveToken(tokenId: string, x: number, y: number) { if (isSupabaseConfigured) { const { error } = await supabase.rpc("move_token", { p_token_id: tokenId, p_x: x, p_y: y }); if (error) throw error; } },
   async checkpointPatrol(patrol:TokenPatrol,x:number,y:number,currentWaypoint:number,direction:1|-1,active:boolean){if(!isSupabaseConfigured)return {...patrol,currentWaypoint,direction,active};const {data,error}=await supabase.rpc("checkpoint_token_patrol",{p_patrol_id:patrol.id,p_x:x,p_y:y,p_current_waypoint:currentWaypoint,p_direction:direction,p_active:active});if(error)throw error;const row=Array.isArray(data)?data[0]:data;if(!row)throw new Error("Patrol checkpoint returned no patrol.");return asPatrol(row as Record<string,unknown>);},
@@ -158,6 +211,126 @@ export const tabletopService = {
   async deletePatrol(id:string){if(!isSupabaseConfigured)return;const {error}=await supabase.from("token_patrols").delete().eq("id",id);if(error)throw error;},
   async updateSceneGrid(sceneId: string, gridType: Scene["gridType"], gridSize: number) { if (isSupabaseConfigured) { const { error } = await supabase.from("scenes").update({ grid_type: gridType, grid_size: gridSize }).eq("id", sceneId); if (error) throw error; } },
   async updateScene(sceneId: string, patch: Partial<Scene>) { if (!isSupabaseConfigured) return; const payload: Record<string, unknown> = {}; if (patch.gridType !== undefined) payload.grid_type=patch.gridType; if (patch.gridSize !== undefined) payload.grid_size=patch.gridSize; if (patch.feetPerCell !== undefined) payload.feet_per_cell=patch.feetPerCell; if (patch.gridColor !== undefined) payload.grid_color=patch.gridColor; if (patch.gridOpacity !== undefined) payload.grid_opacity=patch.gridOpacity; if (patch.gridLineWidth !== undefined) payload.grid_line_width=patch.gridLineWidth; if (patch.mapX !== undefined) payload.map_x=patch.mapX; if (patch.mapY !== undefined) payload.map_y=patch.mapY; if (patch.mapScale !== undefined) payload.map_scale=patch.mapScale; if (patch.gridOffsetX !== undefined) payload.grid_offset_x=patch.gridOffsetX; if (patch.gridOffsetY !== undefined) payload.grid_offset_y=patch.gridOffsetY; if (patch.lighting !== undefined) payload.lighting=patch.lighting; if (patch.playerCameraX !== undefined) payload.player_camera_x=patch.playerCameraX; if (patch.playerCameraY !== undefined) payload.player_camera_y=patch.playerCameraY; if (patch.playerCameraZoom !== undefined) payload.player_camera_zoom=patch.playerCameraZoom; const { error } = await supabase.from("scenes").update(payload).eq("id", sceneId); if (error) throw error; },
+  async prefetchSceneMaps(sceneIds: string[]) {
+    if (!isSupabaseConfigured || !sceneIds.length) return;
+    const uniqueIds = [...new Set(sceneIds)];
+    const { data: sceneRows, error: sceneError } = await supabase.from("scenes").select("id,map_id").in("id", uniqueIds);
+    if (sceneError) return;
+    const mapIds = [...new Set((sceneRows ?? []).map((row) => row.map_id ? String(row.map_id) : null).filter((id): id is string => Boolean(id)))];
+    await Promise.all(mapIds.map(async (mapId) => {
+      try {
+        const path = await getMapStoragePath(mapId);
+        if (!path) return;
+        const url = await getSignedAssetUrl(path);
+        prefetchImage(url);
+      } catch {
+        // Prefetch is best-effort; the normal scene load still handles failures.
+      }
+    }));
+  },
+  async loadSceneState(campaignId: string, sceneId: string | null, base: TabletopState, playerView = false): Promise<TabletopState> {
+    if (!isSupabaseConfigured || campaignId === "demo") return base;
+    let sceneQuery = supabase.from("scenes").select("*").eq("campaign_id", campaignId);
+    sceneQuery = sceneId ? sceneQuery.eq("id", sceneId) : sceneQuery.eq("active", true);
+    const { data: sceneRow, error: sceneError } = await sceneQuery.maybeSingle();
+    if (sceneError) throw sceneError;
+    if (!sceneRow) throw new Error(playerView ? "The DM has hidden the current scene." : "Scene not found.");
+    const scene = await hydrateSceneMap(asScene(sceneRow as Record<string, unknown>));
+    if (playerView && (!scene.active || !scene.revealed)) throw new Error("The DM has hidden the current scene.");
+    const dm = base.role === "OWNER" || base.role === "DM";
+
+    const [
+      { data: tokenRows, error: tokenError },
+      { data: overlayRows, error: overlayError },
+      { data: combatRow, error: combatError },
+      { data: linkRows, error: linkError },
+      { data: discoverableRows, error: discoverableError },
+      { data: patrolRows, error: patrolError },
+      { data: motionRows, error: motionError },
+      { data: zoneMarkerRows, error: zoneMarkerError },
+    ] = await Promise.all([
+      supabase.from("tokens").select("id,scene_id,reference_id,owner_user_id,type,display_name,image_url,image_path,x,y,size,rotation,visible,locked,conditions").eq("scene_id", scene.id),
+      supabase.from("scene_overlays").select("*").eq("scene_id", scene.id).order("z_index"),
+      supabase.from("combat_sessions").select("*").eq("scene_id", scene.id).eq("active", true).maybeSingle(),
+      dm ? supabase.from("scene_links").select("id,scene_id,destination_scene_id,label,x,y,music_mode,music_track_id,music_loop,music_next_track_id,music_next_loop,ambience_mode,ambience_track_id,ambience_loop").eq("scene_id", scene.id).order("created_at") : Promise.resolve({ data: [], error: null }),
+      supabase.from("scene_discoverables").select("id,campaign_id,scene_id,name,x,y,hidden,discovered_at,discovered_by,created_at").eq("scene_id", scene.id),
+      dm ? supabase.from("token_patrols").select("*").eq("scene_id", scene.id) : Promise.resolve({ data: [], error: null }),
+      supabase.from("token_motion_segments").select("*").eq("scene_id", scene.id).eq("active", true),
+      supabase.from("scene_zone_markers").select("*").eq("scene_id", scene.id).order("created_at"),
+    ]);
+    throwQueryError(tokenError, "Unable to load scene tokens.");
+    throwQueryError(overlayError, "Unable to load scene overlays.");
+    throwQueryError(combatError, "Unable to load scene combat.");
+    throwQueryError(linkError, "Unable to load scene links.");
+    throwQueryError(discoverableError, "Unable to load scene discoverables.");
+    throwQueryError(patrolError, "Unable to load scene patrols.");
+    throwQueryError(motionError, "Unable to load scene motion.");
+    throwQueryError(zoneMarkerError, "Unable to load floor markers.");
+
+    let monsterInstances = base.monsterInstances;
+    if (dm) {
+      const wantedIds = [...new Set(((tokenRows ?? []) as Record<string, unknown>[]).filter((row) => row.type === "MONSTER" && row.reference_id).map((row) => String(row.reference_id)))];
+      const known = new Set(monsterInstances.map((monster) => monster.id));
+      const missing = wantedIds.filter((id) => !known.has(id));
+      if (missing.length) {
+        const { data, error } = await supabase.from("monster_instances").select("*,monster_templates(*)").in("id", missing);
+        throwQueryError(error, "Unable to load scene monsters.");
+        const hydrated = await Promise.all(((data ?? []) as Record<string, unknown>[]).map(asMonsterInstance));
+        monsterInstances = [...monsterInstances, ...hydrated];
+      }
+    }
+
+    const overlays = await Promise.all(((overlayRows ?? []) as Record<string, unknown>[]).map(async (row) => {
+      if (row.storage_path) {
+        const url = await getSignedAssetUrl(String(row.storage_path));
+        if (url) row.image_url = url;
+      }
+      return asOverlay(row);
+    }));
+    const tokens = await Promise.all(((tokenRows ?? []) as Record<string, unknown>[]).map(asToken).map(async (token) => {
+      if (token.imagePath) return signTokenImage(token);
+      if (token.imageUrl) return token;
+      const characterImage = token.type === "PLAYER" ? base.characters.find((character) => character.id === token.referenceId)?.imageUrl : null;
+      const monsterImage = token.type === "MONSTER" ? monsterInstances.find((monster) => monster.id === token.referenceId)?.template?.imageUrl : null;
+      const npcImage = token.type === "NPC" ? base.npcTemplates.find((npc) => npc.id === token.referenceId)?.imageUrl : null;
+      return { ...token, imageUrl: characterImage ?? monsterImage ?? npcImage ?? null };
+    }));
+
+    let combat: CombatSession = { id: "none", campaignId, sceneId: scene.id, active: false, round: 1, currentIndex: 0, entries: [] };
+    if (combatRow) {
+      const { data: entries, error } = await supabase.from("initiative_entries").select("*").eq("combat_session_id", combatRow.id).order("sort_order");
+      throwQueryError(error, "Unable to load scene initiative.");
+      combat = { id: combatRow.id, campaignId, sceneId: scene.id, active: true, round: combatRow.round, currentIndex: combatRow.current_index, entries: (entries ?? []).map((entry) => ({ id: entry.id, combatSessionId: entry.combat_session_id, tokenId: entry.token_id, monsterInstanceId: entry.monster_instance_id, characterId: entry.character_id, name: entry.name, imageUrl: entry.image_url, initiative: entry.initiative, sortOrder: entry.sort_order, groupKey: entry.group_key, groupCount: entry.group_count })) };
+    }
+
+    const sceneLinks = ((linkRows ?? []) as Record<string, unknown>[]).map(asSceneLink);
+    const scenes = base.scenes.map((candidate) => candidate.id === scene.id ? { ...candidate, ...scene } : { ...candidate, active: false });
+    const next: TabletopState = {
+      ...base,
+      scene,
+      scenes,
+      sceneLinks,
+      discoverables: ((discoverableRows ?? []) as Record<string, unknown>[]).map(asDiscoverable),
+      overlays,
+      zoneMarkers: ((zoneMarkerRows ?? []) as Record<string, unknown>[]).map(asZoneMarker),
+      tokens,
+      transientTokenIds: [],
+      motionSegments: ((motionRows ?? []) as Record<string, unknown>[]).map(asMotionSegment),
+      patrols: ((patrolRows ?? []) as Record<string, unknown>[]).map(asPatrol),
+      patrolEditTokenId: null,
+      monsterInstances,
+      combat,
+      selectedTokenId: null,
+      activeInteractionTokenId: null,
+      placement: null,
+      attackSelection: null,
+      attackEvent: null,
+      discoveryReveal: null,
+    };
+    prefetchImage(scene.mapUrl);
+    if (dm) void tabletopService.prefetchSceneMaps(sceneLinks.map((link) => link.destinationSceneId));
+    return next;
+  },
   async activateAndRevealScene(sceneId: string) { if (!isSupabaseConfigured) return; const {error}=await supabase.rpc("activate_and_reveal_scene",{p_scene_id:sceneId}); if(error)throw error; },
   async activateSceneLink(linkId: string) { if (!isSupabaseConfigured) return; const {error}=await supabase.rpc("activate_scene_link",{p_link_id:linkId}); if(error)throw error; },
   async addSceneLink(sceneId: string, destinationSceneId: string, label: string, x: number, y: number): Promise<SceneLink> { const local:SceneLink={id:crypto.randomUUID(),sceneId,destinationSceneId,label,x,y,musicMode:"KEEP",musicTrackId:null,musicLoop:true,musicNextTrackId:null,musicNextLoop:true,ambienceMode:"KEEP",ambienceTrackId:null,ambienceLoop:true}; if(!isSupabaseConfigured)return local; const {data,error}=await supabase.from("scene_links").insert({id:local.id,scene_id:sceneId,destination_scene_id:destinationSceneId,label,x,y}).select("id,scene_id,destination_scene_id,label,x,y,music_mode,music_track_id,music_loop,music_next_track_id,music_next_loop,ambience_mode,ambience_track_id,ambience_loop").single(); if(error)throw error; return asSceneLink(data as Record<string,unknown>); },
