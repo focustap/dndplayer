@@ -39,3 +39,51 @@ body{overflow-x:auto;overflow-y:auto}
 .build-badge{position:fixed;left:8px;bottom:8px;z-index:99999;padding:4px 7px;border:1px solid #4e5a54;background:#0b0f0de6;color:#8f9b94;font:700 9px/1.2 monospace;letter-spacing:.04em;pointer-events:none;user-select:none;box-shadow:0 2px 10px #0008}
 
 .token-size-control{margin:0 0 13px}.token-size-control select{width:100%;padding:9px;border:1px solid #39433e;background:#0f1311;color:#eee}.token-size-control small{color:#7f8983;font-size:8px}
+
+/* NPC interactions use a wide split layout: portrait on the left, dialogue/shop on the right. */
+.npc-interaction-backdrop{position:fixed;inset:0;z-index:1600;display:grid;place-items:center;padding:5vh 5vw;background:rgba(3,5,4,.9);backdrop-filter:blur(6px)}
+.npc-interaction-modal{position:relative!important;display:grid!important;grid-template-columns:minmax(250px,38%) minmax(320px,62%);width:min(980px,92vw)!important;min-height:min(560px,80vh);max-height:88vh!important;padding:0!important;overflow:hidden;background:#101512!important;border:1px solid #a98452!important;box-shadow:0 26px 90px #000!important;color:#e9dfcb;align-items:stretch!important}
+.npc-interaction-close{position:absolute;z-index:5;right:10px;top:10px;width:34px;height:34px;display:grid;place-items:center;border:1px solid #5f5140;background:#171914e8;color:#ead8b7}
+.npc-interaction-close svg{width:16px}
+.npc-interaction-portrait{position:relative;min-height:100%;overflow:hidden;background:radial-gradient(circle at 50% 25%,#3c3328,#151713 68%)}
+.npc-interaction-portrait>img{width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;object-fit:cover!important;object-position:center 22%;border:0!important;border-radius:0!important}
+.npc-interaction-fallback{width:100%;height:100%;min-height:560px;display:grid;place-items:center;background:radial-gradient(circle,#6e5335,#1b1d18 68%);font:700 128px Georgia;color:#e7d4ad}
+.npc-interaction-nameplate{position:absolute;left:0;right:0;bottom:0;padding:28px 22px 20px;background:linear-gradient(transparent,#090c0aeF 44%);text-shadow:0 2px 8px #000}
+.npc-interaction-nameplate small,.npc-dialogue-panel>small,.npc-shop-panel header small{color:#c9a66f;font:700 8px Arial;letter-spacing:.16em}
+.npc-interaction-nameplate h2{margin:6px 0 0!important;font:600 28px Georgia!important;color:#f1e5ce}
+.npc-interaction-content{min-width:0;overflow:auto;padding:54px 34px 30px;background:linear-gradient(140deg,#111714,#0c110f)}
+.npc-dialogue-panel{padding-bottom:24px;border-bottom:1px solid #3d372d}
+.npc-dialogue-panel p{margin:12px 0 0;white-space:pre-wrap;color:#ddd0b8;font:16px/1.7 Georgia}
+.npc-shop-panel{margin-top:24px}
+.npc-shop-panel>header{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;padding-bottom:10px;border-bottom:1px solid #3e392f}
+.npc-shop-panel h3{margin:4px 0 0;font:600 20px Georgia;color:#efe0c1}
+.npc-shop-panel>header>span{color:#918b7d;font:700 9px Arial;text-transform:uppercase}
+.npc-shop{display:grid!important;width:100%;margin-top:0!important;border-top:0!important}
+.npc-shop article{display:block!important;padding:14px 2px!important;border-bottom:1px solid #2d312c!important}
+.npc-shop-item-title{display:flex;align-items:center;justify-content:space-between;gap:18px}
+.npc-shop-item-title b{font:600 15px Georgia;color:#eee2c8}
+.npc-shop-item-title span{white-space:nowrap;color:#d9b46f!important;font:700 11px Arial!important}
+.npc-shop article p{margin:5px 0 0!important;color:#aeb2a8!important;font:12px/1.5 Arial!important}
+.npc-shop article>small{display:block;margin-top:6px;color:#7e8b82;font:700 8px Arial;text-transform:uppercase;letter-spacing:.06em}
+.npc-shop-empty{padding:20px 0;color:#8a918b;font-size:12px}
+
+.npc-shop-editor{display:grid;gap:7px;margin:10px 0;padding-top:9px;border-top:1px solid #303934}
+.npc-shop-editor-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;color:#a28a65;font-size:8px;font-weight:800;letter-spacing:.1em}
+.npc-shop-editor-heading button{padding:5px 7px;border:1px solid #4b5a52;background:#17201c;color:#d6dcd8;font-size:8px}
+.npc-shop-editor article{display:grid;gap:5px;padding:7px;border:1px solid #333d38;background:#101512}
+.npc-shop-editor-row{display:grid;grid-template-columns:minmax(0,1fr) 70px 28px;gap:4px}
+.npc-shop-editor input,.npc-shop-editor textarea{width:100%;min-width:0;border:1px solid #39433e;background:#0d1210;color:#e8e5dd;padding:6px;font-size:8px}
+.npc-shop-editor textarea{min-height:48px;resize:vertical}
+.npc-shop-editor-row button{width:28px;border:1px solid #5a403a;background:#241917;color:#dc9c88}
+.npc-shop-editor-row button svg{width:12px}
+.npc-shop-quantity{display:grid;grid-template-columns:auto 65px 1fr;align-items:center;gap:6px;color:#929b95;font-size:8px}
+.npc-shop-quantity small{color:#69736d;font-size:7px}
+.npc-interaction-editor .builder-preview:disabled{opacity:.45;cursor:not-allowed}
+
+@media (max-width:760px){
+  .npc-interaction-modal{grid-template-columns:1fr!important;grid-template-rows:minmax(210px,34vh) minmax(0,1fr);min-height:0}
+  .npc-interaction-portrait{min-height:0}
+  .npc-interaction-fallback{min-height:210px}
+  .npc-interaction-content{padding:28px 20px 24px}
+  .npc-interaction-nameplate{padding:38px 18px 14px}
+}
