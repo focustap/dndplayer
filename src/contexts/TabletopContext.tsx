@@ -34,6 +34,7 @@ import { isSupabaseConfigured, supabase } from "../lib/supabase";
 import {
   asCinematicEvent,
   asDiceRoll,
+  PATROL_PRESENTATION_DELAY_MS,
   serverNowMs,
   tabletopService,
 } from "../services/tabletopService";
@@ -521,7 +522,7 @@ export function TabletopProvider({
 
         const endsAt =
           Date.parse(segment.startedAt) + Math.max(1, segment.durationMs);
-        if (serverNow < endsAt) continue;
+        if (serverNow < endsAt + PATROL_PRESENTATION_DELAY_MS) continue;
 
         patrolCheckpointing.current.add(patrol.id);
         void tabletopService
