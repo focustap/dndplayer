@@ -480,16 +480,17 @@ export function TabletopProvider({
           filter: `campaign_id=eq.${campaignId}`,
         },
         (payload) => {
-          setState((current) =>
-            current
-              ? {
-                  ...current,
-                  cinematicEvent: asCinematicEvent(
-                    payload.new as Record<string, unknown>,
-                  ),
-                }
-              : current,
+          const event = asCinematicEvent(
+            payload.new as Record<string, unknown>,
           );
+          setState((current) => {
+            if (!current) return current;
+            if (event.name === "Dread")
+              return { ...current, dreadActive: true };
+            if (event.name === "Dread off")
+              return { ...current, dreadActive: false };
+            return { ...current, cinematicEvent: event };
+          });
         },
       )
       .on(
@@ -726,9 +727,14 @@ export function TabletopProvider({
           duration,
           steps,
         );
-        setState((current) =>
-          current ? { ...current, cinematicEvent: event } : current,
-        );
+        setState((current) => {
+          if (!current) return current;
+          if (event.name === "Dread")
+            return { ...current, dreadActive: true };
+          if (event.name === "Dread off")
+            return { ...current, dreadActive: false };
+          return { ...current, cinematicEvent: event };
+        });
       },
       finishCinematic() {
         setState((current) =>
