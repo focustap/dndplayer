@@ -1,5 +1,5 @@
 import { Application, Assets, Container, FederatedPointerEvent, Graphics, Sprite, Text, TextStyle, Texture } from "pixi.js";
-import type { AttackAnimationEvent, AttackSelection, CinematicEvent, Placement, Scene, SceneDiscoverable, SceneLink, SceneOverlay, Token, TokenMotionSegment, TokenPatrol } from "../../domain/types";
+import type { AttackAnimationEvent, AttackSelection, CinematicEvent, Placement, Scene, SceneDiscoverable, SceneLink, SceneOverlay, SceneZoneMarker, Token, TokenMotionSegment, TokenPatrol } from "../../domain/types";
 import { createSceneStructureKey, stableAssetIdentity, type SceneStructureSnapshot } from "./sceneStructureKey";
 import { PATROL_PRESENTATION_DELAY_MS, serverNowMs } from "../../services/tabletopService";
 
@@ -7,7 +7,7 @@ export interface EngineSnapshot extends SceneStructureSnapshot { builder: boolea
 interface EngineCallbacks { onSelect(id: string | null): void; onMoveCommit(id: string, x: number, y: number): void; onTokenMove(id:string,x:number,y:number,final:boolean):void; onInteract(id:string):void; onOverlayCommit(id: string, x: number, y: number): void; onSceneLinkCommit(id: string, x: number, y: number): void; onDiscoverableCommit(id:string,x:number,y:number):void; onPatrolWaypointAdd(x:number,y:number):void; onPatrolWaypointMove(id:string,x:number,y:number):void; onPatrolWaypointDelete(id:string):void; onSceneLinkActivate(id: string): void; onDiscover(id:string):void; onPlace(x: number, y: number): void; onAttackTarget(id: string | null): void; onContext(id: string, x: number, y: number): void; }
 interface TokenMovementAnimation { display: Container; startX: number; startY: number; targetX: number; targetY: number; startedAt: number; }
 interface PatrolVisualCatchup { revision:number; offsetX:number; offsetY:number; startedAt:number; durationMs:number; }
-interface AttackEffect { id: string; preset: AttackAnimationEvent["preset"]; attacker: Container; target: Container; attackerX: number; attackerY: number; targetX: number; targetY: number; projectile: Graphics | null; burst: Graphics | null; startedAt: number; }
+interface AttackEffect { id: string; preset: AttackAnimationEvent["preset"]; color:number; attacker: Container; target: Container; attackerX: number; attackerY: number; targetX: number; targetY: number; attackerAlpha:number; targetAlpha:number; projectile: Graphics | null; accent:Graphics|null; burst: Graphics | null; startedAt: number; }
 interface CinematicImpact { ring: Graphics; animate: () => void; }
 interface CinematicTokenGlow { tokenId: string; graphic: Graphics; }
 interface CinematicState { event: CinematicEvent; startedAt: number; rootX: number; rootY: number; scale: number; tokenBases: Map<string, { x: number; y: number; alpha: number; scale: number }>; impacts: Set<number>; effects: Set<CinematicImpact>; glows: Map<string, CinematicTokenGlow>; }
@@ -88,6 +88,7 @@ export class SceneEngine {
     if (version !== this.renderVersion || this.destroyed) return;
     if (snapshot.scene.gridType === "SQUARE") this.renderGrid(snapshot.scene);
     for (const overlay of snapshot.overlays.filter((o) => o.visible || snapshot.canDm)) await this.renderOverlay(overlay, snapshot.canDm);
+    for (const marker of snapshot.zoneMarkers.filter((item)=>item.visible||snapshot.canDm)) this.renderZoneMarker(marker,snapshot);
     if (snapshot.canDm) for (const link of snapshot.sceneLinks) this.renderSceneLink(link);
     for(const item of snapshot.discoverables.filter(item=>snapshot.canDm||(!item.hidden&&!item.discoveredAt)))this.renderDiscoverable(item,snapshot.canDm);
     await this.syncTokens(snapshot);
@@ -289,39 +290,99 @@ export class SceneEngine {
     this.playAttack(event);
   }
   private playAttack(event: AttackAnimationEvent) {
-    const attacker = this.tokenDisplays.get(event.attackerTokenId); const target = this.tokenDisplays.get(event.targetTokenId);
-    if (!attacker || !target || attacker === target) return;
-    const projectile = event.preset === "MELEE" ? null : new Graphics().circle(0, 0, event.preset === "SPELL" ? 11 : 5).fill(event.preset === "SPELL" ? 0x9c7cff : 0xe8d5a8);
-    if (projectile) { projectile.zIndex = 700; projectile.eventMode = "none"; projectile.position.copyFrom(attacker.position); this.root.addChild(projectile); }
-    this.attackEffects.set(event.id, { id: event.id, preset: event.preset, attacker, target, attackerX: attacker.position.x, attackerY: attacker.position.y, targetX: target.position.x, targetY: target.position.y, projectile, burst: null, startedAt: performance.now() });
+    const attacker=this.tokenDisplays.get(event.attackerTokenId);
+    const target=this.tokenDisplays.get(event.targetTokenId);
+    if(!attacker||!target||attacker===target)return;
+    const defaults:Record<AttackAnimationEvent["preset"],number>={
+      MELEE:0xf1b071,RANGED:0xe8d5a8,SPELL:0x9c7cff,SNEAK_ATTACK:0x8f6bff,SMITE:0xffd66b,DRUID:0x64d884,WIZARD:0x8d7cff,
+    };
+    const parsed=event.color?Number.parseInt(event.color.replace("#",""),16):NaN;
+    const color=Number.isFinite(parsed)?parsed:defaults[event.preset];
+    let projectile:Graphics|null=null;
+    let accent:Graphics|null=null;
+    if(["RANGED","SPELL","DRUID","WIZARD"].includes(event.preset)){
+      const radius=event.preset==="RANGED"?5:event.preset==="WIZARD"?12:10;
+      projectile=new Graphics().circle(0,0,radius).fill({color,alpha:.95}).circle(0,0,radius+6).stroke({color,width:2,alpha:.35});
+      projectile.zIndex=700;projectile.eventMode="none";projectile.position.copyFrom(attacker.position);this.root.addChild(projectile);
+    }
+    if(event.preset==="SNEAK_ATTACK"){
+      accent=new Graphics()
+        .moveTo(-25,-18).lineTo(24,18).stroke({color,width:5,alpha:.95})
+        .moveTo(-18,24).lineTo(21,-22).stroke({color:0xf5f0ff,width:2,alpha:.8});
+    }else if(event.preset==="SMITE"){
+      accent=new Graphics()
+        .rect(-16,-150,32,150).fill({color,alpha:.34})
+        .circle(0,0,26).stroke({color,width:5,alpha:.95})
+        .circle(0,0,42).stroke({color:0xffffff,width:2,alpha:.7});
+    }else if(event.preset==="DRUID"){
+      accent=new Graphics()
+        .circle(0,0,30).stroke({color,width:4,alpha:.9})
+        .ellipse(0,-33,8,18).fill({color,alpha:.75})
+        .ellipse(28,-12,8,18).fill({color,alpha:.7})
+        .ellipse(-28,12,8,18).fill({color,alpha:.7})
+        .ellipse(0,33,8,18).fill({color,alpha:.65});
+    }else if(event.preset==="WIZARD"){
+      accent=new Graphics()
+        .circle(0,0,27).stroke({color,width:4,alpha:.95})
+        .circle(0,0,40).stroke({color,width:2,alpha:.55})
+        .moveTo(-46,0).lineTo(46,0).stroke({color,width:2,alpha:.45})
+        .moveTo(0,-46).lineTo(0,46).stroke({color,width:2,alpha:.45});
+    }
+    if(accent){accent.zIndex=701;accent.eventMode="none";accent.position.copyFrom(target.position);accent.alpha=0;this.root.addChild(accent);}
+    this.attackEffects.set(event.id,{id:event.id,preset:event.preset,color,attacker,target,attackerX:attacker.position.x,attackerY:attacker.position.y,targetX:target.position.x,targetY:target.position.y,attackerAlpha:attacker.alpha,targetAlpha:target.alpha,projectile,accent,burst:null,startedAt:performance.now()});
   }
   private updateAttackEffects(now: number) {
-    for (const [id, effect] of this.attackEffects) {
-      const duration = effect.preset === "MELEE" ? 420 : 360;
-      const progress = Math.min(1, (now - effect.startedAt) / duration);
-      if (effect.preset === "MELEE") {
-        const lunge = progress < .35 ? progress / .35 : progress < .55 ? 1 : Math.max(0, (1 - progress) / .45);
-        effect.attacker.position.set(effect.attackerX + (effect.targetX - effect.attackerX) * .24 * lunge, effect.attackerY + (effect.targetY - effect.attackerY) * .24 * lunge);
-        if (progress > .32 && progress < .72) effect.target.position.set(effect.targetX + Math.sin(progress * 90) * 7, effect.targetY + Math.cos(progress * 72) * 4);
-      } else if (effect.projectile) {
-        const eased = 1 - Math.pow(1 - progress, 2);
-        effect.projectile.position.set(effect.attackerX + (effect.targetX - effect.attackerX) * eased, effect.attackerY + (effect.targetY - effect.attackerY) * eased);
-        effect.projectile.alpha = progress < .88 ? 1 : (1 - progress) / .12;
+    for(const [id,effect] of this.attackEffects){
+      const durations:Record<AttackAnimationEvent["preset"],number>={MELEE:420,RANGED:360,SPELL:420,SNEAK_ATTACK:520,SMITE:720,DRUID:620,WIZARD:600};
+      const duration=durations[effect.preset];
+      const progress=Math.min(1,(now-effect.startedAt)/duration);
+      if(effect.preset==="MELEE"||effect.preset==="SNEAK_ATTACK"){
+        const reach=effect.preset==="SNEAK_ATTACK"?.38:.24;
+        const lunge=progress<.32?progress/.32:progress<.58?1:Math.max(0,(1-progress)/.42);
+        effect.attacker.position.set(effect.attackerX+(effect.targetX-effect.attackerX)*reach*lunge,effect.attackerY+(effect.targetY-effect.attackerY)*reach*lunge);
+        if(effect.preset==="SNEAK_ATTACK"){
+          effect.attacker.alpha=progress<.12?effect.attackerAlpha*(1-progress/.12):progress<.28?effect.attackerAlpha*.18:effect.attackerAlpha;
+        }
+      }else if(effect.projectile){
+        const flightStart=effect.preset==="SMITE"?0:.08;
+        const p=Math.max(0,Math.min(1,(progress-flightStart)/(effect.preset==="WIZARD"?.58:.62)));
+        const eased=1-Math.pow(1-p,2.2);
+        effect.projectile.position.set(effect.attackerX+(effect.targetX-effect.attackerX)*eased,effect.attackerY+(effect.targetY-effect.attackerY)*eased);
+        effect.projectile.scale.set(1+Math.sin(p*Math.PI)*.55);
+        effect.projectile.alpha=p<.9?1:(1-p)/.1;
       }
-      if (progress > .74 && !effect.burst) {
-        const color = effect.preset === "SPELL" ? 0xb699ff : effect.preset === "RANGED" ? 0xf0dfb0 : 0xf1b071;
-        effect.burst = new Graphics().circle(0, 0, 16).stroke({ color, width: 4, alpha: .9 }); effect.burst.zIndex = 701; effect.burst.eventMode = "none"; effect.burst.position.set(effect.targetX, effect.targetY); this.root.addChild(effect.burst);
+      const impactAt=effect.preset==="SMITE"?.38:effect.preset==="SNEAK_ATTACK"?.32:.64;
+      if(effect.accent&&progress>=impactAt){
+        const ap=Math.min(1,(progress-impactAt)/Math.max(.01,1-impactAt));
+        effect.accent.alpha=Math.max(0,1-ap);
+        effect.accent.scale.set(.75+ap*1.45);
+        if(effect.preset==="WIZARD")effect.accent.rotation=ap*Math.PI;
+        if(effect.preset==="DRUID")effect.accent.rotation=-ap*.8;
       }
-      if (effect.burst) { const burstProgress = Math.min(1, (progress - .74) / .26); effect.burst.scale.set(1 + burstProgress * 2.2); effect.burst.alpha = 1 - burstProgress; }
-      if (progress < 1) continue;
-      effect.attacker.position.set(effect.attackerX, effect.attackerY); effect.target.position.set(effect.targetX, effect.targetY);
-      effect.projectile?.destroy(); effect.burst?.destroy(); this.attackEffects.delete(id);
+      if(progress>=impactAt&&progress<impactAt+.22){
+        const shake=(1-(progress-impactAt)/.22);
+        effect.target.position.set(effect.targetX+Math.sin(progress*110)*7*shake,effect.targetY+Math.cos(progress*93)*5*shake);
+      }
+      if(progress>impactAt&&!effect.burst){
+        effect.burst=new Graphics().circle(0,0,15).stroke({color:effect.color,width:5,alpha:.95}).circle(0,0,7).fill({color:effect.color,alpha:.35});
+        effect.burst.zIndex=702;effect.burst.eventMode="none";effect.burst.position.set(effect.targetX,effect.targetY);this.root.addChild(effect.burst);
+      }
+      if(effect.burst){
+        const bp=Math.min(1,(progress-impactAt)/Math.max(.01,1-impactAt));
+        effect.burst.scale.set(1+bp*3);
+        effect.burst.alpha=1-bp;
+      }
+      if(progress<1)continue;
+      effect.attacker.position.set(effect.attackerX,effect.attackerY);effect.attacker.alpha=effect.attackerAlpha;
+      effect.target.position.set(effect.targetX,effect.targetY);effect.target.alpha=effect.targetAlpha;
+      effect.projectile?.destroy();effect.accent?.destroy();effect.burst?.destroy();this.attackEffects.delete(id);
     }
   }
   private clearAttackEffects() {
-    for (const effect of this.attackEffects.values()) { effect.projectile?.destroy(); effect.burst?.destroy(); }
+    for(const effect of this.attackEffects.values()){effect.attacker.alpha=effect.attackerAlpha;effect.target.alpha=effect.targetAlpha;effect.projectile?.destroy();effect.accent?.destroy();effect.burst?.destroy();}
     this.attackEffects.clear();
   }
+
   private applyIntel(snapshot: EngineSnapshot | null) {
     if (!snapshot) return;
     const key = JSON.stringify({
@@ -455,6 +516,22 @@ export class SceneEngine {
       this.applyTokenVisibility(token,snapshot);
     }
   }
+  private renderZoneMarker(marker:SceneZoneMarker,snapshot:EngineSnapshot){
+    const radius=Math.max(8,(marker.radiusFt/snapshot.scene.feetPerCell)*snapshot.scene.gridSize);
+    const color=Number.parseInt(marker.color.replace("#",""),16)||0x6b5cff;
+    const layer=new Container();
+    layer.position.set(marker.x,marker.y);
+    layer.zIndex=120;
+    layer.eventMode="none";
+    const disk=new Graphics().circle(0,0,radius).fill({color,alpha:marker.opacity}).stroke({color,width:3,alpha:.9});
+    const inner=new Graphics().circle(0,0,Math.max(3,radius-7)).stroke({color,width:1,alpha:.5});
+    const label=new Text({text:marker.label,style:{fill:0xffffff,fontSize:Math.max(11,Math.min(18,radius*.2)),fontWeight:"700",fontFamily:"Arial",align:"center",stroke:{color:0x080b0a,width:4}}});
+    label.anchor.set(.5);
+    label.position.set(0,0);
+    if(snapshot.canDm&&!marker.visible)layer.alpha=.35;
+    layer.addChild(disk,inner,label);
+    this.root.addChild(layer);
+  }
   private async renderToken(token: Token, snapshot: EngineSnapshot) {
     const cell=snapshot.scene.gridSize; const radius=cell*.32*token.size; const c=new Container(); c.position.set(token.x,token.y); c.rotation=token.rotation; c.zIndex=300; c.eventMode="static"; c.cursor=snapshot.canMove(token)?"grab":"pointer";
     const ringColor=token.type==="MONSTER"?0x718460:token.type==="NPC"?0x9b794e:0x9a86b1;
@@ -470,7 +547,7 @@ export class SceneEngine {
     if(snapshot.canDm){const hidden=new Text({text:"HIDDEN",style:{fill:0xe5b978,fontSize:11,fontWeight:"700",letterSpacing:1}});hidden.anchor.set(.5);hidden.position.set(0,-radius-17);hidden.visible=!token.visible;c.addChild(hidden);this.tokenHiddenLabels.set(token.id,hidden);}
     c.on("rightclick",(e: FederatedPointerEvent)=>{e.stopPropagation();this.callbacks.onContext(token.id,e.clientX,e.clientY);}); c.on("pointerdown",(e: FederatedPointerEvent)=>{if(e.button!==0)return;if(this.snapshot?.attackSelection){e.stopPropagation();this.callbacks.onAttackTarget(token.id);return;}if(this.snapshot?.canInteract(token)){e.stopPropagation();this.callbacks.onInteract(token.id);return;}if(!this.snapshot?.canMove(token)){e.stopPropagation();this.callbacks.onSelect(token.id);return;}e.stopPropagation();const p=this.root.toLocal(e.global);const currentX=c.position.x,currentY=c.position.y;this.pointerCandidate={kind:"TOKEN",id:token.id,startX:e.global.x,startY:e.global.y,originX:currentX,originY:currentY,dx:p.x-currentX,dy:p.y-currentY,display:c};}); this.tokenDisplays.set(token.id,c); this.root.addChild(c); this.applyTokenVisibility(token,snapshot);
   }
-  private renderPlacementGhost(placement: Placement, cell: number) { const ghost=new Container();const radius=placement.kind==="SCENE_LINK"?cell*.22:cell*.32;const color=placement.kind==="MONSTER"?0x718460:placement.kind==="SCENE_LINK"?0xe3b978:0x9a86b1;const circle=new Graphics().circle(0,0,radius).fill({color,alpha:.45}).stroke({color:0xe3b978,width:2});const label=new Text({text:placement.kind==="SCENE_LINK"?"↗":placement.name.slice(0,1).toUpperCase(),style:{fill:0xf4ead9,fontSize:radius*.8,fontWeight:"700",fontFamily:"Georgia"}});label.anchor.set(.5);ghost.addChild(circle,label);ghost.zIndex=310;ghost.eventMode="none";ghost.visible=false;this.placementGhost=ghost;this.root.addChild(ghost); }
+  private renderPlacementGhost(placement: Placement, cell: number) { const ghost=new Container();const zone=placement.kind==="ZONE_MARKER";const radius=zone?Math.max(8,(placement.radiusFt/(this.snapshot?.scene.feetPerCell??5))*cell):placement.kind==="SCENE_LINK"?cell*.22:cell*.32;const color=zone?(Number.parseInt(placement.color.replace("#",""),16)||0x6b5cff):placement.kind==="MONSTER"?0x718460:placement.kind==="SCENE_LINK"?0xe3b978:0x9a86b1;const circle=new Graphics().circle(0,0,radius).fill({color,alpha:zone?.22:.45}).stroke({color:zone?color:0xe3b978,width:2});const text=zone?placement.name:placement.kind==="SCENE_LINK"?"↗":placement.name.slice(0,1).toUpperCase();const label=new Text({text,style:{fill:0xf4ead9,fontSize:zone?Math.max(11,Math.min(18,radius*.2)):radius*.8,fontWeight:"700",fontFamily:zone?"Arial":"Georgia",align:"center",stroke:zone?{color:0x080b0a,width:4}:undefined}});label.anchor.set(.5);ghost.addChild(circle,label);ghost.zIndex=310;ghost.eventMode="none";ghost.visible=false;this.placementGhost=ghost;this.root.addChild(ghost); }
   private handleStageDown(e:FederatedPointerEvent){if(this.spaceDown||e.button===1){this.panning=true;this.panStart={x:e.global.x,y:e.global.y,rootX:this.root.x,rootY:this.root.y};return;}if(this.snapshot?.attackSelection){this.callbacks.onAttackTarget(null);return;}if(this.snapshot?.patrolEdit&&this.snapshot.builder&&this.snapshot.canDm){const p=this.root.toLocal(e.global);this.callbacks.onPatrolWaypointAdd(p.x,p.y);return;}if(this.snapshot?.placement&&this.snapshot.canDm){const p=this.root.toLocal(e.global);this.callbacks.onPlace(p.x,p.y);return;}this.callbacks.onSelect(null);}
   private handleMove(e:FederatedPointerEvent){if(this.panning){this.root.position.set(this.panStart.rootX+e.global.x-this.panStart.x,this.panStart.rootY+e.global.y-this.panStart.y);return;}if(this.snapshot?.placement&&this.placementGhost){const p=this.root.toLocal(e.global);this.placementGhost.position.set(p.x,p.y);this.placementGhost.visible=true;return;}if(!this.dragging&&this.pointerCandidate){const candidate=this.pointerCandidate;if(Math.hypot(e.global.x-candidate.startX,e.global.y-candidate.startY)<5)return;this.dragging={kind:candidate.kind,id:candidate.id,dx:candidate.dx,dy:candidate.dy,x:candidate.originX,y:candidate.originY,originX:candidate.originX,originY:candidate.originY,display:candidate.display};if(candidate.kind==="TOKEN"){this.tokenMovementAnimations.delete(candidate.id);this.patrolVisualCatchups.delete(candidate.id);}this.pointerCandidate=null;}if(!this.dragging)return;const p=this.root.toLocal(e.global);const x=p.x-this.dragging.dx,y=p.y-this.dragging.dy;this.dragging.x=x;this.dragging.y=y;this.dragging.display.position.set(x,y);if(this.dragging.kind==="TOKEN"&&performance.now()-this.lastMoveBroadcast>=40){this.lastMoveBroadcast=performance.now();this.callbacks.onTokenMove(this.dragging.id,x,y,false);}}
   private handleUp(){const candidate=this.pointerCandidate;this.pointerCandidate=null;if(candidate){if(candidate.kind==="TOKEN")this.callbacks.onSelect(candidate.id);this.panning=false;return;}if(!this.dragging){this.panning=false;return;}const drag=this.dragging;const changed=Math.hypot(drag.x-drag.originX,drag.y-drag.originY)>.01;if(drag.kind==="TOKEN"){if(changed){this.instrumentation.moveCommits++;this.debug("token move commit");this.callbacks.onMoveCommit(drag.id,drag.x,drag.y);}else this.callbacks.onSelect(drag.id);}else if(drag.kind==="OVERLAY"&&changed){this.instrumentation.overlayCommits++;this.debug("overlay move commit");this.callbacks.onOverlayCommit(drag.id,drag.x,drag.y);}else if(drag.kind==="SCENE_LINK"&&changed){this.instrumentation.sceneLinkCommits++;this.debug("scene link move commit");this.callbacks.onSceneLinkCommit(drag.id,drag.x,drag.y);}else if(drag.kind==="DISCOVERABLE"&&changed){this.callbacks.onDiscoverableCommit(drag.id,drag.x,drag.y);}else if(drag.kind==="PATROL_WAYPOINT"&&changed){this.callbacks.onPatrolWaypointMove(drag.id,drag.x,drag.y);}this.dragging=null;this.panning=false;}
