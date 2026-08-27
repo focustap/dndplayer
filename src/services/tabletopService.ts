@@ -17,6 +17,7 @@ let serverClockOffsetMs = 0;
 let serverClockCalibratedAt = 0;
 let serverClockCalibration: Promise<void> | null = null;
 export const serverNowMs = () => Date.now() + serverClockOffsetMs;
+export const PATROL_PRESENTATION_DELAY_MS = 180;
 export const getServerClockOffsetMs = () => serverClockOffsetMs;
 const ensureServerClock = async () => {
   if (!isSupabaseConfigured || Date.now() - serverClockCalibratedAt < 60_000) return;
