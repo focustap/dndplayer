@@ -122,9 +122,9 @@ function TabletopSurface({ playerView }: { playerView: boolean }) {
           Space + drag to pan <span>•</span> Scroll to zoom{" "}
           {playerView ? "" : "• Shift for creature intel"}
         </div>
+        {!playerView && <DMToolbar />}
       </section>
       <CreatureInspector />
-      {!playerView && <DMToolbar />}
       {canDm && <CinematicControls />}
       <DiceRoller />
       {playerView && (
