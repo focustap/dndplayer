@@ -231,17 +231,22 @@ export function TabletopProvider({
       setError(null);
     } catch (e) {
       if (generation !== reloadGeneration.current) return;
-      setError(e instanceof Error ? e.message : "Unable to load the tabletop");
+      if (stateRef.current) {
+        console.error("Failed to refresh tabletop; keeping current state", e);
+      } else {
+        setError(e instanceof Error ? e.message : "Unable to load the tabletop");
+      }
     } finally {
       if (generation === reloadGeneration.current) setLoading(false);
     }
   }, [campaignId, playerView, sceneId]);
   const scheduleReload = useCallback(() => {
-    if (syncReloadTimer.current !== null) return;
+    if (syncReloadTimer.current !== null)
+      window.clearTimeout(syncReloadTimer.current);
     syncReloadTimer.current = window.setTimeout(() => {
       syncReloadTimer.current = null;
       void reload();
-    }, 100);
+    }, 220);
   }, [reload]);
 
   const beginPatrolSegment = useCallback(
@@ -286,13 +291,14 @@ export function TabletopProvider({
         sendPatrolSegment(segment);
       } catch (error) {
         console.error("Failed to ensure patrol segment", error);
-        setError("Unable to continue patrol movement.");
-        void reload();
+        // Patrol traffic is non-critical. Back off and retry instead of
+        // replacing the entire tabletop with a fatal error screen.
+        patrolResumeAt.current.set(patrolId, Date.now() + 1500);
       } finally {
         patrolStarting.current.delete(patrolId);
       }
     },
-    [reload, sendPatrolSegment],
+    [sendPatrolSegment],
   );
   useEffect(() => {
     void reload();
@@ -541,6 +547,7 @@ export function TabletopProvider({
           !patrol.active ||
           patrol.waypoints.length < 2 ||
           (patrol.pauseDuringCombat && current.combat.active) ||
+          (patrolResumeAt.current.get(patrol.id) ?? 0) > localNow ||
           patrolCheckpointing.current.has(patrol.id) ||
           patrolStarting.current.has(patrol.id)
         )
@@ -602,7 +609,7 @@ export function TabletopProvider({
           })
           .catch((error) => {
             console.error("Failed to complete patrol segment", error);
-            void reload();
+            patrolResumeAt.current.set(patrol.id, Date.now() + 1500);
           })
           .finally(() => {
             patrolCheckpointing.current.delete(patrol.id);
@@ -616,7 +623,7 @@ export function TabletopProvider({
       disposed = true;
       window.clearInterval(interval);
     };
-  }, [patrolRole, reload, beginPatrolSegment]);
+  }, [patrolRole, beginPatrolSegment]);
 
   useEffect(() => () => {
     if (syncReloadTimer.current !== null) {

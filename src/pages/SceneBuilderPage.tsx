@@ -126,10 +126,9 @@ function NpcInteractionEditor(){
     setShopDraft(current=>current.map((item,itemIndex)=>itemIndex===index?{...item,...value}:item));
   };
   const addShopItem=()=>{
-    const next=[...shopDraft,{name:"New item",description:"",priceGp:0,quantity:null,sortOrder:shopDraft.length}];
-    saveShop(next);
+    setShopDraft(current=>[...current,{name:"New item",description:"",priceGp:0,quantity:null,sortOrder:current.length}]);
   };
-  const removeShopItem=(index:number)=>saveShop(shopDraft.filter((_,itemIndex)=>itemIndex!==index));
+  const removeShopItem=(index:number)=>setShopDraft(current=>current.filter((_,itemIndex)=>itemIndex!==index));
   const type=interaction?.type??"DIALOGUE";
   const effectiveInteraction=interaction??{
     tokenId:token.id,
@@ -152,17 +151,18 @@ function NpcInteractionEditor(){
       <div className="npc-shop-editor-heading"><span>SHOP ITEMS</span><button type="button" onClick={addShopItem}>+ Add item</button></div>
       {shopDraft.length?shopDraft.map((item,index)=><article key={index}>
         <div className="npc-shop-editor-row">
-          <input aria-label={`Shop item ${index+1} name`} value={item.name} placeholder="Item name" onChange={event=>updateShopItem(index,{name:event.target.value})} onBlur={()=>saveShop()}/>
-          <input aria-label={`Shop item ${index+1} price`} type="number" min="0" step="1" value={item.priceGp} onChange={event=>updateShopItem(index,{priceGp:Math.max(0,Number(event.target.value)||0)})} onBlur={()=>saveShop()}/>
+          <input aria-label={`Shop item ${index+1} name`} value={item.name} placeholder="Item name" onChange={event=>updateShopItem(index,{name:event.target.value})}/>
+          <input aria-label={`Shop item ${index+1} price`} type="number" min="0" step="1" value={item.priceGp} onChange={event=>updateShopItem(index,{priceGp:Math.max(0,Number(event.target.value)||0)})}/>
           <button type="button" aria-label={`Remove ${item.name}`} onClick={()=>removeShopItem(index)}><Trash2/></button>
         </div>
-        <textarea value={item.description} placeholder="Description" onChange={event=>updateShopItem(index,{description:event.target.value})} onBlur={()=>saveShop()}/>
-        <label className="npc-shop-quantity"><span>Quantity</span><input type="number" min="0" placeholder="∞" value={item.quantity??""} onChange={event=>updateShopItem(index,{quantity:event.target.value===""?null:Math.max(0,Number(event.target.value)||0)})} onBlur={()=>saveShop()}/><small>Blank = unlimited</small></label>
+        <textarea value={item.description} placeholder="Description" onChange={event=>updateShopItem(index,{description:event.target.value})}/>
+        <label className="npc-shop-quantity"><span>Quantity</span><input type="number" min="0" placeholder="∞" value={item.quantity??""} onChange={event=>updateShopItem(index,{quantity:event.target.value===""?null:Math.max(0,Number(event.target.value)||0)})}/><small>Blank = unlimited</small></label>
       </article>):<p className="builder-help">No shop items yet. Add one and it will appear to players when they click this NPC.</p>}
     </div>}
 
+    {(type==="SHOP"||type==="BOTH")&&<button className="builder-preview" onClick={()=>saveShop()}>Save shop items</button>}
     <button className="builder-preview" disabled={!interaction?.enabled} onClick={()=>setPreview(true)}>Preview player interaction</button>
-    <p className="builder-help">Players click an enabled NPC to open its interaction. Shops currently display items and prices; they do not automatically spend player gold.</p>
+    <p className="builder-help">{(type==="SHOP"||type==="BOTH")?"Edit shop items freely, then press Save shop items once. ":""}Players click an enabled NPC to open its interaction. Shops currently display items and prices; they do not automatically spend player gold.</p>
     {preview&&<NpcInteractionModal interaction={{...effectiveInteraction,shopItems:shopDraft.map((item,index)=>({id:`preview-${index}`,interactionId:token.id,...item,sortOrder:index}))}} token={token} preview onClose={()=>setPreview(false)}/>}
   </section>;
 }
