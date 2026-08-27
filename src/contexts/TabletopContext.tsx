@@ -33,6 +33,7 @@ import { isSupabaseConfigured, supabase } from "../lib/supabase";
 import {
   asCinematicEvent,
   asDiceRoll,
+  serverNowMs,
   tabletopService,
 } from "../services/tabletopService";
 
@@ -452,7 +453,8 @@ export function TabletopProvider({
       if (disposed) return;
       const current = stateRef.current;
       if (!current) return;
-      const now = Date.now();
+      const localNow = Date.now();
+      const serverNow = serverNowMs();
 
       for (const patrol of current.patrols) {
         if (
@@ -472,14 +474,14 @@ export function TabletopProvider({
         );
 
         if (!segment) {
-          if ((patrolResumeAt.current.get(patrol.id) ?? 0) <= now)
+          if ((patrolResumeAt.current.get(patrol.id) ?? 0) <= localNow)
             void beginPatrolSegment(patrol.id);
           continue;
         }
 
         const endsAt =
           Date.parse(segment.startedAt) + Math.max(1, segment.durationMs);
-        if (now < endsAt) continue;
+        if (serverNow < endsAt) continue;
 
         patrolCheckpointing.current.add(patrol.id);
         void tabletopService
