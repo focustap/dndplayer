@@ -4,6 +4,7 @@ import "./cinematic.css";
 
 interface CinematicLayerProps {
   event: CinematicEvent | null;
+  dreadActive: boolean;
   onFinished(): void;
 }
 
@@ -18,7 +19,7 @@ const durationFor = (step: CinematicStep) => step.duration ?? 600;
 const progressFor = (step: CinematicStep, elapsed: number) => Math.min(1, Math.max(0, (elapsed - step.at) / durationFor(step)));
 const isActive = (step: CinematicStep, elapsed: number) => elapsed >= step.at && elapsed <= step.at + durationFor(step);
 
-export function CinematicLayer({ event, onFinished }: CinematicLayerProps) {
+export function CinematicLayer({ event, dreadActive, onFinished }: CinematicLayerProps) {
   const [frame, setFrame] = useState<CinematicFrame>({ elapsed: 0, event: null });
 
   useEffect(() => {
@@ -44,29 +45,33 @@ export function CinematicLayer({ event, onFinished }: CinematicLayerProps) {
 
   const view = useMemo(() => {
     const activeFrame = event && !event.completed && frame.event?.id === event.id ? frame : null;
-    if (!activeFrame?.event) return null;
-    const steps = activeFrame.exiting ? [] : activeFrame.event.steps.filter((step) => isActive(step, activeFrame.elapsed));
+    if (!activeFrame?.event && !dreadActive) return null;
+    const elapsed = activeFrame?.elapsed ?? 0;
+    const eventSteps = activeFrame?.event?.steps ?? [];
+    const steps = activeFrame?.exiting ? [] : eventSteps.filter((step) => isActive(step, elapsed));
     const find = (type: CinematicStep["type"]) => steps.filter((step) => step.type === type);
-    const shake = find("SCREEN_SHAKE").reduce((total, step) => total + (step.intensity ?? .35), 0);
+    const shake = (dreadActive ? .12 : 0) + find("SCREEN_SHAKE").reduce((total, step) => total + (step.intensity ?? .35), 0);
     const flash = find("FLASH").at(-1) as (CinematicStep & { color?: string }) | undefined;
     const darken = find("DARKEN").at(-1);
     const vignette = find("VIGNETTE").at(-1);
-    const letterbox = activeFrame.event.steps.filter((step) => step.type === "LETTERBOX" && step.at <= activeFrame.elapsed).at(-1);
-    const letterboxExiting = Boolean(letterbox && (activeFrame.exiting || activeFrame.elapsed > letterbox.at + durationFor(letterbox)));
+    const darkness = Math.max(dreadActive ? .46 : 0, darken?.intensity ?? 0);
+    const vignetteIntensity = Math.max(dreadActive ? .76 : 0, vignette?.intensity ?? 0);
+    const letterbox = eventSteps.filter((step) => step.type === "LETTERBOX" && step.at <= elapsed).at(-1);
+    const letterboxExiting = Boolean(letterbox && (activeFrame?.exiting || elapsed > letterbox.at + durationFor(letterbox)));
     const colorWash = find("COLOR_WASH").at(-1) as (CinematicStep & { color?: string }) | undefined;
     const blur = find("BLUR").at(-1);
     const interactionLocked = find("LOCK_INTERACTION").length > 0;
     const title = find("TITLE").at(-1) as (CinematicStep & { text?: string }) | undefined;
-    const titleProgress = title ? progressFor(title, activeFrame.elapsed) : 0;
+    const titleProgress = title ? progressFor(title, elapsed) : 0;
     const titleOpacity = title ? Math.sin(titleProgress * Math.PI) : 0;
-    const uiStep = [...activeFrame.event.steps].filter((step) => (step.type === "UI_FADE_OUT" || step.type === "UI_FADE_IN") && step.at <= activeFrame.elapsed).at(-1);
+    const uiStep = [...eventSteps].filter((step) => (step.type === "UI_FADE_OUT" || step.type === "UI_FADE_IN") && step.at <= elapsed).at(-1);
     let uiOpacity = 1;
     if (uiStep) {
-      const progress = progressFor(uiStep, activeFrame.elapsed);
+      const progress = progressFor(uiStep, elapsed);
       uiOpacity = uiStep.type === "UI_FADE_OUT" ? 1 - progress : progress;
     }
-    return { shake, flash, darken, vignette, letterbox, letterboxExiting, colorWash, blur, title, titleOpacity, uiOpacity, interactionLocked };
-  }, [event, frame]);
+    return { shake, flash, darkness, vignetteIntensity, letterbox, letterboxExiting, colorWash, blur, title, titleOpacity, uiOpacity, interactionLocked };
+  }, [event, frame, dreadActive]);
 
   useEffect(() => {
     const shell = document.querySelector<HTMLElement>(".tabletop-shell");
@@ -91,8 +96,8 @@ export function CinematicLayer({ event, onFinished }: CinematicLayerProps) {
   const overlayStyle = {
     "--cinematic-flash": view.flash?.color ?? "#fff6d9",
     "--cinematic-flash-alpha": view.flash ? String(Math.max(.12, 1 - progressFor(view.flash, frame.elapsed))) : "0",
-    "--cinematic-darkness": String(view.darken?.intensity ?? 0),
-    "--cinematic-vignette": String(view.vignette?.intensity ?? 0),
+    "--cinematic-darkness": String(view.darkness),
+    "--cinematic-vignette": String(view.vignetteIntensity),
     "--cinematic-letterbox": String(Math.max(0, Math.min(1, view.letterbox?.intensity ?? 0))),
     "--cinematic-wash": view.colorWash?.color ?? "#be3434",
     "--cinematic-wash-alpha": String(view.colorWash ? Math.max(0, Math.sin(progressFor(view.colorWash, frame.elapsed) * Math.PI) * (view.colorWash.intensity ?? .45)) : 0),
