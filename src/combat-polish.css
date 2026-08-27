@@ -23,6 +23,11 @@
 .attack-controls button { border:1px solid #39423d; background:#202622; padding:6px 3px; font-size:7px; }
 .attack-controls button.active,.attack-controls .attack-start { border-color:#a98354; background:#4b3923; color:#f0d09a; }
 .attack-controls .attack-start { width:100%; margin-top:6px; padding:8px; font-size:8px; }
+.signature-attacks>div:first-of-type{grid-template-columns:repeat(4,1fr)}
+.wizard-color-row{display:flex!important;grid-template-columns:none!important;gap:5px!important;margin-top:7px;padding:6px;border:1px solid #303832;background:#111513}
+.wizard-color-row button{width:23px;height:23px;padding:0!important;border-radius:50%!important;background:var(--spell-color)!important;border:2px solid #202522!important;box-shadow:inset 0 0 0 2px #0006}
+.wizard-color-row button.active{border-color:#f2d4a1!important;box-shadow:0 0 0 2px #a47e50,inset 0 0 0 2px #0007}
+
 .attack-target-hint { position:absolute; z-index:80; top:18px; left:50%; translate:-50%; display:flex; align-items:center; gap:7px; padding:8px 10px; border:1px solid #ae8855; background:#16130eee; color:#d9c19b; font-size:9px; letter-spacing:.06em; box-shadow:0 8px 24px #0009; }
 .attack-target-hint b { color:#f0c67e; }
 .attack-target-hint button { border:0; border-left:1px solid #65513a; background:none; color:#e6a293; padding-left:7px; font-size:8px; }

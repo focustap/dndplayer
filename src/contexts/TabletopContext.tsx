@@ -21,6 +21,7 @@ import type {
   SceneDiscoverable,
   SceneLink,
   SceneOverlay,
+  SceneZoneMarker,
   TabletopState,
   Token,
   TokenInteraction,
@@ -45,7 +46,8 @@ interface TabletopActions {
   startPlayerPlacement(characterIds: string[]): void;
   startSceneLinkPlacement(destinationSceneId: string, label: string): void;
   cancelPlacement(): void;
-  startAttack(attackerTokenId: string, preset: AttackPreset): Promise<void>;
+  startAttack(attackerTokenId: string, preset: AttackPreset, color?:string|null): Promise<void>;
+  startZoneMarkerPlacement(label:string,radiusFt:number,color:string): void;
   targetAttack(targetTokenId: string | null): Promise<void>;
   cancelAttack(): void;
   triggerCinematic(
@@ -105,6 +107,8 @@ interface TabletopActions {
   deleteNpcTemplate(id: string): Promise<void>;
   patchOverlay(id: string, patch: Partial<SceneOverlay>): Promise<void>;
   deleteOverlay(id: string): Promise<void>;
+  updateZoneMarker(id:string,patch:Partial<Pick<SceneZoneMarker,"label"|"x"|"y"|"radiusFt"|"color"|"opacity"|"visible">>):Promise<void>;
+  deleteZoneMarker(id:string):Promise<void>;
   addDiscoverable(name: string, file: File, hidden: boolean): Promise<void>;
   patchDiscoverable(
     id: string,
@@ -433,6 +437,7 @@ export function TabletopProvider({
             attacker_token_id: string;
             target_token_id: string;
             preset: AttackPreset;
+            color?: string | null;
             created_at: string;
           };
           setState((current) =>
@@ -445,6 +450,7 @@ export function TabletopProvider({
                     attackerTokenId: event.attacker_token_id,
                     targetTokenId: event.target_token_id,
                     preset: event.preset,
+                    color: event.color ?? null,
                     createdAt: event.created_at,
                   },
                 }
@@ -697,12 +703,30 @@ export function TabletopProvider({
             : current,
         );
       },
+      startZoneMarkerPlacement(label, radiusFt, color) {
+        const s = stateRef.current;
+        if (!s || !isDmRole(s.role)) return;
+        setState((current) =>
+          current
+            ? {
+                ...current,
+                placement: {
+                  kind: "ZONE_MARKER",
+                  name: label.trim() || "Effect",
+                  radiusFt: Math.max(1, Math.min(300, radiusFt)),
+                  color,
+                  imageUrl: null,
+                },
+              }
+            : current,
+        );
+      },
       cancelPlacement() {
         setState((current) =>
           current ? { ...current, placement: null } : current,
         );
       },
-      async startAttack(attackerTokenId, preset) {
+      async startAttack(attackerTokenId, preset, color = null) {
         const s = stateRef.current;
         const attacker = s?.tokens.find(
           (token) => token.id === attackerTokenId,
@@ -719,7 +743,7 @@ export function TabletopProvider({
           current
             ? {
                 ...current,
-                attackSelection: { attackerTokenId, preset },
+                attackSelection: { attackerTokenId, preset, color },
                 placement: null,
               }
             : current,
@@ -778,6 +802,7 @@ export function TabletopProvider({
           selection.attackerTokenId,
           targetTokenId,
           selection.preset,
+          selection.color,
         );
         setState((current) =>
           current
@@ -825,6 +850,23 @@ export function TabletopProvider({
                   sceneLinks: [...current.sceneLinks, link],
                   placement: null,
                 }
+              : current,
+          );
+          return;
+        }
+        if (placement.kind === "ZONE_MARKER") {
+          const marker = await tabletopService.addZoneMarker(
+            s.scene.id,
+            s.campaign.id,
+            placement.name,
+            placement.radiusFt,
+            placement.color,
+            x,
+            y,
+          );
+          setState((current) =>
+            current
+              ? { ...current, zoneMarkers: [...current.zoneMarkers, marker], placement: null }
               : current,
           );
           return;
@@ -1901,6 +1943,34 @@ export function TabletopProvider({
                 overlays: current.overlays.filter(
                   (overlay) => overlay.id !== id,
                 ),
+              }
+            : current,
+        );
+      },
+      async updateZoneMarker(id, patch) {
+        const s = stateRef.current;
+        if (!s || !isDmRole(s.role)) return;
+        await tabletopService.updateZoneMarker(id, patch);
+        setState((current) =>
+          current
+            ? {
+                ...current,
+                zoneMarkers: current.zoneMarkers.map((marker) =>
+                  marker.id === id ? { ...marker, ...patch } : marker,
+                ),
+              }
+            : current,
+        );
+      },
+      async deleteZoneMarker(id) {
+        const s = stateRef.current;
+        if (!s || !isDmRole(s.role)) return;
+        await tabletopService.deleteZoneMarker(id);
+        setState((current) =>
+          current
+            ? {
+                ...current,
+                zoneMarkers: current.zoneMarkers.filter((marker) => marker.id !== id),
               }
             : current,
         );
