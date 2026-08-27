@@ -160,20 +160,17 @@ export function TabletopProvider({
   const [state, setState] = useState<TabletopState | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [patrolLeaderTick, setPatrolLeaderTick] = useState(0);
   const stateRef = useRef(state);
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
-  const patrolSceneId = state?.scene.id;
   const patrolRole = state?.role;
   const movementChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(
     null,
   );
   const moveSequences = useRef(new Map<string, number>());
   const receivedSequences = useRef(new Map<string, number>());
-  const patrolLeaderRef = useRef(false);
-  const patrolDriverId = useRef(crypto.randomUUID());
+  const reloadGeneration = useRef(0);
   const patrolCheckpointing = useRef(new Set<string>());
   const patrolStarting = useRef(new Set<string>());
   const patrolResumeAt = useRef(new Map<string, number>());
@@ -192,8 +189,10 @@ export function TabletopProvider({
     [],
   );
   const reload = useCallback(async () => {
+    const generation = ++reloadGeneration.current;
     try {
       const next = await tabletopService.load(campaignId, playerView, sceneId);
+      if (generation !== reloadGeneration.current) return;
       setState((current) => {
         if (!current) return next;
         const transient = new Set(current.transientTokenIds);
@@ -222,15 +221,15 @@ export function TabletopProvider({
       });
       setError(null);
     } catch (e) {
+      if (generation !== reloadGeneration.current) return;
       setError(e instanceof Error ? e.message : "Unable to load the tabletop");
     } finally {
-      setLoading(false);
+      if (generation === reloadGeneration.current) setLoading(false);
     }
   }, [campaignId, playerView, sceneId]);
   const beginPatrolSegment = useCallback(
     async (patrolId: string) => {
       if (
-        !patrolLeaderRef.current ||
         patrolStarting.current.has(patrolId) ||
         patrolCheckpointing.current.has(patrolId)
       )
@@ -249,20 +248,10 @@ export function TabletopProvider({
         )
       )
         return;
-      const token = current.tokens.find((item) => item.id === patrol.tokenId);
-      const target = patrol.waypoints[patrol.currentWaypoint];
-      if (!token || !target) return;
 
       patrolStarting.current.add(patrolId);
       try {
-        const segment = await tabletopService.startPatrolSegment(
-          patrol,
-          token.x,
-          token.y,
-          target.x,
-          target.y,
-        );
-        if (!patrolLeaderRef.current) return;
+        const segment = await tabletopService.ensurePatrolSegment(patrol.id);
         patrolResumeAt.current.delete(patrolId);
         setState((live) =>
           live
@@ -278,7 +267,7 @@ export function TabletopProvider({
             : live,
         );
       } catch (error) {
-        console.error("Failed to start patrol segment", error);
+        console.error("Failed to ensure patrol segment", error);
         setError("Unable to continue patrol movement.");
         void reload();
       } finally {
@@ -288,28 +277,8 @@ export function TabletopProvider({
     [reload],
   );
   useEffect(() => {
-    let cancelled = false;
-    void tabletopService
-      .load(campaignId, playerView, sceneId)
-      .then((next) => {
-        if (!cancelled) {
-          setState(next);
-          setError(null);
-        }
-      })
-      .catch((e: unknown) => {
-        if (!cancelled)
-          setError(
-            e instanceof Error ? e.message : "Unable to load the tabletop",
-          );
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [campaignId, playerView, sceneId]);
+    void reload();
+  }, [reload]);
   useEffect(() => {
     if (!isSupabaseConfigured || campaignId === "demo") return;
     const channel = supabase
@@ -476,43 +445,7 @@ export function TabletopProvider({
     };
   }, [campaignId, reload]);
   useEffect(() => {
-    if (
-      !isSupabaseConfigured ||
-      campaignId === "demo" ||
-      !patrolSceneId ||
-      !patrolRole ||
-      !isDmRole(patrolRole)
-    )
-      return;
-    const channel = supabase.channel(
-      `patrol-driver:${campaignId}:${patrolSceneId}`,
-      { config: { presence: { key: patrolDriverId.current } } },
-    );
-    const elect = () => {
-      const next =
-        (Object.keys(channel.presenceState()).sort()[0] ?? null) ===
-        patrolDriverId.current;
-      if (patrolLeaderRef.current !== next) {
-        patrolLeaderRef.current = next;
-        setPatrolLeaderTick((value) => value + 1);
-      }
-    };
-    channel
-      .on("presence", { event: "sync" }, elect)
-      .subscribe(async (status) => {
-        if (status === "SUBSCRIBED") {
-          await channel.track({ driver: true });
-          elect();
-        }
-      });
-    return () => {
-      patrolLeaderRef.current = false;
-      void supabase.removeChannel(channel);
-    };
-  }, [campaignId, patrolSceneId, patrolRole]);
-  useEffect(() => {
-    if (!patrolRole || !isDmRole(patrolRole) || !patrolLeaderRef.current)
-      return;
+    if (!patrolRole || !isDmRole(patrolRole)) return;
     const current = stateRef.current;
     if (!current) return;
     const timers: number[] = [];
@@ -542,6 +475,7 @@ export function TabletopProvider({
         );
         continue;
       }
+
       const remaining = Math.max(
         0,
         Date.parse(segment.startedAt) + segment.durationMs - Date.now(),
@@ -552,74 +486,50 @@ export function TabletopProvider({
           const activePatrol = live?.patrols.find(
             (item) => item.id === patrol.id,
           );
-          if (!live || !activePatrol || !patrolLeaderRef.current) return;
+          if (!live || !activePatrol) return;
           const liveSegment = live.motionSegments.find(
             (item) => item.tokenId === activePatrol.tokenId && item.active,
           );
           if (!liveSegment || liveSegment.revision !== segment.revision) return;
-          const target = { x: liveSegment.toX, y: liveSegment.toY };
-          let next = activePatrol.currentWaypoint + activePatrol.direction,
-            dir = activePatrol.direction,
-            active = true;
-          if (next >= activePatrol.waypoints.length || next < 0) {
-            if (activePatrol.mode === "LOOP")
-              next =
-                activePatrol.direction === 1
-                  ? 0
-                  : activePatrol.waypoints.length - 1;
-            else if (activePatrol.mode === "PING_PONG") {
-              dir = activePatrol.direction === 1 ? -1 : 1;
-              next = activePatrol.currentWaypoint + dir;
-            } else {
-              next = activePatrol.currentWaypoint;
-              active = false;
-            }
-          }
+
           patrolCheckpointing.current.add(activePatrol.id);
-          if (active)
-            patrolResumeAt.current.set(
-              activePatrol.id,
-              Date.now() + activePatrol.waypointPauseMs,
-            );
-          else patrolResumeAt.current.delete(activePatrol.id);
           void tabletopService
-            .checkpointPatrol(
-              activePatrol,
-              target.x,
-              target.y,
-              next,
-              dir,
-              active,
-            )
-            .then(() => {
-              setState((s) =>
-                s
+            .completePatrolSegment(activePatrol.id, liveSegment.revision)
+            .then((updatedPatrol) => {
+              if (updatedPatrol.active)
+                patrolResumeAt.current.set(
+                  updatedPatrol.id,
+                  Date.now() + updatedPatrol.waypointPauseMs,
+                );
+              else patrolResumeAt.current.delete(updatedPatrol.id);
+
+              setState((currentState) =>
+                currentState
                   ? {
-                      ...s,
-                      tokens: s.tokens.map((item) =>
-                        item.id === token.id
-                          ? { ...item, x: target.x, y: target.y }
-                          : item,
-                      ),
-                      motionSegments: s.motionSegments.filter(
-                        (item) => item.tokenId !== token.id,
-                      ),
-                      patrols: s.patrols.map((item) =>
-                        item.id === activePatrol.id
+                      ...currentState,
+                      tokens: currentState.tokens.map((item) =>
+                        item.id === activePatrol.tokenId
                           ? {
                               ...item,
-                              currentWaypoint: next,
-                              direction: dir,
-                              active,
+                              x: liveSegment.toX,
+                              y: liveSegment.toY,
                             }
                           : item,
                       ),
+                      motionSegments: currentState.motionSegments.filter(
+                        (item) => item.tokenId !== activePatrol.tokenId,
+                      ),
+                      patrols: currentState.patrols.map((item) =>
+                        item.id === updatedPatrol.id
+                          ? { ...item, ...updatedPatrol }
+                          : item,
+                      ),
                     }
-                  : s,
+                  : currentState,
               );
             })
             .catch((error) => {
-              console.error("Failed to checkpoint patrol segment", error);
+              console.error("Failed to complete patrol segment", error);
               void reload();
             })
             .finally(() => {
@@ -635,7 +545,6 @@ export function TabletopProvider({
     state?.combat.active,
     patrolRole,
     reload,
-    patrolLeaderTick,
     beginPatrolSegment,
   ]);
 
