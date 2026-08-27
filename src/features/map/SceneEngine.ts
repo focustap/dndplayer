@@ -1,6 +1,6 @@
 import { Application, Assets, Container, FederatedPointerEvent, Graphics, Sprite, Text, TextStyle, Texture } from "pixi.js";
 import type { AttackAnimationEvent, AttackSelection, CinematicEvent, Placement, Scene, SceneDiscoverable, SceneLink, SceneOverlay, Token, TokenMotionSegment, TokenPatrol } from "../../domain/types";
-import { createSceneStructureKey, type SceneStructureSnapshot } from "./sceneStructureKey";
+import { createSceneStructureKey, stableAssetIdentity, type SceneStructureSnapshot } from "./sceneStructureKey";
 import { PATROL_PRESENTATION_DELAY_MS, serverNowMs } from "../../services/tabletopService";
 
 export interface EngineSnapshot extends SceneStructureSnapshot { builder: boolean; shiftIntel: boolean; placement: Placement | null; patrolEdit: TokenPatrol | null; motionSegments: TokenMotionSegment[]; attackSelection: AttackSelection | null; attackEvent: AttackAnimationEvent | null; cinematicEvent: CinematicEvent | null; selectedTokenId: string | null; transientTokenIds: string[]; monsterIntel: Record<string, { hp: number; maxHp: number; ac: number }>; canMove(token: Token): boolean; canInteract(token:Token):boolean; }
@@ -13,7 +13,7 @@ interface CinematicTokenGlow { tokenId: string; graphic: Graphics; }
 interface CinematicState { event: CinematicEvent; startedAt: number; rootX: number; rootY: number; scale: number; tokenBases: Map<string, { x: number; y: number; alpha: number; scale: number }>; impacts: Set<number>; effects: Set<CinematicImpact>; glows: Map<string, CinematicTokenGlow>; }
 
 export class SceneEngine {
-  private app = new Application(); private root = new Container(); private patrolLayer:Container|null=null; private snapshot: EngineSnapshot | null = null; private initialized = false; private destroyed = false; private renderVersion = 0; private structureKey: string | null = null; private tokenTextures = new Map<string, Promise<Texture | null>>(); private tokenDisplays = new Map<string, Container>(); private overlayDisplays = new Map<string, Container>(); private sceneLinkDisplays = new Map<string, Container>(); private discoverableDisplays = new Map<string,Container>(); private tokenPositionTargets = new Map<string, { x: number; y: number }>(); private tokenMovementAnimations = new Map<string, TokenMovementAnimation>(); private patrolVisualCatchups = new Map<string, PatrolVisualCatchup>(); private attackEffects = new Map<string, AttackEffect>(); private lastAttackEventId: string | null = null; private cinematic: CinematicState | null = null; private finishedCinematicIds = new Set<string>(); private selectedRings = new Map<string, Graphics>(); private intelDisplays = new Map<string, Container>(); private intelKey: string | null = null; private selectedTokenId: string | null = null; private placementGhost: Container | null = null; private placementKey: string | null = null; private pointerCandidate: { kind: "TOKEN"|"OVERLAY"|"SCENE_LINK"|"DISCOVERABLE"|"PATROL_WAYPOINT"; id: string; startX: number; startY: number; originX: number; originY: number; dx: number; dy: number; display: Container } | null = null; private dragging: { kind: "TOKEN"|"OVERLAY"|"SCENE_LINK"|"DISCOVERABLE"|"PATROL_WAYPOINT"; id: string; dx: number; dy: number; x: number; y: number; originX: number; originY: number; display: Container } | null = null; private lastMoveBroadcast=0; private instrumentation = { structuralRebuilds: 0, moveCommits: 0, overlayCommits: 0, sceneLinkCommits: 0 }; private panning = false; private panStart = { x: 0, y: 0, rootX: 0, rootY: 0 }; private spaceDown = false;
+  private app = new Application(); private root = new Container(); private patrolLayer:Container|null=null; private snapshot: EngineSnapshot | null = null; private initialized = false; private destroyed = false; private renderVersion = 0; private structureKey: string | null = null; private tokenTextures = new Map<string, Promise<Texture | null>>(); private tokenDisplays = new Map<string, Container>(); private tokenStructureKeys = new Map<string,string>(); private tokenHiddenLabels = new Map<string,Text>(); private lightingLayer:Graphics|null=null; private lightingKey:string|null=null; private overlayDisplays = new Map<string, Container>(); private sceneLinkDisplays = new Map<string, Container>(); private discoverableDisplays = new Map<string,Container>(); private tokenPositionTargets = new Map<string, { x: number; y: number }>(); private tokenMovementAnimations = new Map<string, TokenMovementAnimation>(); private patrolVisualCatchups = new Map<string, PatrolVisualCatchup>(); private attackEffects = new Map<string, AttackEffect>(); private lastAttackEventId: string | null = null; private cinematic: CinematicState | null = null; private finishedCinematicIds = new Set<string>(); private selectedRings = new Map<string, Graphics>(); private intelDisplays = new Map<string, Container>(); private intelKey: string | null = null; private selectedTokenId: string | null = null; private placementGhost: Container | null = null; private placementKey: string | null = null; private pointerCandidate: { kind: "TOKEN"|"OVERLAY"|"SCENE_LINK"|"DISCOVERABLE"|"PATROL_WAYPOINT"; id: string; startX: number; startY: number; originX: number; originY: number; dx: number; dy: number; display: Container } | null = null; private dragging: { kind: "TOKEN"|"OVERLAY"|"SCENE_LINK"|"DISCOVERABLE"|"PATROL_WAYPOINT"; id: string; dx: number; dy: number; x: number; y: number; originX: number; originY: number; display: Container } | null = null; private lastMoveBroadcast=0; private instrumentation = { structuralRebuilds: 0, moveCommits: 0, overlayCommits: 0, sceneLinkCommits: 0 }; private panning = false; private panStart = { x: 0, y: 0, rootX: 0, rootY: 0 }; private spaceDown = false;
   constructor(private host: HTMLElement, private callbacks: EngineCallbacks) {}
   async init() {
     await this.app.init({ resizeTo: this.host, antialias: true, backgroundColor: 0x151816, resolution: Math.min(window.devicePixelRatio, 2), autoDensity: true }); this.initialized=true;
@@ -24,14 +24,64 @@ export class SceneEngine {
   setSpaceDown(value: boolean) { this.spaceDown = value; }
   center() { if (!this.snapshot || !this.app.renderer) return; const s = this.snapshot.scene; const baseScale = Math.min(this.host.clientWidth / s.width, this.host.clientHeight / s.height) * .96; const cameraReady=this.snapshot.playerView&&s.playerCameraX!==null&&s.playerCameraY!==null; const scale=baseScale*(cameraReady?s.playerCameraZoom:1); this.root.scale.set(scale); this.root.position.set(cameraReady?this.host.clientWidth/2-s.playerCameraX!*scale:(this.host.clientWidth-s.width*scale)/2,cameraReady?this.host.clientHeight/2-s.playerCameraY!*scale:(this.host.clientHeight-s.height*scale)/2); }
   async render(snapshot: EngineSnapshot) {
-    this.snapshot = snapshot; if (!this.app.renderer) return; const structureKey=createSceneStructureKey(snapshot); if (structureKey===this.structureKey) { this.applyPositions(snapshot); this.applyDiscoverablePositions(snapshot); this.renderPatrolPath(snapshot); this.applyIntel(snapshot); this.applySelection(snapshot); this.applyPlacement(snapshot); this.applyAttackEvent(snapshot); return; } this.structureKey=structureKey; const version = ++this.renderVersion; this.instrumentation.structuralRebuilds++; this.debug("structural rebuild"); this.clearCinematic(); this.clearAttackEffects(); this.root.removeChildren(); this.patrolLayer=null; this.tokenDisplays.clear(); this.overlayDisplays.clear(); this.sceneLinkDisplays.clear(); this.discoverableDisplays.clear(); this.tokenPositionTargets.clear(); this.tokenMovementAnimations.clear(); this.patrolVisualCatchups.clear(); this.selectedRings.clear(); this.intelDisplays.clear(); this.intelKey=null; this.selectedTokenId=null; this.placementGhost=null; this.placementKey=null;
-    this.center(); await this.renderBackground(snapshot.scene); if (version !== this.renderVersion || this.destroyed) return;
+    this.snapshot = snapshot;
+    if (!this.app.renderer) return;
+    const structureKey=createSceneStructureKey(snapshot);
+    if (structureKey===this.structureKey) {
+      await this.syncTokens(snapshot);
+      if (this.destroyed) return;
+      this.applyLighting(snapshot.scene);
+      this.applyPositions(snapshot);
+      this.applyDiscoverablePositions(snapshot);
+      this.renderPatrolPath(snapshot);
+      this.applyIntel(snapshot);
+      this.applySelection(snapshot);
+      this.applyPlacement(snapshot);
+      this.applyAttackEvent(snapshot);
+      return;
+    }
+    this.structureKey=structureKey;
+    const version = ++this.renderVersion;
+    this.instrumentation.structuralRebuilds++;
+    this.debug("structural rebuild");
+    this.clearCinematic();
+    this.clearAttackEffects();
+    this.root.removeChildren();
+    this.patrolLayer=null;
+    this.tokenDisplays.clear();
+    this.tokenStructureKeys.clear();
+    this.tokenHiddenLabels.clear();
+    this.lightingLayer=null;
+    this.lightingKey=null;
+    this.overlayDisplays.clear();
+    this.sceneLinkDisplays.clear();
+    this.discoverableDisplays.clear();
+    this.tokenPositionTargets.clear();
+    this.tokenMovementAnimations.clear();
+    this.patrolVisualCatchups.clear();
+    this.selectedRings.clear();
+    this.intelDisplays.clear();
+    this.intelKey=null;
+    this.selectedTokenId=null;
+    this.placementGhost=null;
+    this.placementKey=null;
+    this.center();
+    await this.renderBackground(snapshot.scene);
+    if (version !== this.renderVersion || this.destroyed) return;
     if (snapshot.scene.gridType === "SQUARE") this.renderGrid(snapshot.scene);
     for (const overlay of snapshot.overlays.filter((o) => o.visible || snapshot.canDm)) await this.renderOverlay(overlay, snapshot.canDm);
     if (snapshot.canDm) for (const link of snapshot.sceneLinks) this.renderSceneLink(link);
     for(const item of snapshot.discoverables.filter(item=>snapshot.canDm||(!item.hidden&&!item.discoveredAt)))this.renderDiscoverable(item,snapshot.canDm);
-    for (const token of snapshot.tokens.filter((t) => snapshot.canDm || t.visible)) { await this.renderToken(token, snapshot); if (version !== this.renderVersion || this.destroyed) return; }
-    this.renderLighting(snapshot.scene); this.renderPatrolPath(snapshot); this.applyPositions(this.snapshot); this.applyDiscoverablePositions(this.snapshot); this.applyIntel(this.snapshot); this.applySelection(this.snapshot); this.applyPlacement(this.snapshot); this.applyAttackEvent(this.snapshot);
+    await this.syncTokens(snapshot);
+    if (version !== this.renderVersion || this.destroyed) return;
+    this.applyLighting(snapshot.scene);
+    this.renderPatrolPath(snapshot);
+    this.applyPositions(this.snapshot);
+    this.applyDiscoverablePositions(this.snapshot);
+    this.applyIntel(this.snapshot);
+    this.applySelection(this.snapshot);
+    this.applyPlacement(this.snapshot);
+    this.applyAttackEvent(this.snapshot);
   }
   private applyPositions(snapshot: EngineSnapshot | null) {
     if (!snapshot) return;
@@ -287,7 +337,24 @@ export class SceneEngine {
     const message = new Text({ text: "DEMO SCENE  ·  UPLOAD A MAP IMAGE FROM CAMPAIGN SETUP", style: new TextStyle({ fill: 0xb7a98f, fontFamily: "Arial", fontSize: 15, letterSpacing: 3 }) }); message.anchor.set(.5); message.position.set(scene.width/2,40); message.zIndex=2; this.root.addChild(message);
   }
   private renderGrid(scene: Scene) { const g = new Graphics(); const color = Number.parseInt(scene.gridColor.replace("#",""),16); const startX=((scene.gridOffsetX%scene.gridSize)+scene.gridSize)%scene.gridSize; const startY=((scene.gridOffsetY%scene.gridSize)+scene.gridSize)%scene.gridSize; for(let x=startX;x<=scene.width;x+=scene.gridSize) g.moveTo(x,0).lineTo(x,scene.height); for(let y=startY;y<=scene.height;y+=scene.gridSize) g.moveTo(0,y).lineTo(scene.width,y); g.stroke({ color, width: scene.gridLineWidth, alpha: scene.gridOpacity }); g.zIndex=10; g.eventMode="none"; this.root.addChild(g); }
-  private renderLighting(scene: Scene) { if(scene.lighting==="BRIGHT")return; const alpha=scene.lighting==="DIM"?.22:.5; const shade=new Graphics().rect(0,0,scene.width,scene.height).fill({color:0x07100f,alpha}); shade.zIndex=490; shade.eventMode="none"; this.root.addChild(shade); }
+  private applyLighting(scene: Scene) {
+    const key=`${scene.id}:${scene.width}:${scene.height}:${scene.lighting}`;
+    if(key===this.lightingKey)return;
+    this.lightingKey=key;
+    if(this.lightingLayer){
+      this.lightingLayer.removeFromParent();
+      this.lightingLayer.destroy();
+      this.lightingLayer=null;
+    }
+    if(scene.lighting==="DAY")return;
+    const color=scene.lighting==="MIDDAY"?0xd6a15f:0x071019;
+    const alpha=scene.lighting==="MIDDAY"?.10:.50;
+    const shade=new Graphics().rect(0,0,scene.width,scene.height).fill({color,alpha});
+    shade.zIndex=490;
+    shade.eventMode="none";
+    this.lightingLayer=shade;
+    this.root.addChild(shade);
+  }
   private async renderOverlay(overlay: SceneOverlay, canDm: boolean) {
     let display: Sprite|Container;
     if (overlay.imageUrl) { try { const texture = await Assets.load<Texture>(overlay.imageUrl); const sprite = new Sprite(texture); sprite.anchor.set(.5); sprite.width=overlay.width; sprite.height=overlay.height; display=sprite; } catch { display=this.fallbackEffect(overlay); } } else display=this.fallbackEffect(overlay);
@@ -310,25 +377,84 @@ export class SceneEngine {
     if (!pending) { pending = Assets.load<Texture>(url).catch(() => null); this.tokenTextures.set(url, pending); }
     return pending;
   }
+  private tokenRenderKey(token:Token,snapshot:EngineSnapshot){
+    return JSON.stringify({
+      id:token.id,
+      sceneId:token.sceneId,
+      referenceId:token.referenceId,
+      ownerUserId:token.ownerUserId,
+      type:token.type,
+      displayName:token.displayName,
+      image:stableAssetIdentity(token.imagePath,token.imageUrl),
+      size:token.size,
+      rotation:token.rotation,
+      locked:token.locked,
+      conditions:[...token.conditions].sort(),
+      canDm:snapshot.canDm,
+    });
+  }
+  private removeTokenDisplay(id:string){
+    const display=this.tokenDisplays.get(id);
+    if(display){
+      display.removeFromParent();
+      display.destroy({children:true});
+    }
+    this.tokenDisplays.delete(id);
+    this.tokenStructureKeys.delete(id);
+    this.tokenHiddenLabels.delete(id);
+    this.tokenPositionTargets.delete(id);
+    this.tokenMovementAnimations.delete(id);
+    this.patrolVisualCatchups.delete(id);
+  }
+  private applyTokenVisibility(token:Token,snapshot:EngineSnapshot){
+    const display=this.tokenDisplays.get(token.id);
+    if(!display)return;
+    display.visible=snapshot.canDm||token.visible;
+    display.alpha=snapshot.canDm&&!token.visible?.42:1;
+    const hidden=this.tokenHiddenLabels.get(token.id);
+    if(hidden)hidden.visible=snapshot.canDm&&!token.visible;
+  }
+  private async syncTokens(snapshot:EngineSnapshot){
+    const ids=new Set(snapshot.tokens.map(token=>token.id));
+    for(const id of [...this.tokenDisplays.keys()]){
+      if(!ids.has(id))this.removeTokenDisplay(id);
+    }
+    for(const token of snapshot.tokens){
+      const key=this.tokenRenderKey(token,snapshot);
+      let display=this.tokenDisplays.get(token.id);
+      if(display&&this.tokenStructureKeys.get(token.id)!==key){
+        this.removeTokenDisplay(token.id);
+        display=undefined;
+      }
+      if(!display&&(snapshot.canDm||token.visible)){
+        await this.renderToken(token,snapshot);
+        if(this.destroyed)return;
+        this.tokenStructureKeys.set(token.id,key);
+      }else if(display){
+        this.tokenStructureKeys.set(token.id,key);
+      }
+      this.applyTokenVisibility(token,snapshot);
+    }
+  }
   private async renderToken(token: Token, snapshot: EngineSnapshot) {
     const cell=snapshot.scene.gridSize; const radius=cell*.32*token.size; const c=new Container(); c.position.set(token.x,token.y); c.rotation=token.rotation; c.zIndex=300; c.eventMode="static"; c.cursor=snapshot.canMove(token)?"grab":"pointer";
     const ringColor=token.type==="MONSTER"?0x718460:token.type==="NPC"?0x9b794e:0x9a86b1;
-    const ring=new Graphics().circle(0,0,radius+5).fill(ringColor); if(snapshot.canDm&&!token.visible) ring.alpha=.42; c.addChild(ring);
+    const ring=new Graphics().circle(0,0,radius+5).fill(ringColor); c.addChild(ring);
     const texture=token.imageUrl?await this.loadTokenTexture(token.imageUrl):null;
     if(texture){
       const portrait=new Sprite(texture); portrait.anchor.set(.5); const diameter=radius*2; const scale=Math.max(diameter/texture.width,diameter/texture.height); portrait.scale.set(scale);
-      const circleMask=new Graphics().circle(0,0,radius).fill(0xffffff); portrait.mask=circleMask; if(snapshot.canDm&&!token.visible) portrait.alpha=.42; c.addChild(portrait,circleMask);
+      const circleMask=new Graphics().circle(0,0,radius).fill(0xffffff); portrait.mask=circleMask; c.addChild(portrait,circleMask);
     }else{
-      const face=new Graphics().circle(0,0,radius).fill(token.type==="MONSTER"?0x394a34:token.type==="NPC"?0x6e5335:0x544965); if(snapshot.canDm&&!token.visible) face.alpha=.42; c.addChild(face); const label=new Text({text:token.displayName.slice(0,1).toUpperCase(),style:{fill:0xf4ead9,fontSize:radius*.8,fontWeight:"700",fontFamily:"Georgia"}}); label.anchor.set(.5); if(snapshot.canDm&&!token.visible) label.alpha=.42; c.addChild(label);
+      const face=new Graphics().circle(0,0,radius).fill(token.type==="MONSTER"?0x394a34:token.type==="NPC"?0x6e5335:0x544965); c.addChild(face); const label=new Text({text:token.displayName.slice(0,1).toUpperCase(),style:{fill:0xf4ead9,fontSize:radius*.8,fontWeight:"700",fontFamily:"Georgia"}}); label.anchor.set(.5); c.addChild(label);
     }
     if(token.conditions.length){const badge=new Graphics().circle(radius*.8,radius*.8,12).fill(0x8b5039); const bt=new Text({text:String(token.conditions.length),style:{fill:0xffffff,fontSize:12,fontWeight:"700"}}); bt.anchor.set(.5); bt.position.set(radius*.8,radius*.8); c.addChild(badge,bt);}
-    if(snapshot.canDm&&!token.visible){const hidden=new Text({text:"HIDDEN",style:{fill:0xe5b978,fontSize:11,fontWeight:"700",letterSpacing:1}});hidden.anchor.set(.5);hidden.position.set(0,-radius-17);c.addChild(hidden);}
-    c.on("rightclick",(e: FederatedPointerEvent)=>{e.stopPropagation();this.callbacks.onContext(token.id,e.clientX,e.clientY);}); c.on("pointerdown",(e: FederatedPointerEvent)=>{if(e.button!==0)return;if(this.snapshot?.attackSelection){e.stopPropagation();this.callbacks.onAttackTarget(token.id);return;}if(this.snapshot?.canInteract(token)){e.stopPropagation();this.callbacks.onInteract(token.id);return;}if(!this.snapshot?.canMove(token)){e.stopPropagation();this.callbacks.onSelect(token.id);return;}e.stopPropagation();const p=this.root.toLocal(e.global);const currentX=c.position.x,currentY=c.position.y;this.pointerCandidate={kind:"TOKEN",id:token.id,startX:e.global.x,startY:e.global.y,originX:currentX,originY:currentY,dx:p.x-currentX,dy:p.y-currentY,display:c};}); this.tokenDisplays.set(token.id,c); this.root.addChild(c);
+    if(snapshot.canDm){const hidden=new Text({text:"HIDDEN",style:{fill:0xe5b978,fontSize:11,fontWeight:"700",letterSpacing:1}});hidden.anchor.set(.5);hidden.position.set(0,-radius-17);hidden.visible=!token.visible;c.addChild(hidden);this.tokenHiddenLabels.set(token.id,hidden);}
+    c.on("rightclick",(e: FederatedPointerEvent)=>{e.stopPropagation();this.callbacks.onContext(token.id,e.clientX,e.clientY);}); c.on("pointerdown",(e: FederatedPointerEvent)=>{if(e.button!==0)return;if(this.snapshot?.attackSelection){e.stopPropagation();this.callbacks.onAttackTarget(token.id);return;}if(this.snapshot?.canInteract(token)){e.stopPropagation();this.callbacks.onInteract(token.id);return;}if(!this.snapshot?.canMove(token)){e.stopPropagation();this.callbacks.onSelect(token.id);return;}e.stopPropagation();const p=this.root.toLocal(e.global);const currentX=c.position.x,currentY=c.position.y;this.pointerCandidate={kind:"TOKEN",id:token.id,startX:e.global.x,startY:e.global.y,originX:currentX,originY:currentY,dx:p.x-currentX,dy:p.y-currentY,display:c};}); this.tokenDisplays.set(token.id,c); this.root.addChild(c); this.applyTokenVisibility(token,snapshot);
   }
   private renderPlacementGhost(placement: Placement, cell: number) { const ghost=new Container();const radius=placement.kind==="SCENE_LINK"?cell*.22:cell*.32;const color=placement.kind==="MONSTER"?0x718460:placement.kind==="SCENE_LINK"?0xe3b978:0x9a86b1;const circle=new Graphics().circle(0,0,radius).fill({color,alpha:.45}).stroke({color:0xe3b978,width:2});const label=new Text({text:placement.kind==="SCENE_LINK"?"↗":placement.name.slice(0,1).toUpperCase(),style:{fill:0xf4ead9,fontSize:radius*.8,fontWeight:"700",fontFamily:"Georgia"}});label.anchor.set(.5);ghost.addChild(circle,label);ghost.zIndex=310;ghost.eventMode="none";ghost.visible=false;this.placementGhost=ghost;this.root.addChild(ghost); }
   private handleStageDown(e:FederatedPointerEvent){if(this.spaceDown||e.button===1){this.panning=true;this.panStart={x:e.global.x,y:e.global.y,rootX:this.root.x,rootY:this.root.y};return;}if(this.snapshot?.attackSelection){this.callbacks.onAttackTarget(null);return;}if(this.snapshot?.patrolEdit&&this.snapshot.builder&&this.snapshot.canDm){const p=this.root.toLocal(e.global);this.callbacks.onPatrolWaypointAdd(p.x,p.y);return;}if(this.snapshot?.placement&&this.snapshot.canDm){const p=this.root.toLocal(e.global);this.callbacks.onPlace(p.x,p.y);return;}this.callbacks.onSelect(null);}
   private handleMove(e:FederatedPointerEvent){if(this.panning){this.root.position.set(this.panStart.rootX+e.global.x-this.panStart.x,this.panStart.rootY+e.global.y-this.panStart.y);return;}if(this.snapshot?.placement&&this.placementGhost){const p=this.root.toLocal(e.global);this.placementGhost.position.set(p.x,p.y);this.placementGhost.visible=true;return;}if(!this.dragging&&this.pointerCandidate){const candidate=this.pointerCandidate;if(Math.hypot(e.global.x-candidate.startX,e.global.y-candidate.startY)<5)return;this.dragging={kind:candidate.kind,id:candidate.id,dx:candidate.dx,dy:candidate.dy,x:candidate.originX,y:candidate.originY,originX:candidate.originX,originY:candidate.originY,display:candidate.display};if(candidate.kind==="TOKEN"){this.tokenMovementAnimations.delete(candidate.id);this.patrolVisualCatchups.delete(candidate.id);}this.pointerCandidate=null;}if(!this.dragging)return;const p=this.root.toLocal(e.global);const x=p.x-this.dragging.dx,y=p.y-this.dragging.dy;this.dragging.x=x;this.dragging.y=y;this.dragging.display.position.set(x,y);if(this.dragging.kind==="TOKEN"&&performance.now()-this.lastMoveBroadcast>=40){this.lastMoveBroadcast=performance.now();this.callbacks.onTokenMove(this.dragging.id,x,y,false);}}
   private handleUp(){const candidate=this.pointerCandidate;this.pointerCandidate=null;if(candidate){if(candidate.kind==="TOKEN")this.callbacks.onSelect(candidate.id);this.panning=false;return;}if(!this.dragging){this.panning=false;return;}const drag=this.dragging;const changed=Math.hypot(drag.x-drag.originX,drag.y-drag.originY)>.01;if(drag.kind==="TOKEN"){if(changed){this.instrumentation.moveCommits++;this.debug("token move commit");this.callbacks.onMoveCommit(drag.id,drag.x,drag.y);}else this.callbacks.onSelect(drag.id);}else if(drag.kind==="OVERLAY"&&changed){this.instrumentation.overlayCommits++;this.debug("overlay move commit");this.callbacks.onOverlayCommit(drag.id,drag.x,drag.y);}else if(drag.kind==="SCENE_LINK"&&changed){this.instrumentation.sceneLinkCommits++;this.debug("scene link move commit");this.callbacks.onSceneLinkCommit(drag.id,drag.x,drag.y);}else if(drag.kind==="DISCOVERABLE"&&changed){this.callbacks.onDiscoverableCommit(drag.id,drag.x,drag.y);}else if(drag.kind==="PATROL_WAYPOINT"&&changed){this.callbacks.onPatrolWaypointMove(drag.id,drag.x,drag.y);}this.dragging=null;this.panning=false;}
   private handleWheel=(e:WheelEvent)=>{e.preventDefault();const old=this.root.scale.x;const next=Math.max(.25,Math.min(3,old*(e.deltaY<0?1.1:.9)));const rect=this.app.canvas.getBoundingClientRect();const px=e.clientX-rect.left,py=e.clientY-rect.top;const wx=(px-this.root.x)/old,wy=(py-this.root.y)/old;this.root.scale.set(next);this.root.position.set(px-wx*next,py-wy*next);};
-  destroy(){this.clearCinematic();this.destroyed=true;this.clearAttackEffects();this.tokenTextures.clear();this.tokenDisplays.clear();this.overlayDisplays.clear();this.sceneLinkDisplays.clear();this.discoverableDisplays.clear();this.patrolLayer?.destroy({children:true});this.patrolLayer=null;this.tokenPositionTargets.clear();this.tokenMovementAnimations.clear();this.patrolVisualCatchups.clear();this.selectedRings.clear();this.intelDisplays.clear();if(!this.initialized)return;this.app.canvas.removeEventListener("wheel",this.handleWheel);this.app.ticker.remove(this.updateTokenAnimations);this.app.destroy(true,{children:true,texture:false});}
+  destroy(){this.clearCinematic();this.destroyed=true;this.clearAttackEffects();this.tokenTextures.clear();this.tokenDisplays.clear();this.tokenStructureKeys.clear();this.tokenHiddenLabels.clear();this.lightingLayer=null;this.lightingKey=null;this.overlayDisplays.clear();this.sceneLinkDisplays.clear();this.discoverableDisplays.clear();this.patrolLayer?.destroy({children:true});this.patrolLayer=null;this.tokenPositionTargets.clear();this.tokenMovementAnimations.clear();this.patrolVisualCatchups.clear();this.selectedRings.clear();this.intelDisplays.clear();if(!this.initialized)return;this.app.canvas.removeEventListener("wheel",this.handleWheel);this.app.ticker.remove(this.updateTokenAnimations);this.app.destroy(true,{children:true,texture:false});}
 }
