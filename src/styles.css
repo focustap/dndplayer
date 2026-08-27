@@ -87,3 +87,22 @@ body{overflow-x:auto;overflow-y:auto}
   .npc-interaction-content{padding:28px 20px 24px}
   .npc-interaction-nameplate{padding:38px 18px 14px}
 }
+
+.npc-dialogue-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.npc-dialogue-heading small{color:#c9a66f;font:700 8px Arial;letter-spacing:.16em}
+.npc-dialogue-heading span{color:#817b70;font:700 8px Arial;letter-spacing:.08em}
+.npc-dialogue-nav{display:flex;justify-content:space-between;gap:10px;margin-top:18px}
+.npc-dialogue-nav button{display:flex;align-items:center;gap:5px;padding:7px 10px;border:1px solid #51483b;background:#171b17;color:#dfd2ba;font:700 9px Arial}
+.npc-dialogue-nav button:last-child{margin-left:auto}
+.npc-dialogue-nav button:disabled{opacity:.35;cursor:not-allowed}
+.npc-dialogue-nav svg{width:13px;height:13px}
+
+.npc-dialogue-editor{display:grid;gap:7px;margin:10px 0;padding-top:9px;border-top:1px solid #303934}
+.npc-dialogue-editor-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;color:#a28a65;font-size:8px;font-weight:800;letter-spacing:.1em}
+.npc-dialogue-editor-heading button{padding:5px 7px;border:1px solid #4b5a52;background:#17201c;color:#d6dcd8;font-size:8px}
+.npc-dialogue-editor article{display:grid;gap:5px;padding:7px;border:1px solid #333d38;background:#101512}
+.npc-dialogue-editor-page{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.npc-dialogue-editor-page b{color:#aeb6b1;font-size:8px}
+.npc-dialogue-editor-page button{width:28px;height:26px;border:1px solid #5a403a;background:#241917;color:#dc9c88}
+.npc-dialogue-editor-page button svg{width:12px}
+.npc-dialogue-editor textarea{width:100%;min-height:72px;resize:vertical;border:1px solid #39433e;background:#0d1210;color:#e8e5dd;padding:7px;font-size:8px;line-height:1.5}

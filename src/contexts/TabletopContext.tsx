@@ -1252,7 +1252,14 @@ export function TabletopProvider({
           enabled: patch.enabled ?? existing?.enabled ?? false,
           type: patch.type ?? existing?.type ?? "DIALOGUE",
           displayName: patch.displayName ?? existing?.displayName ?? "",
-          dialogueText: patch.dialogueText ?? existing?.dialogueText ?? "",
+          dialogueText: patch.dialoguePages
+            ? (patch.dialoguePages[0] ?? "")
+            : (patch.dialogueText ?? existing?.dialogueText ?? ""),
+          dialoguePages: patch.dialoguePages
+            ? patch.dialoguePages
+            : patch.dialogueText !== undefined
+              ? (patch.dialogueText.trim() ? [patch.dialogueText] : [])
+              : (existing?.dialoguePages ?? (existing?.dialogueText.trim() ? [existing.dialogueText] : [])),
           shopItems: shopItems
             ? shopItems.map((item, index) => ({
                 id: existing?.shopItems[index]?.id ?? crypto.randomUUID(),

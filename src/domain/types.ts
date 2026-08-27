@@ -19,7 +19,7 @@ export interface TokenPatrol { id: string; tokenId: string; sceneId: string; mod
 export interface TokenMotionSegment { tokenId:string; sceneId:string; fromX:number; fromY:number; toX:number; toY:number; startedAt:string; durationMs:number; revision:number; active:boolean; }
 export type TokenInteractionType = "DIALOGUE" | "SHOP" | "BOTH";
 export interface NpcShopItem { id:string; interactionId:string; name:string; description:string; priceGp:number; quantity:number|null; sortOrder:number; }
-export interface TokenInteraction { tokenId:string; campaignId:string; enabled:boolean; type:TokenInteractionType; displayName:string; dialogueText:string; shopItems:NpcShopItem[]; }
+export interface TokenInteraction { tokenId:string; campaignId:string; enabled:boolean; type:TokenInteractionType; displayName:string; dialogueText:string; dialoguePages:string[]; shopItems:NpcShopItem[]; }
 export type MonsterAttackType = "MELEE" | "RANGED" | "MELEE_OR_RANGED" | "SPELL" | "OTHER";
 export interface DamageComponent { average: number | null; dice: string; flatBonus: number; damageType: string; }
 export interface MonsterUsage { kind: "RECHARGE" | "PER_DAY"; value?: string; uses?: number; each?: boolean; }

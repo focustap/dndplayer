@@ -100,10 +100,17 @@ function NpcInteractionEditor(){
   const {state,actions}=useTabletop();
   const token=state?.tokens.find(item=>item.id===state.selectedTokenId);
   const interaction=token?state?.tokenInteractions.find(item=>item.tokenId===token.id):undefined;
+  const [dialogueDraft,setDialogueDraft]=useState<string[]>([]);
   const [shopDraft,setShopDraft]=useState<Omit<NpcShopItem,"id"|"interactionId">[]>([]);
   const [preview,setPreview]=useState(false);
 
   useEffect(()=>{
+    const pages=interaction?.dialoguePages?.length
+      ? interaction.dialoguePages
+      : interaction?.dialogueText?.trim()
+        ? [interaction.dialogueText]
+        : [""];
+    setDialogueDraft(pages);
     setShopDraft((interaction?.shopItems??[]).map((item,index)=>({
       name:item.name,
       description:item.description,
@@ -117,6 +124,17 @@ function NpcInteractionEditor(){
   if(!state||!token||(token.type!=="NPC"&&token.type!=="MONSTER"))return null;
 
   const patch=(value:Parameters<typeof actions.updateTokenInteraction>[1])=>void actions.updateTokenInteraction(token.id,value);
+  const saveDialogue=()=>{
+    const normalized=dialogueDraft.map(page=>page.trim()).filter(Boolean);
+    setDialogueDraft(normalized.length?normalized:[""]);
+    patch({dialoguePages:normalized});
+  };
+  const addDialoguePage=()=>setDialogueDraft(current=>[...current,""]);
+  const removeDialoguePage=(index:number)=>setDialogueDraft(current=>{
+    const next=current.filter((_,pageIndex)=>pageIndex!==index);
+    return next.length?next:[""];
+  });
+
   const saveShop=(items=shopDraft)=>{
     const normalized=items.map((item,index)=>({...item,sortOrder:index}));
     setShopDraft(normalized);
@@ -130,6 +148,7 @@ function NpcInteractionEditor(){
   };
   const removeShopItem=(index:number)=>setShopDraft(current=>current.filter((_,itemIndex)=>itemIndex!==index));
   const type=interaction?.type??"DIALOGUE";
+  const previewPages=dialogueDraft.map(page=>page.trim()).filter(Boolean);
   const effectiveInteraction=interaction??{
     tokenId:token.id,
     campaignId:state.campaign.id,
@@ -137,6 +156,7 @@ function NpcInteractionEditor(){
     type:"DIALOGUE" as const,
     displayName:token.displayName,
     dialogueText:"",
+    dialoguePages:[],
     shopItems:[],
   };
 
@@ -145,7 +165,19 @@ function NpcInteractionEditor(){
     <label className="builder-toggle"><input type="checkbox" checked={interaction?.enabled??false} onChange={event=>patch({enabled:event.target.checked})}/>Interactable</label>
     <label className="builder-select"><span>Type</span><select value={type} onChange={event=>patch({type:event.target.value as "DIALOGUE"|"SHOP"|"BOTH"})}><option value="DIALOGUE">Dialogue</option><option value="SHOP">Shop</option><option value="BOTH">Dialogue + Shop</option></select></label>
     <label className="builder-select"><span>Display name</span><input key={`${token.id}-name`} defaultValue={interaction?.displayName||token.displayName} onBlur={event=>patch({displayName:event.target.value})}/></label>
-    {(type==="DIALOGUE"||type==="BOTH")&&<label className="builder-select"><span>Dialogue</span><textarea key={`${token.id}-dialogue`} defaultValue={interaction?.dialogueText??""} placeholder="What does this NPC say?" onBlur={event=>patch({dialogueText:event.target.value})}/></label>}
+
+    {(type==="DIALOGUE"||type==="BOTH")&&<div className="npc-dialogue-editor">
+      <div className="npc-dialogue-editor-heading"><span>DIALOGUE PAGES</span><button type="button" onClick={addDialoguePage}>+ Add dialogue</button></div>
+      {dialogueDraft.map((page,index)=><article key={index}>
+        <div className="npc-dialogue-editor-page">
+          <b>Dialogue {index+1}</b>
+          {dialogueDraft.length>1&&<button type="button" aria-label={`Remove dialogue ${index+1}`} onClick={()=>removeDialoguePage(index)}><Trash2/></button>}
+        </div>
+        <textarea value={page} placeholder={index===0?"What does this NPC say first?":"What do they say when the player clicks Next?"} onChange={event=>setDialogueDraft(current=>current.map((text,pageIndex)=>pageIndex===index?event.target.value:text))}/>
+      </article>)}
+      <button className="builder-preview" onClick={saveDialogue}>Save dialogue</button>
+      {dialogueDraft.length>1&&<p className="builder-help">Players will get Previous / Next buttons and read these in order.</p>}
+    </div>}
 
     {(type==="SHOP"||type==="BOTH")&&<div className="npc-shop-editor">
       <div className="npc-shop-editor-heading"><span>SHOP ITEMS</span><button type="button" onClick={addShopItem}>+ Add item</button></div>
@@ -162,8 +194,8 @@ function NpcInteractionEditor(){
 
     {(type==="SHOP"||type==="BOTH")&&<button className="builder-preview" onClick={()=>saveShop()}>Save shop items</button>}
     <button className="builder-preview" disabled={!interaction?.enabled} onClick={()=>setPreview(true)}>Preview player interaction</button>
-    <p className="builder-help">{(type==="SHOP"||type==="BOTH")?"Edit shop items freely, then press Save shop items once. ":""}Players click an enabled NPC to open its interaction. Shops currently display items and prices; they do not automatically spend player gold.</p>
-    {preview&&<NpcInteractionModal interaction={{...effectiveInteraction,shopItems:shopDraft.map((item,index)=>({id:`preview-${index}`,interactionId:token.id,...item,sortOrder:index}))}} token={token} preview onClose={()=>setPreview(false)}/>}
+    <p className="builder-help">{(type==="DIALOGUE"||type==="BOTH")?"Use dialogue pages for the base conversation; you can still improvise anything players ask. ":""}{(type==="SHOP"||type==="BOTH")?"Edit shop items freely, then press Save shop items once. ":""}Players click an enabled NPC to open its interaction.</p>
+    {preview&&<NpcInteractionModal interaction={{...effectiveInteraction,dialogueText:previewPages[0]??"",dialoguePages:previewPages,shopItems:shopDraft.map((item,index)=>({id:`preview-${index}`,interactionId:token.id,...item,sortOrder:index}))}} token={token} preview onClose={()=>setPreview(false)}/>}
   </section>;
 }
 
