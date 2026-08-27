@@ -101,6 +101,8 @@ interface TabletopActions {
   reorderInitiative(sourceId: string, targetId: string): Promise<void>;
   duplicateToken(tokenId: string): Promise<void>;
   addOverlay(file: File): Promise<void>;
+  createNpcTemplate(name: string, file: File): Promise<void>;
+  deleteNpcTemplate(id: string): Promise<void>;
   patchOverlay(id: string, patch: Partial<SceneOverlay>): Promise<void>;
   deleteOverlay(id: string): Promise<void>;
   addDiscoverable(name: string, file: File, hidden: boolean): Promise<void>;
@@ -879,12 +881,19 @@ export function TabletopProvider({
                 x,
                 y,
               )
-            : await tabletopService.placeMonsterToken(
-                s.scene.id,
-                placement.referenceId,
-                x,
-                y,
-              );
+            : placement.kind === "NPC"
+              ? await tabletopService.placeNpcToken(
+                  s.scene.id,
+                  placement.referenceId,
+                  x,
+                  y,
+                )
+              : await tabletopService.placeMonsterToken(
+                  s.scene.id,
+                  placement.referenceId,
+                  x,
+                  y,
+                );
         setState((current) =>
           current
             ? {
@@ -893,6 +902,43 @@ export function TabletopProvider({
                 placement: null,
               }
             : current,
+        );
+      },
+      async createNpcTemplate(name, file) {
+        const current = stateRef.current;
+        if (!current || !isDmRole(current.role)) return;
+        const item = await tabletopService.createNpcTemplate(
+          current.campaign.id,
+          name.trim(),
+          file,
+        );
+        setState((state) =>
+          state
+            ? {
+                ...state,
+                npcTemplates: [...state.npcTemplates, item].sort((a, b) =>
+                  a.name.localeCompare(b.name),
+                ),
+              }
+            : state,
+        );
+      },
+      async deleteNpcTemplate(id) {
+        const current = stateRef.current;
+        if (!current || !isDmRole(current.role)) return;
+        await tabletopService.deleteNpcTemplate(id);
+        setState((state) =>
+          state
+            ? {
+                ...state,
+                npcTemplates: state.npcTemplates.filter((item) => item.id !== id),
+                placement:
+                  state.placement?.kind === "NPC" &&
+                  state.placement.referenceId === id
+                    ? null
+                    : state.placement,
+              }
+            : state,
         );
       },
       async addDiscoverable(name, file, hidden) {
