@@ -43,6 +43,7 @@ export function DMToolbar() {
         <button className="danger" title={`Delete ${overlay.name}`} aria-label={`Delete ${overlay.name}`} onClick={() => { if (confirm(`Delete ${overlay.name}? This removes it from the scene and deletes its uploaded asset.`)) void actions.deleteOverlay(overlay.id); }}><Trash2 /></button>
         <div className="overlay-controls"><label>Scale<input type="range" min="60" max="500" value={overlay.width} onChange={event => { const width = Number(event.target.value); void actions.patchOverlay(overlay.id, { width, height: width * .72 }); }} /></label><label>Rotate<input type="range" min="-180" max="180" value={Math.round(overlay.rotation * 180 / Math.PI)} onChange={event => void actions.patchOverlay(overlay.id, { rotation: Number(event.target.value) * Math.PI / 180 })} /></label></div>
       </div>)}
+    </div>}
     {dm&&panel==="zones"&&<div className="tool-popover zones-popover">
       <div className="popover-title"><span><CircleDot/>Floor effect</span><button onClick={()=>setPanel(null)}><X/></button></div>
       <div className="zone-create">
@@ -59,7 +60,6 @@ export function DMToolbar() {
         <button title={marker.visible?"Hide from players":"Show to players"} onClick={()=>void actions.updateZoneMarker(marker.id,{visible:!marker.visible})}>{marker.visible?<Eye/>:<EyeOff/>}</button>
         <button className="danger" title={`Delete ${marker.label}`} onClick={()=>void actions.deleteZoneMarker(marker.id)}><Trash2/></button>
       </div>)}</div>
-    </div>}
     </div>}
   </>;
 }
