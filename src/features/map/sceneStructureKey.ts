@@ -1,10 +1,9 @@
-import type { FogRegion, Scene, SceneDiscoverable, SceneLink, SceneOverlay, Token } from "../../domain/types";
+import type { Scene, SceneDiscoverable, SceneLink, SceneOverlay, Token } from "../../domain/types";
 
 export interface SceneStructureSnapshot {
   scene: Scene;
   overlays: SceneOverlay[];
   tokens: Token[];
-  fogRegions: FogRegion[];
   sceneLinks: SceneLink[];
   discoverables: SceneDiscoverable[];
   canDm: boolean;
@@ -30,7 +29,7 @@ export function createSceneStructureKey(snapshot: SceneStructureSnapshot) {
       map: scene.mapId ? `map:${scene.mapId}` : stableAssetIdentity(null, scene.mapUrl),
       width: scene.width, height: scene.height, gridType: scene.gridType, gridSize: scene.gridSize,
       feetPerCell: scene.feetPerCell, gridColor: scene.gridColor, gridOpacity: scene.gridOpacity, gridLineWidth: scene.gridLineWidth,
-      fogEnabled: scene.fogEnabled, fogCovered: scene.fogCovered, mapX: scene.mapX, mapY: scene.mapY,
+mapX: scene.mapX, mapY: scene.mapY,
       mapScale: scene.mapScale, gridOffsetX: scene.gridOffsetX, gridOffsetY: scene.gridOffsetY,
       lighting: scene.lighting, playerCameraX: scene.playerCameraX, playerCameraY: scene.playerCameraY, playerCameraZoom: scene.playerCameraZoom,
     },
@@ -45,15 +44,9 @@ export function createSceneStructureKey(snapshot: SceneStructureSnapshot) {
       kind: overlay.kind, width: overlay.width, height: overlay.height, rotation: overlay.rotation,
       opacity: overlay.opacity, zIndex: overlay.zIndex, visible: overlay.visible, locked: overlay.locked,
     })),
-    fogRegions: [...snapshot.fogRegions].sort((a, b) => a.id.localeCompare(b.id)).map((region) => ({
-      id: region.id, sceneId: region.sceneId, mode: region.mode, shape: region.shape, points: region.points,
-    })),
-    sceneLinks: [...snapshot.sceneLinks].sort((a, b) => a.id.localeCompare(b.id)).map((link) => ({
-      id: link.id, sceneId: link.sceneId, destinationSceneId: link.destinationSceneId, label: link.label,
-    })),
-    discoverables: [...snapshot.discoverables].sort((a,b)=>a.id.localeCompare(b.id)).map((item)=>({id:item.id,name:item.name,hidden:item.hidden,discoveredAt:item.discoveredAt})),
+
     // These modes affect which board objects exist. Selection/placement and monster
-    // intel update incrementally; the fog tool is interaction state only.
+    // Intel updates incrementally.
     canDm: snapshot.canDm,
     playerView: snapshot.playerView,
   });
