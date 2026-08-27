@@ -15,6 +15,10 @@ export interface Token { id: string; sceneId: string; referenceId: string | null
 export type PatrolMode = "LOOP" | "PING_PONG" | "ONCE";
 export interface PatrolWaypoint { id: string; x: number; y: number; }
 export interface TokenPatrol { id: string; tokenId: string; sceneId: string; mode: PatrolMode; active: boolean; speed: number; waypointPauseMs: number; pauseDuringCombat: boolean; currentWaypoint: number; direction: 1 | -1; waypoints: PatrolWaypoint[]; createdAt: string; updatedAt: string; }
+export interface TokenMotionSegment { tokenId:string; sceneId:string; fromX:number; fromY:number; toX:number; toY:number; startedAt:string; durationMs:number; revision:number; active:boolean; }
+export type TokenInteractionType = "DIALOGUE" | "SHOP" | "BOTH";
+export interface NpcShopItem { id:string; interactionId:string; name:string; description:string; priceGp:number; quantity:number|null; sortOrder:number; }
+export interface TokenInteraction { tokenId:string; campaignId:string; enabled:boolean; type:TokenInteractionType; displayName:string; dialogueText:string; shopItems:NpcShopItem[]; }
 export type MonsterAttackType = "MELEE" | "RANGED" | "MELEE_OR_RANGED" | "SPELL" | "OTHER";
 export interface DamageComponent { average: number | null; dice: string; flatBonus: number; damageType: string; }
 export interface MonsterUsage { kind: "RECHARGE" | "PER_DAY"; value?: string; uses?: number; each?: boolean; }
@@ -40,7 +44,7 @@ export type CinematicStep =
   | { at: number; duration?: number; type: "MAP_SHAKE"; x?: number; y?: number; zoom?: number; intensity?: number };
 export interface CinematicEvent { id: string; campaignId: string; name: string; duration: number; steps: CinematicStep[]; createdAt: string; completed?: boolean; }
 export interface DiceRoll { id: string; campaignId: string; rollerUserId: string; rollerRole: CampaignRole; rollerDisplayName: string | null; sides: number; quantity: number; results: number[]; total: number; createdAt: string; }
-export interface TabletopState { campaign: Campaign; role: CampaignRole; scene: Scene; scenes: Scene[]; sceneLinks: SceneLink[]; discoverables: SceneDiscoverable[]; treasure: SceneDiscoverable[]; discoveryReveal: SceneDiscoverable | null; overlays: SceneOverlay[]; tokens: Token[]; transientTokenIds: string[]; patrols: TokenPatrol[]; patrolEditTokenId: string | null; characters: Character[]; monsterTemplates: MonsterTemplate[]; monsterInstances: MonsterInstance[]; combat: CombatSession; fogRegions: FogRegion[]; diceRolls: DiceRoll[]; selectedTokenId: string | null; activeFogTool: FogTool | null; placement: Placement | null; attackSelection: AttackSelection | null; attackEvent: AttackAnimationEvent | null; cinematicEvent: CinematicEvent | null; previewPlayerView: boolean; shiftIntel: boolean; connected: boolean; }
+export interface TabletopState { campaign: Campaign; role: CampaignRole; scene: Scene; scenes: Scene[]; sceneLinks: SceneLink[]; discoverables: SceneDiscoverable[]; treasure: SceneDiscoverable[]; discoveryReveal: SceneDiscoverable | null; overlays: SceneOverlay[]; tokens: Token[]; transientTokenIds: string[]; motionSegments: TokenMotionSegment[]; tokenInteractions: TokenInteraction[]; patrols: TokenPatrol[]; patrolEditTokenId: string | null; characters: Character[]; monsterTemplates: MonsterTemplate[]; monsterInstances: MonsterInstance[]; combat: CombatSession; fogRegions: FogRegion[]; diceRolls: DiceRoll[]; selectedTokenId: string | null; activeFogTool: FogTool | null; placement: Placement | null; attackSelection: AttackSelection | null; attackEvent: AttackAnimationEvent | null; cinematicEvent: CinematicEvent | null; previewPlayerView: boolean; shiftIntel: boolean; connected: boolean; }
 
 export const CONDITION_OPTIONS = ["Poisoned","Prone","Restrained","Stunned","Blinded","Charmed","Frightened","Grappled","Incapacitated","Invisible"] as const;
 export const isDmRole = (role: CampaignRole) => role === "OWNER" || role === "DM";
