@@ -192,11 +192,101 @@ function withDamageOverrides(action: MonsterAction, group: string, actionIndex: 
   };
 }
 
+type ActionRollState = {
+  rolling?: boolean;
+  attack?: { raw: number; bonus: number; total: number };
+  damage?: { formula: string; rolls: number[]; modifier: number; total: number; damageType: string }[];
+  error?: string;
+};
+
+function parseDamageFormula(formula: string, fallbackBonus: number) {
+  const clean = formula.trim().replace(/\s+/g, "");
+  const dice = clean.match(/^(\d*)d(\d+)([+-]\d+)?$/i);
+  if (dice) {
+    return {
+      quantity: Number(dice[1] || 1),
+      sides: Number(dice[2]),
+      modifier: dice[3] === undefined ? fallbackBonus : Number(dice[3]),
+    };
+  }
+  const flat = clean.match(/^[+-]?\d+$/);
+  if (flat) return { quantity: 0, sides: 0, modifier: Number(clean) };
+  return null;
+}
+
 function ActionSection({ title, actions, group, damageDiceOverrides }: { title: string; actions: MonsterAction[]; group: string; damageDiceOverrides: Record<string, string> }) {
+  const { actions: tabletopActions } = useTabletop();
+  const [rolls, setRolls] = useState<Record<number, ActionRollState>>({});
   if (!actions.length) return null;
+
+  const rollAttack = async (index: number, action: MonsterAction) => {
+    if (action.attackBonus === null || action.attackBonus === undefined) return;
+    setRolls((current) => ({ ...current, [index]: { ...current[index], rolling: true, error: undefined } }));
+    try {
+      const roll = await tabletopActions.rollDice(20, 1);
+      const raw = roll.results[0] ?? roll.total;
+      setRolls((current) => ({
+        ...current,
+        [index]: {
+          ...current[index],
+          rolling: false,
+          attack: { raw, bonus: action.attackBonus ?? 0, total: raw + (action.attackBonus ?? 0) },
+        },
+      }));
+    } catch (error) {
+      setRolls((current) => ({ ...current, [index]: { ...current[index], rolling: false, error: error instanceof Error ? error.message : "Attack roll failed." } }));
+    }
+  };
+
+  const rollDamage = async (index: number, action: MonsterAction) => {
+    if (!action.damage?.length) return;
+    setRolls((current) => ({ ...current, [index]: { ...current[index], rolling: true, error: undefined } }));
+    try {
+      const damageResults: NonNullable<ActionRollState["damage"]> = [];
+      for (const damage of action.damage) {
+        const parsed = parseDamageFormula(damage.dice, damage.flatBonus ?? 0);
+        if (!parsed) throw new Error(`Can't auto-roll "${damage.dice}" yet.`);
+        if (parsed.quantity === 0) {
+          damageResults.push({ formula: damage.dice, rolls: [], modifier: parsed.modifier, total: parsed.modifier, damageType: damage.damageType });
+          continue;
+        }
+        const roll = await tabletopActions.rollDice(parsed.sides, parsed.quantity);
+        damageResults.push({
+          formula: damage.dice,
+          rolls: roll.results,
+          modifier: parsed.modifier,
+          total: roll.total + parsed.modifier,
+          damageType: damage.damageType,
+        });
+      }
+      setRolls((current) => ({ ...current, [index]: { ...current[index], rolling: false, damage: damageResults } }));
+    } catch (error) {
+      setRolls((current) => ({ ...current, [index]: { ...current[index], rolling: false, error: error instanceof Error ? error.message : "Damage roll failed." } }));
+    }
+  };
+
   return <><p className="section-label">{title}</p>{actions.map((action, index) => {
     const effectiveAction = withDamageOverrides(action, group, index, damageDiceOverrides);
-    return <details className="action-row" key={`${title}-${action.name}-${index}`}><summary><span><b>{action.name}</b><small>{actionSummary(effectiveAction)}</small></span><ChevronRight /></summary><p>{action.description}</p>{action.variants?.map((variant, variantIndex) => <details className="action-variant" key={`${variant.name}-${variantIndex}`}><summary>{variant.name}</summary><p>{variant.description}</p></details>)}</details>;
+    const result = rolls[index];
+    const attackBonus = effectiveAction.attackBonus;
+    return <details className="action-row" key={`${title}-${action.name}-${index}`}>
+      <summary><span><b>{action.name}</b><small>{actionSummary(effectiveAction)}</small></span><ChevronRight /></summary>
+      <p>{action.description}</p>
+      {(attackBonus !== null && attackBonus !== undefined || effectiveAction.damage?.length) && <div className="monster-action-roll-controls">
+        {attackBonus !== null && attackBonus !== undefined && <button disabled={result?.rolling} onClick={() => void rollAttack(index, effectiveAction)}>ROLL ATTACK · d20{attackBonus >= 0 ? "+" : ""}{attackBonus}</button>}
+        {effectiveAction.damage?.length ? <button disabled={result?.rolling} onClick={() => void rollDamage(index, effectiveAction)}>ROLL DAMAGE · {effectiveAction.damage.map((damage) => damage.dice).join(" + ")}</button> : null}
+      </div>}
+      {result?.attack && <div className={`monster-action-roll-result ${result.attack.raw === 20 ? "critical" : result.attack.raw === 1 ? "fumble" : ""}`}>
+        <small>ATTACK</small><b>d20 {result.attack.raw} {result.attack.bonus >= 0 ? "+" : "−"} {Math.abs(result.attack.bonus)} = {result.attack.total}</b>
+        {result.attack.raw === 20 && <em>NAT 20</em>}{result.attack.raw === 1 && <em>NAT 1</em>}
+      </div>}
+      {result?.damage?.map((damage, damageIndex) => <div className="monster-action-roll-result" key={`${damage.formula}-${damageIndex}`}>
+        <small>{damage.damageType.toUpperCase()} DAMAGE</small>
+        <b>{damage.rolls.length ? `[${damage.rolls.join(", ")}]${damage.modifier ? ` ${damage.modifier >= 0 ? "+" : "−"} ${Math.abs(damage.modifier)}` : ""}` : damage.formula} = {damage.total}</b>
+      </div>)}
+      {result?.error && <p className="monster-action-roll-error">{result.error}</p>}
+      {action.variants?.map((variant, variantIndex) => <details className="action-variant" key={`${variant.name}-${variantIndex}`}><summary>{variant.name}</summary><p>{variant.description}</p></details>)}
+    </details>;
   })}</>;
 }
 
