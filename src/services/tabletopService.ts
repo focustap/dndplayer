@@ -193,7 +193,7 @@ export const tabletopService = {
     }));
     const signDiscoverable=async(item:SceneDiscoverable)=>{if(!item.storagePath)return item;const url=await getSignedAssetUrl(item.storagePath);return url?{...item,imageUrl:url}:item;};
     const treasure=await Promise.all(((treasureRows??[]) as Record<string,unknown>[]).map(asDiscoverable).map(signDiscoverable));
-    const loadedState: TabletopState = { campaign: { id: campaign.id, name: campaign.name, joinCode: campaign.join_code, ownerId: campaign.owner_id, role, memberCount: 0, updatedAt: campaign.updated_at }, role, scene, scenes: ((sceneRows ?? []) as Record<string, unknown>[]).map(asScene), sceneLinks: ((linkRows ?? []) as Record<string, unknown>[]).map(asSceneLink), discoverables:((discoverableRows??[]) as Record<string,unknown>[]).map(asDiscoverable),treasure,discoveryReveal:null, overlays, zoneMarkers:((zoneMarkerRows??[]) as Record<string,unknown>[]).map(asZoneMarker), tokens, transientTokenIds:[],motionSegments:((motionRows??[]) as Record<string,unknown>[]).map(asMotionSegment),tokenInteractions:((interactionRows??[]) as Record<string,unknown>[]).map(asInteraction), patrols:((patrolRows??[]) as Record<string,unknown>[]).map(asPatrol),patrolEditTokenId:null, characters, npcTemplates, monsterTemplates, monsterInstances, combat, diceRolls: ((diceRows ?? []) as Record<string, unknown>[]).map(asDiceRoll), selectedTokenId: null, activeInteractionTokenId: null, placement: null, attackSelection: null, attackEvent: null, cinematicEvent: null, dreadActive: dreadRow?.name === "Dread", previewPlayerView: false, shiftIntel: false, connected: true };
+    const loadedState: TabletopState = { campaign: { id: campaign.id, name: campaign.name, joinCode: campaign.join_code, ownerId: campaign.owner_id, role, memberCount: 0, updatedAt: campaign.updated_at }, role, scene, scenes: ((sceneRows ?? []) as Record<string, unknown>[]).map(asScene), sceneLinks: ((linkRows ?? []) as Record<string, unknown>[]).map(asSceneLink), discoverables:((discoverableRows??[]) as Record<string,unknown>[]).map(asDiscoverable),treasure,discoveryReveal:null, overlays, zoneMarkers:((zoneMarkerRows??[]) as Record<string,unknown>[]).map(asZoneMarker), tokens, transientTokenIds:[],motionSegments:((motionRows??[]) as Record<string,unknown>[]).map(asMotionSegment),tokenInteractions:((interactionRows??[]) as Record<string,unknown>[]).map(asInteraction), patrols:((patrolRows??[]) as Record<string,unknown>[]).map(asPatrol),patrolEditTokenId:null, characters, npcTemplates, monsterTemplates, monsterInstances, combat, diceRolls: ((diceRows ?? []) as Record<string, unknown>[]).map(asDiceRoll), selectedTokenId: null, selectedTokenIds: [], activeInteractionTokenId: null, placement: null, attackSelection: null, attackEvent: null, cinematicEvent: null, dreadActive: dreadRow?.name === "Dread", previewPlayerView: false, shiftIntel: false, connected: true };
     prefetchImage(scene.mapUrl);
     if (role === "OWNER" || role === "DM") void tabletopService.prefetchSceneMaps(loadedState.sceneLinks.map((link) => link.destinationSceneId));
     return loadedState;
@@ -325,6 +325,7 @@ export const tabletopService = {
       monsterInstances,
       combat,
       selectedTokenId: null,
+      selectedTokenIds: [],
       activeInteractionTokenId: null,
       placement: null,
       attackSelection: null,
