@@ -122,3 +122,27 @@ body{overflow-x:auto;overflow-y:auto}
 .zone-row>input,.zone-row label input{width:100%;min-width:0;height:27px;border:1px solid #343e39;background:#0f1412;color:#dfe2dc;padding:0 5px;font-size:8px}
 .zone-row label{display:flex;align-items:center;gap:3px}.zone-row label small{font-size:7px;color:#77817b}
 .zone-row>button{width:27px;height:27px;display:grid;place-items:center;border:1px solid #343d38;background:#181e1b}.zone-row>button svg{width:11px}.zone-row>button.danger{color:#cf8275;border-color:#543832}
+
+
+/* Multi-token encounter prep */
+.multi-token-toolbar{position:absolute;z-index:120;left:50%;top:18px;translate:-50% 0;display:flex;align-items:center;gap:6px;min-height:38px;padding:6px 8px;border:1px solid #8b704c;background:#101512f2;box-shadow:0 10px 28px #000b;color:#e6dcc8}
+.multi-token-toolbar strong{padding:0 7px;color:#d8b06f;font:800 9px Arial;letter-spacing:.08em}
+.multi-token-toolbar button{display:flex;align-items:center;gap:5px;height:28px;padding:0 8px;border:1px solid #3d4842;background:#19201c;color:#d8ddd8;font:700 8px Arial;text-transform:uppercase}
+.multi-token-toolbar button:hover{border-color:#8f734c;background:#25251d}
+.multi-token-toolbar button svg{width:12px;height:12px}
+.multi-token-toolbar button.danger{border-color:#5f3d37;color:#dfa095;background:#241917}
+.multi-token-toolbar button.icon-only{width:28px;padding:0;justify-content:center}
+.multi-token-toolbar small{padding:0 4px;color:#7f8983;font:700 7px Arial;white-space:nowrap}
+
+/* Clickable monster action rolls */
+.monster-action-roll-controls{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 6px}
+.monster-action-roll-controls button{display:flex;align-items:center;justify-content:center;min-height:30px;padding:7px 9px;border:1px solid #66533a;background:#241f18;color:#e6c78e;font:800 8px Arial;letter-spacing:.04em}
+.monster-action-roll-controls button:hover{border-color:#b08b59;background:#332819}
+.monster-action-roll-controls button:disabled{opacity:.5;cursor:wait}
+.monster-action-roll-result{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:7px;margin:5px 0;padding:7px 8px;border:1px solid #344039;background:#111714}
+.monster-action-roll-result small{color:#8d9992;font:800 7px Arial;letter-spacing:.08em}
+.monster-action-roll-result b{color:#ece4d5;font:700 10px Arial}
+.monster-action-roll-result em{color:#d8b06f;font:800 8px Arial;font-style:normal}
+.monster-action-roll-result.critical{border-color:#94754f;background:#211d15}
+.monster-action-roll-result.fumble{border-color:#6d4039;background:#211513}
+.monster-action-roll-error{margin:6px 0!important;padding:6px 8px;border-left:2px solid #9f5a4d;color:#d99386!important;font:8px/1.4 Arial!important}
