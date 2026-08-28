@@ -39,7 +39,8 @@ import {
 } from "../services/tabletopService";
 
 interface TabletopActions {
-  selectToken(id: string | null): void;
+  selectToken(id: string | null, additive?: boolean): void;
+  selectTokens(ids: string[], additive?: boolean): void;
   setShiftIntel(value: boolean): void;
   togglePlayerPreview(): void;
   startPlacement(placement: Placement): void;
@@ -228,7 +229,14 @@ export function TabletopProvider({
           transientTokenIds: [...transient].filter((id) =>
             tokens.some((token) => token.id === id),
           ),
-          selectedTokenId: current.selectedTokenId,
+          selectedTokenId:
+            current.selectedTokenId &&
+            tokens.some((token) => token.id === current.selectedTokenId)
+              ? current.selectedTokenId
+              : null,
+          selectedTokenIds: current.selectedTokenIds.filter((id) =>
+            tokens.some((token) => token.id === id),
+          ),
           activeInteractionTokenId: current.activeInteractionTokenId,
           patrolEditTokenId: current.patrolEditTokenId,
           previewPlayerView: current.previewPlayerView,
@@ -680,8 +688,42 @@ export function TabletopProvider({
 
   const actions = useMemo<TabletopActions>(
     () => ({
-      selectToken(id) {
-        setState((s) => (s ? { ...s, selectedTokenId: id } : s));
+      selectToken(id, additive = false) {
+        setState((s) => {
+          if (!s) return s;
+          if (!id)
+            return { ...s, selectedTokenId: null, selectedTokenIds: [] };
+          if (!additive)
+            return { ...s, selectedTokenId: id, selectedTokenIds: [id] };
+          const alreadySelected = s.selectedTokenIds.includes(id);
+          const selectedTokenIds = alreadySelected
+            ? s.selectedTokenIds.filter((candidate) => candidate !== id)
+            : [...s.selectedTokenIds, id];
+          return {
+            ...s,
+            selectedTokenIds,
+            selectedTokenId: alreadySelected
+              ? selectedTokenIds[selectedTokenIds.length - 1] ?? null
+              : id,
+          };
+        });
+      },
+      selectTokens(ids, additive = false) {
+        setState((s) => {
+          if (!s) return s;
+          const validIds = [...new Set(ids)].filter((id) =>
+            s.tokens.some((token) => token.id === id),
+          );
+          const selectedTokenIds = additive
+            ? [...new Set([...s.selectedTokenIds, ...validIds])]
+            : validIds;
+          return {
+            ...s,
+            selectedTokenIds,
+            selectedTokenId:
+              selectedTokenIds[selectedTokenIds.length - 1] ?? null,
+          };
+        });
       },
       setShiftIntel(value) {
         setState((s) => (s ? { ...s, shiftIntel: value } : s));
@@ -1420,6 +1462,7 @@ export function TabletopProvider({
             ? {
                 ...current,
                 selectedTokenId: tokenId,
+                selectedTokenIds: [tokenId],
                 activeInteractionTokenId: tokenId,
               }
             : current,
@@ -1437,6 +1480,7 @@ export function TabletopProvider({
             ? {
                 ...current,
                 selectedTokenId: tokenId,
+                selectedTokenIds: [tokenId],
                 activeInteractionTokenId: tokenId,
                 tokens: current.tokens.map((item) =>
                   item.id === tokenId
@@ -1463,6 +1507,9 @@ export function TabletopProvider({
                   current.selectedTokenId === current.activeInteractionTokenId
                     ? null
                     : current.selectedTokenId,
+                selectedTokenIds: current.selectedTokenIds.filter(
+                  (id) => id !== current.activeInteractionTokenId,
+                ),
               }
             : current,
         );
@@ -1478,9 +1525,14 @@ export function TabletopProvider({
           current
             ? {
                 ...current,
+                selectedTokenIds: current.selectedTokenIds.filter(
+                  (tokenId) => tokenId !== id,
+                ),
                 selectedTokenId:
                   current.selectedTokenId === id
-                    ? null
+                    ? current.selectedTokenIds.filter(
+                        (tokenId) => tokenId !== id,
+                      ).at(-1) ?? null
                     : current.selectedTokenId,
                 tokens: current.tokens.filter((t) => t.id !== id),
               }
