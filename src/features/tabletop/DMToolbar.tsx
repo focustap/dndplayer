@@ -37,11 +37,11 @@ export function DMToolbar() {
       <button className="upload-overlay" onClick={() => input.current?.click()}><ImagePlus /><span><b>Add image overlay</b><small>PNG, JPEG, or WebP</small></span></button>
       <input ref={input} hidden type="file" accept="image/png,image/jpeg,image/webp" onChange={event => { const file = event.target.files?.[0]; if (file) void actions.addOverlay(file); event.target.value = ""; }} />
       {state.overlays.map(overlay => <div className="overlay-row" key={overlay.id}>
-        <span className={overlay.kind.toLowerCase()}>{overlay.kind[0]}</span><div><b>{overlay.name}</b><small>{Math.round(overlay.width)} × {Math.round(overlay.height)} · {Math.round(overlay.rotation * 180 / Math.PI)}°</small></div>
+        <span className={overlay.kind.toLowerCase()}>{overlay.kind[0]}</span><div><b>{overlay.name}</b><small>Scale {Math.round(overlay.width)}px · {Math.round(overlay.rotation * 180 / Math.PI)}°</small></div>
         <button title={overlay.visible ? "Hide" : "Show"} onClick={() => void actions.patchOverlay(overlay.id, { visible: !overlay.visible })}>{overlay.visible ? <Eye /> : <EyeOff />}</button>
         <button title={overlay.locked ? "Unlock" : "Lock"} onClick={() => void actions.patchOverlay(overlay.id, { locked: !overlay.locked })}>{overlay.locked ? <Lock /> : <Unlock />}</button>
         <button className="danger" title={`Delete ${overlay.name}`} aria-label={`Delete ${overlay.name}`} onClick={() => { if (confirm(`Delete ${overlay.name}? This removes it from the scene and deletes its uploaded asset.`)) void actions.deleteOverlay(overlay.id); }}><Trash2 /></button>
-        <div className="overlay-controls"><label>Scale<input type="range" min="60" max="500" value={overlay.width} onChange={event => { const width = Number(event.target.value); void actions.patchOverlay(overlay.id, { width, height: width * .72 }); }} /></label><label>Rotate<input type="range" min="-180" max="180" value={Math.round(overlay.rotation * 180 / Math.PI)} onChange={event => void actions.patchOverlay(overlay.id, { rotation: Number(event.target.value) * Math.PI / 180 })} /></label></div>
+        <div className="overlay-controls"><label>Scale<input type="range" min="60" max="500" value={overlay.width} onChange={event => { const width = Number(event.target.value); void actions.patchOverlay(overlay.id, { width }); }} /></label><label>Rotate<input type="range" min="-180" max="180" value={Math.round(overlay.rotation * 180 / Math.PI)} onChange={event => void actions.patchOverlay(overlay.id, { rotation: Number(event.target.value) * Math.PI / 180 })} /></label></div>
       </div>)}
     </div>}
     {dm&&panel==="zones"&&<div className="tool-popover zones-popover">
