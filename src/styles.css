@@ -42,7 +42,7 @@ body{overflow-x:auto;overflow-y:auto}
 
 /* NPC interactions use a wide split layout: portrait on the left, dialogue/shop on the right. */
 .npc-interaction-backdrop{position:fixed;inset:0;z-index:1600;display:grid;place-items:center;padding:5vh 5vw;background:rgba(3,5,4,.84)}
-.npc-interaction-modal{position:relative!important;display:grid!important;grid-template-columns:minmax(250px,38%) minmax(320px,62%);width:min(980px,92vw)!important;min-height:min(560px,80vh);max-height:88vh!important;padding:0!important;overflow:hidden;background:#101512!important;border:1px solid #a98452!important;box-shadow:0 26px 90px #000!important;color:#e9dfcb;align-items:stretch!important}
+.npc-interaction-modal{position:relative!important;display:grid!important;grid-template-columns:minmax(250px,38%) minmax(320px,62%);width:min(980px,92vw)!important;min-height:min(560px,80vh);max-height:88vh!important;padding:0!important;overflow:hidden;background:#101512!important;border:1px solid #a98452!important;box-shadow:0 26px 90px #000!important;color:#e9dfcb;align-items:stretch!important;min-width:0;min-height:0}
 .npc-interaction-close{position:absolute;z-index:5;right:10px;top:10px;width:34px;height:34px;display:grid;place-items:center;border:1px solid #5f5140;background:#171914e8;color:#ead8b7}
 .npc-interaction-close svg{width:16px}
 .npc-interaction-portrait{position:relative;min-height:100%;overflow:hidden;background:radial-gradient(circle at 50% 25%,#3c3328,#151713 68%)}
@@ -51,7 +51,7 @@ body{overflow-x:auto;overflow-y:auto}
 .npc-interaction-nameplate{position:absolute;left:0;right:0;bottom:0;padding:28px 22px 20px;background:linear-gradient(transparent,#090c0aeF 44%);text-shadow:0 2px 8px #000}
 .npc-interaction-nameplate small,.npc-dialogue-panel>small,.npc-shop-panel header small{color:#c9a66f;font:700 8px Arial;letter-spacing:.16em}
 .npc-interaction-nameplate h2{margin:6px 0 0!important;font:600 28px Georgia!important;color:#f1e5ce}
-.npc-interaction-content{min-width:0;overflow:auto;padding:54px 34px 30px;background:linear-gradient(140deg,#111714,#0c110f)}
+.npc-interaction-content{min-width:0;min-height:0;max-height:88vh;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;padding:54px 34px 30px;background:linear-gradient(140deg,#111714,#0c110f)}
 .npc-dialogue-panel{padding-bottom:24px;border-bottom:1px solid #3d372d}
 .npc-dialogue-panel p{margin:12px 0 0;white-space:pre-wrap;color:#ddd0b8;font:16px/1.7 Georgia}
 .npc-shop-panel{margin-top:24px}
