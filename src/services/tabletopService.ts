@@ -347,7 +347,7 @@ export const tabletopService = {
 
     const overlays = await Promise.all(((overlayRows ?? []) as Record<string, unknown>[]).map(async (row) => {
       if (row.storage_path) {
-        const url = await getSignedAssetUrl(String(row.storage_path));
+        const url = await getSignedAssetUrl(String(row.storage_path), campaignId);
         if (url) row.image_url = url;
       }
       return asOverlay(row);
