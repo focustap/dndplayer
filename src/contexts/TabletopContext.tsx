@@ -118,7 +118,7 @@ interface TabletopActions {
   ): Promise<void>;
   deleteDiscoverable(id: string): Promise<void>;
   discover(id: string): Promise<void>;
-  previewDiscoverable(id: string): void;
+  previewDiscoverable(id: string): Promise<void>;
   closeDiscovery(): void;
   createPatrol(tokenId: string): Promise<void>;
   patchPatrol(
@@ -1165,14 +1165,27 @@ export function TabletopProvider({
             : current,
         );
       },
-      previewDiscoverable(id) {
+      async previewDiscoverable(id) {
         const s = stateRef.current;
         if (!s || !isDmRole(s.role)) return;
         const item = s.discoverables.find((candidate) => candidate.id === id);
         if (!item) return;
-        setState((current) =>
-          current ? { ...current, discoveryReveal: item } : current,
-        );
+        try {
+          const preview = await tabletopService.previewDiscoverable(item);
+          setState((current) =>
+            current
+              ? {
+                  ...current,
+                  discoverables: current.discoverables.map((candidate) =>
+                    candidate.id === id ? { ...candidate, ...preview } : candidate,
+                  ),
+                  discoveryReveal: preview,
+                }
+              : current,
+          );
+        } catch (previewError) {
+          console.error("Unable to load discoverable preview.", previewError);
+        }
       },
       closeDiscovery() {
         setState((current) =>
