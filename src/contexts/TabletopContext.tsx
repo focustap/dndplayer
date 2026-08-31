@@ -96,9 +96,14 @@ interface TabletopActions {
     characterId: string,
     abilities: Character["abilities"],
   ): Promise<void>;
+  setCharacterAttackPresets(
+    characterId: string,
+    presets: AttackPreset[],
+  ): Promise<void>;
   toggleCondition(instanceId: string, condition: string): Promise<void>;
   nextTurn(delta: 1 | -1): Promise<void>;
   startCombat(): Promise<void>;
+  rollInitiative(): Promise<void>;
   endCombat(): Promise<void>;
   addToInitiative(tokenId: string, initiative?: number): Promise<void>;
   removeInitiative(entryId: string): Promise<void>;
@@ -812,6 +817,12 @@ export function TabletopProvider({
           (token) => token.id === attackerTokenId,
         );
         if (!s || !attacker) return;
+        if (attacker.type === "PLAYER") {
+          const character = s.characters.find(
+            (candidate) => candidate.id === attacker.referenceId,
+          );
+          if (!character?.allowedAttackPresets.includes(preset)) return;
+        }
         if (!isDmRole(s.role)) {
           const {
             data: { user },
@@ -1791,6 +1802,29 @@ export function TabletopProvider({
             : existing,
         );
       },
+      async setCharacterAttackPresets(characterId, presets) {
+        const s = stateRef.current;
+        const character = s?.characters.find(
+          (candidate) => candidate.id === characterId,
+        );
+        if (!s || !character || !isDmRole(s.role)) return;
+        const safe = [...new Set(presets)];
+        const updated = isSupabaseConfigured
+          ? await tabletopService.setCharacterAttackPresets(characterId, safe)
+          : { ...character, allowedAttackPresets: safe };
+        setState((existing) =>
+          existing
+            ? {
+                ...existing,
+                characters: existing.characters.map((candidate) =>
+                  candidate.id === updated.id
+                    ? { ...candidate, ...updated }
+                    : candidate,
+                ),
+              }
+            : existing,
+        );
+      },
       async toggleCondition(instanceId, condition) {
         const s = stateRef.current;
         const instance = s?.monsterInstances.find((m) => m.id === instanceId);
@@ -1878,6 +1912,121 @@ export function TabletopProvider({
             : current,
         );
       },
+      async rollInitiative() {
+        const s = stateRef.current;
+        if (!s || !isDmRole(s.role)) return;
+
+        let combat = s.combat;
+        if (!combat.active) {
+          let id = crypto.randomUUID();
+          if (isSupabaseConfigured && campaignId !== "demo") {
+            const { data, error } = await supabase
+              .from("combat_sessions")
+              .insert({
+                campaign_id: s.campaign.id,
+                scene_id: s.scene.id,
+                active: true,
+              })
+              .select("id")
+              .single();
+            if (error) throw error;
+            id = data.id;
+          }
+          combat = {
+            id,
+            campaignId: s.campaign.id,
+            sceneId: s.scene.id,
+            active: true,
+            round: 1,
+            currentIndex: 0,
+            entries: [],
+          };
+        }
+
+        const existingTokenIds = new Set(
+          combat.entries.map((entry) => entry.tokenId).filter(Boolean),
+        );
+        const monsterTokens = s.tokens.filter(
+          (token) =>
+            token.type === "MONSTER" && !existingTokenIds.has(token.id),
+        );
+        const rolled = monsterTokens.map((token) => {
+          const monster = s.monsterInstances.find(
+            (instance) => instance.id === token.referenceId,
+          );
+          const dexterity = monster?.template?.abilities.dex ?? 10;
+          const modifier =
+            monster?.template?.initiative.modifier ??
+            Math.floor((dexterity - 10) / 2);
+          return {
+            id: crypto.randomUUID(),
+            combatSessionId: combat.id,
+            tokenId: token.id,
+            monsterInstanceId: token.referenceId,
+            characterId: null,
+            name: token.displayName,
+            imageUrl: token.imageUrl,
+            initiative: Math.floor(Math.random() * 20) + 1 + modifier,
+            sortOrder: 0,
+            groupKey: null,
+            groupCount: 1,
+          };
+        });
+
+        const currentEntryId = combat.entries[combat.currentIndex]?.id ?? null;
+        const ordered = [...combat.entries, ...rolled]
+          .sort((a, b) => b.initiative - a.initiative || a.sortOrder - b.sortOrder)
+          .map((entry, index) => ({ ...entry, sortOrder: index }));
+        const currentIndex = currentEntryId
+          ? Math.max(0, ordered.findIndex((entry) => entry.id === currentEntryId))
+          : 0;
+
+        if (isSupabaseConfigured && campaignId !== "demo") {
+          if (rolled.length) {
+            const { error } = await supabase.from("initiative_entries").insert(
+              rolled.map((entry) => ({
+                id: entry.id,
+                combat_session_id: combat.id,
+                token_id: entry.tokenId,
+                monster_instance_id: entry.monsterInstanceId,
+                character_id: null,
+                name: entry.name,
+                image_url: entry.imageUrl,
+                initiative: entry.initiative,
+                sort_order: ordered.findIndex((item) => item.id === entry.id),
+              })),
+            );
+            if (error) throw error;
+          }
+          await Promise.all(
+            ordered.map((entry) =>
+              supabase
+                .from("initiative_entries")
+                .update({ sort_order: entry.sortOrder })
+                .eq("id", entry.id)
+                .then(({ error }) => {
+                  if (error) throw error;
+                }),
+            ),
+          );
+          if (currentIndex !== combat.currentIndex) {
+            const { error } = await supabase
+              .from("combat_sessions")
+              .update({ current_index: currentIndex })
+              .eq("id", combat.id);
+            if (error) throw error;
+          }
+        }
+
+        setState((current) =>
+          current
+            ? {
+                ...current,
+                combat: { ...combat, currentIndex, entries: ordered },
+              }
+            : current,
+        );
+      },
       async endCombat() {
         const s = stateRef.current;
         if (!s || !s.combat.active) return;
@@ -1935,35 +2084,75 @@ export function TabletopProvider({
           };
         }
         const score = initiative ?? Math.floor(Math.random() * 20) + 1;
-        const entry = {
-          id: crypto.randomUUID(),
-          combatSessionId: combat.id,
-          tokenId: token.id,
-          monsterInstanceId:
-            token.type === "MONSTER" ? token.referenceId : null,
-          characterId: token.type === "PLAYER" ? token.referenceId : null,
-          name: token.displayName,
-          imageUrl: token.imageUrl,
-          initiative: score,
-          sortOrder: combat.entries.length,
-          groupKey: null,
-          groupCount: 1,
-        };
-        if (isSupabaseConfigured && campaignId !== "demo") {
-          const { error } = await supabase
-            .from("initiative_entries")
-            .insert({
-              id: entry.id,
-              combat_session_id: combat.id,
-              token_id: entry.tokenId,
-              monster_instance_id: entry.monsterInstanceId,
-              character_id: entry.characterId,
-              name: entry.name,
-              image_url: entry.imageUrl,
+        const existing = combat.entries.find((entry) => entry.tokenId === token.id);
+        const entry = existing
+          ? { ...existing, initiative: score }
+          : {
+              id: crypto.randomUUID(),
+              combatSessionId: combat.id,
+              tokenId: token.id,
+              monsterInstanceId:
+                token.type === "MONSTER" ? token.referenceId : null,
+              characterId: token.type === "PLAYER" ? token.referenceId : null,
+              name: token.displayName,
+              imageUrl: token.imageUrl,
               initiative: score,
-              sort_order: entry.sortOrder,
-            });
-          if (error) throw error;
+              sortOrder: combat.entries.length,
+              groupKey: null,
+              groupCount: 1,
+            };
+        const currentEntryId = combat.entries[combat.currentIndex]?.id ?? null;
+        const ordered = [
+          ...combat.entries.filter((candidate) => candidate.id !== entry.id),
+          entry,
+        ]
+          .sort((a, b) => b.initiative - a.initiative || a.sortOrder - b.sortOrder)
+          .map((candidate, index) => ({ ...candidate, sortOrder: index }));
+        const currentIndex = currentEntryId
+          ? Math.max(0, ordered.findIndex((candidate) => candidate.id === currentEntryId))
+          : 0;
+
+        if (isSupabaseConfigured && campaignId !== "demo") {
+          if (existing) {
+            const { error } = await supabase
+              .from("initiative_entries")
+              .update({ initiative: score })
+              .eq("id", entry.id);
+            if (error) throw error;
+          } else {
+            const { error } = await supabase
+              .from("initiative_entries")
+              .insert({
+                id: entry.id,
+                combat_session_id: combat.id,
+                token_id: entry.tokenId,
+                monster_instance_id: entry.monsterInstanceId,
+                character_id: entry.characterId,
+                name: entry.name,
+                image_url: entry.imageUrl,
+                initiative: score,
+                sort_order: entry.sortOrder,
+              });
+            if (error) throw error;
+          }
+          await Promise.all(
+            ordered.map((candidate) =>
+              supabase
+                .from("initiative_entries")
+                .update({ sort_order: candidate.sortOrder })
+                .eq("id", candidate.id)
+                .then(({ error }) => {
+                  if (error) throw error;
+                }),
+            ),
+          );
+          if (currentIndex !== combat.currentIndex) {
+            const { error } = await supabase
+              .from("combat_sessions")
+              .update({ current_index: currentIndex })
+              .eq("id", combat.id);
+            if (error) throw error;
+          }
         }
         setState((current) =>
           current
@@ -1971,9 +2160,8 @@ export function TabletopProvider({
                 ...current,
                 combat: {
                   ...combat,
-                  entries: [...combat.entries, entry]
-                    .sort((a, b) => b.initiative - a.initiative)
-                    .map((e, i) => ({ ...e, sortOrder: i })),
+                  currentIndex,
+                  entries: ordered,
                 },
               }
             : current,
@@ -2012,6 +2200,7 @@ export function TabletopProvider({
         const from = entries.findIndex((e) => e.id === sourceId),
           to = entries.findIndex((e) => e.id === targetId);
         if (from < 0 || to < 0 || from === to) return;
+        if (entries[from].initiative !== entries[to].initiative) return;
         const [moved] = entries.splice(from, 1);
         entries.splice(to, 0, moved);
         const ordered = entries.map((e, i) => ({ ...e, sortOrder: i }));
