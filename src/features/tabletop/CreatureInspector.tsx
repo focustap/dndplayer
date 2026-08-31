@@ -18,17 +18,19 @@ function InspectorContent({ tokenId }: { tokenId: string }) {
   const { state, actions } = useTabletop();
   const { user } = useAuth();
   const token = state?.tokens.find((item) => item.id === tokenId);
-  const [amount, setAmount] = useState("8");
-  const [editing, setEditing] = useState(false);
-  const [conditionOpen, setConditionOpen] = useState(false);
-  const [attackPreset, setAttackPreset] = useState<AttackPreset>(token?.type === "PLAYER" ? "SNEAK_ATTACK" : "MELEE");
-  const [attackColor, setAttackColor] = useState("#8d7cff");
-  const input = useRef<HTMLInputElement>(null);
   const monster = state?.monsterInstances.find((item) => item.id === token?.referenceId);
   const character = state?.characters.find((item) => item.id === token?.referenceId);
   const npcTemplate = token?.type === "NPC"
     ? state?.npcTemplates.find((item) => item.id === token.referenceId)
     : undefined;
+  const [amount, setAmount] = useState("8");
+  const [editing, setEditing] = useState(false);
+  const [conditionOpen, setConditionOpen] = useState(false);
+  const [attackPreset, setAttackPreset] = useState<AttackPreset>(
+    character?.allowedAttackPresets[0] ?? "MELEE",
+  );
+  const [attackColor, setAttackColor] = useState("#8d7cff");
+  const input = useRef<HTMLInputElement>(null);
   if (!state || !token) return null;
 
   const portraitUrl =
@@ -41,6 +43,10 @@ function InspectorContent({ tokenId }: { tokenId: string }) {
   const dm = isDmRole(state.role);
   const canCharacterEdit = Boolean(character && (dm || character.ownerId === user?.id));
   const canAnimate = dm || (token.type === "PLAYER" && token.ownerUserId === user?.id);
+  const baseAttackPresets = ([["MELEE","Melee"],["RANGED","Ranged"],["SPELL","Spell"]] as [AttackPreset,string][])
+    .filter(([preset]) => token.type !== "PLAYER" || character?.allowedAttackPresets.includes(preset));
+  const signatureAttackPresets = ([["SNEAK_ATTACK","Sneak Attack"],["SMITE","Smite"],["DRUID","Druid"],["WIZARD","Wizard"]] as [AttackPreset,string][])
+    .filter(([preset]) => token.type === "PLAYER" && character?.allowedAttackPresets.includes(preset));
   const current = monster?.currentHp ?? character?.currentHp ?? 0;
   const max = monster?.maxHp ?? character?.maxHp ?? 1;
   const ac = monster?.ac ?? character?.ac ?? 0;
@@ -65,11 +71,11 @@ function InspectorContent({ tokenId }: { tokenId: string }) {
       {dm && <button className="danger" onClick={() => { if (confirm(`Delete ${token.displayName} from this scene?`)) void actions.deleteToken(token.id); }} aria-label={`Delete ${token.displayName}`} title="Delete token"><Trash2 /></button>}
     </div>
     {canAnimate && <section className={`attack-controls ${token.type==="PLAYER"?"signature-attacks":""}`}>
-      <small>ATTACK ANIMATION</small>
-      <div>{([["MELEE","Melee"],["RANGED","Ranged"],["SPELL","Spell"]] as [AttackPreset,string][]).map(([preset,label]) => <button className={attackPreset === preset ? "active" : ""} key={preset} onClick={() => setAttackPreset(preset)}>{label}</button>)}</div>
-      {token.type==="PLAYER"&&<>
-        <small className="attack-subhead">SIGNATURE ANIMATION</small>
-        <div className="signature-grid">{([["SNEAK_ATTACK","Sneak"],["SMITE","Smite"],["DRUID","Druid"],["WIZARD","Wizard"]] as [AttackPreset,string][]).map(([preset,label]) => <button className={attackPreset === preset ? "active" : ""} key={preset} onClick={() => setAttackPreset(preset)}>{label}</button>)}</div>
+      <small>ATTACK / ABILITY</small>
+      <div>{baseAttackPresets.map(([preset,label]) => <button className={attackPreset === preset ? "active" : ""} key={preset} onClick={() => setAttackPreset(preset)}>{label}</button>)}</div>
+      {signatureAttackPresets.length > 0 && <>
+        <small className="attack-subhead">CLASS ABILITIES</small>
+        <div className="signature-grid">{signatureAttackPresets.map(([preset,label]) => <button className={attackPreset === preset ? "active" : ""} key={preset} onClick={() => setAttackPreset(preset)}>{label}</button>)}</div>
       </>}
       {token.type==="PLAYER"&&attackPreset==="WIZARD"&&<div className="wizard-color-row" aria-label="Wizard spell color">
         {["#8d7cff","#4aa8ff","#5ce1e6","#67d17a","#ff5f63","#ff9a45","#f5f2ff"].map(color=><button key={color} type="button" className={attackColor===color?"active":""} style={{"--spell-color":color} as CSSProperties} onClick={()=>setAttackColor(color)} aria-label={`Use ${color} spell color`}/>)}
@@ -89,6 +95,7 @@ function InspectorContent({ tokenId }: { tokenId: string }) {
       <small>Changes only this token's map footprint.</small>
     </label>}
     {character && <CharacterAbilityScores character={character} canEdit={canCharacterEdit} onSave={(abilities) => void actions.setCharacterAbilities(character.id, abilities)} />}
+    {character && dm && <CharacterCombatAbilities key={character.id + character.allowedAttackPresets.join(",")} character={character} onSave={(presets) => void actions.setCharacterAttackPresets(character.id, presets)} />}
     <section className="hp-card">
       <div className="hp-title"><span>HIT POINTS</span><strong>{current} <i>/ {max}</i></strong></div>
       {character && character.tempHp > 0 && <div className="temp-hp">TEMP HP <b>+{character.tempHp}</b></div>}
@@ -307,6 +314,33 @@ function DirectCharacterCombat({ character, onSave }: { character: { currentHp: 
   const [current, setCurrent] = useState(String(character.currentHp)); const [max, setMax] = useState(String(character.maxHp)); const [temp, setTemp] = useState(String(character.tempHp)); const [ac, setAc] = useState(String(character.ac));
   return <div className="direct-hp character-combat-edit"><label>Current<input value={current} onChange={(event) => setCurrent(event.target.value)} /></label><label>Max<input value={max} onChange={(event) => setMax(event.target.value)} /></label><label>Temp<input value={temp} onChange={(event) => setTemp(event.target.value)} /></label><label>AC<input value={ac} onChange={(event) => setAc(event.target.value)} /></label><button onClick={() => onSave(Number(current), Number(max), Number(temp), Number(ac))}>Save</button></div>;
 }
+function CharacterCombatAbilities({ character, onSave }: { character: Character; onSave(presets: AttackPreset[]): void }) {
+  const options: [AttackPreset, string][] = [
+    ["MELEE", "Melee"],
+    ["RANGED", "Ranged"],
+    ["SPELL", "Spell"],
+    ["SNEAK_ATTACK", "Sneak Attack"],
+    ["SMITE", "Smite"],
+    ["DRUID", "Druid"],
+    ["WIZARD", "Wizard"],
+  ];
+  const [draft, setDraft] = useState<AttackPreset[]>(character.allowedAttackPresets);
+  const toggle = (preset: AttackPreset) =>
+    setDraft((current) =>
+      current.includes(preset)
+        ? current.filter((item) => item !== preset)
+        : [...current, preset],
+    );
+  return <section className="character-combat-abilities">
+    <p className="character-ability-title">PLAYER COMBAT BUTTONS</p>
+    <p className="dm-notes">Only enabled attacks and class abilities appear for this player.</p>
+    <div className="character-combat-ability-grid">
+      {options.map(([preset, label]) => <button type="button" className={draft.includes(preset) ? "active" : ""} key={preset} onClick={() => toggle(preset)}>{label}</button>)}
+    </div>
+    <button className="save-combat-abilities" onClick={() => onSave(draft)}>Save player abilities</button>
+  </section>;
+}
+
 function CharacterAbilityScores({ character, canEdit, onSave }: { character: Character; canEdit: boolean; onSave(abilities: AbilityScores): void }) {
   const [draft, setDraft] = useState(character.abilities);
   const modifier = (score: number) => Math.floor((score - 10) / 2);
