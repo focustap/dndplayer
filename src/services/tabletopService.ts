@@ -15,20 +15,55 @@ const asMotionSegment=(r:Record<string,unknown>):TokenMotionSegment=>({tokenId:S
 const asShopItem=(r:Record<string,unknown>):NpcShopItem=>({id:String(r.id),interactionId:String(r.interaction_id),name:String(r.name),description:String(r.description??""),priceGp:Number(r.price_gp),quantity:r.quantity===null||r.quantity===undefined?null:Number(r.quantity),sortOrder:Number(r.sort_order)});
 const asInteraction=(r:Record<string,unknown>):TokenInteraction=>{const legacy=String(r.dialogue_text??"");const rawPages=Array.isArray(r.dialogue_pages)?r.dialogue_pages:[];const dialoguePages=rawPages.map((page)=>String(page)).filter((page)=>page.trim().length>0);return {tokenId:String(r.token_id),campaignId:String(r.campaign_id),enabled:Boolean(r.enabled),type:r.type as TokenInteraction["type"],displayName:String(r.display_name??""),dialogueText:legacy,dialoguePages:dialoguePages.length?dialoguePages:(legacy.trim()?[legacy]:[]),shopItems:((r.npc_shop_items as Record<string,unknown>[]|null)??[]).map(asShopItem).sort((a,b)=>a.sortOrder-b.sortOrder)};};
 const SIGNED_ASSET_CACHE_MS = 11 * 60 * 60 * 1000;
+const SIGNED_ASSET_STORAGE_PREFIX = "wayfinder:signed-asset:";
 const signedAssetCache = new Map<string, { url: string; expiresAt: number }>();
 const signedAssetInflight = new Map<string, Promise<string | null>>();
 const mapStoragePathCache = new Map<string, string | null>();
 const prefetchedImages = new Map<string, HTMLImageElement>();
 
+const readPersistedSignedAsset = (path: string) => {
+  if (typeof localStorage === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(`${SIGNED_ASSET_STORAGE_PREFIX}${path}`);
+    if (!raw) return null;
+    const value = JSON.parse(raw) as { url?: string; expiresAt?: number };
+    if (!value.url || !value.expiresAt || value.expiresAt <= Date.now() + 60_000) {
+      localStorage.removeItem(`${SIGNED_ASSET_STORAGE_PREFIX}${path}`);
+      return null;
+    }
+    return { url: value.url, expiresAt: value.expiresAt };
+  } catch {
+    return null;
+  }
+};
+
+const persistSignedAsset = (path: string, value: { url: string; expiresAt: number }) => {
+  if (typeof localStorage === "undefined") return;
+  try {
+    localStorage.setItem(`${SIGNED_ASSET_STORAGE_PREFIX}${path}`, JSON.stringify(value));
+  } catch {
+    // Storage may be disabled/private. The in-memory cache still works.
+  }
+};
+
 const getSignedAssetUrl = async (path: string): Promise<string | null> => {
   const cached = signedAssetCache.get(path);
   if (cached && cached.expiresAt > Date.now()) return cached.url;
+
+  const persisted = readPersistedSignedAsset(path);
+  if (persisted) {
+    signedAssetCache.set(path, persisted);
+    return persisted.url;
+  }
+
   const inflight = signedAssetInflight.get(path);
   if (inflight) return inflight;
   const request = (async () => {
     const { data, error } = await supabase.storage.from("campaign-assets").createSignedUrl(path, 60 * 60 * 12);
     if (error || !data?.signedUrl) return null;
-    signedAssetCache.set(path, { url: data.signedUrl, expiresAt: Date.now() + SIGNED_ASSET_CACHE_MS });
+    const value = { url: data.signedUrl, expiresAt: Date.now() + SIGNED_ASSET_CACHE_MS };
+    signedAssetCache.set(path, value);
+    persistSignedAsset(path, value);
     return data.signedUrl;
   })().finally(() => signedAssetInflight.delete(path));
   signedAssetInflight.set(path, request);
@@ -195,7 +230,6 @@ export const tabletopService = {
     const treasure=await Promise.all(((treasureRows??[]) as Record<string,unknown>[]).map(asDiscoverable).map(signDiscoverable));
     const loadedState: TabletopState = { campaign: { id: campaign.id, name: campaign.name, joinCode: campaign.join_code, ownerId: campaign.owner_id, role, memberCount: 0, updatedAt: campaign.updated_at }, role, scene, scenes: ((sceneRows ?? []) as Record<string, unknown>[]).map(asScene), sceneLinks: ((linkRows ?? []) as Record<string, unknown>[]).map(asSceneLink), discoverables:((discoverableRows??[]) as Record<string,unknown>[]).map(asDiscoverable),treasure,discoveryReveal:null, overlays, zoneMarkers:((zoneMarkerRows??[]) as Record<string,unknown>[]).map(asZoneMarker), tokens, transientTokenIds:[],motionSegments:((motionRows??[]) as Record<string,unknown>[]).map(asMotionSegment),tokenInteractions:((interactionRows??[]) as Record<string,unknown>[]).map(asInteraction), patrols:((patrolRows??[]) as Record<string,unknown>[]).map(asPatrol),patrolEditTokenId:null, characters, npcTemplates, monsterTemplates, monsterInstances, combat, diceRolls: ((diceRows ?? []) as Record<string, unknown>[]).map(asDiceRoll), selectedTokenId: null, selectedTokenIds: [], activeInteractionTokenId: null, placement: null, attackSelection: null, attackEvent: null, cinematicEvent: null, dreadActive: dreadRow?.name === "Dread", previewPlayerView: false, shiftIntel: false, connected: true };
     prefetchImage(scene.mapUrl);
-    if (role === "OWNER" || role === "DM") void tabletopService.prefetchSceneMaps(loadedState.sceneLinks.map((link) => link.destinationSceneId));
     return loadedState;
   },
   async moveToken(tokenId: string, x: number, y: number) { if (isSupabaseConfigured) { const { error } = await supabase.rpc("move_token", { p_token_id: tokenId, p_x: x, p_y: y }); if (error) throw error; } },
@@ -333,7 +367,6 @@ export const tabletopService = {
       discoveryReveal: null,
     };
     prefetchImage(scene.mapUrl);
-    if (dm) void tabletopService.prefetchSceneMaps(sceneLinks.map((link) => link.destinationSceneId));
     return next;
   },
   async activateAndRevealScene(sceneId: string) { if (!isSupabaseConfigured) return; const {error}=await supabase.rpc("activate_and_reveal_scene",{p_scene_id:sceneId}); if(error)throw error; },
