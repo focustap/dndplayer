@@ -119,7 +119,7 @@ export const campaignAudioService = {
     const path = `${campaignId}/${id}-${safeName}`;
     const { error: uploadError } = await supabase.storage
       .from("campaign-audio")
-      .upload(path, file, { contentType: "audio/mpeg" });
+      .upload(path, file, { contentType: "audio/mpeg", cacheControl: "43200" });
     fail(uploadError, "Audio upload failed.");
 
     const name = file.name.replace(/\.[^.]+$/, "").trim() || "Untitled track";
