@@ -48,6 +48,7 @@ jobs:
           VITE_BASE_PATH: ${{ vars.VITE_BASE_PATH || steps.pages.outputs.base_path }}
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY || secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_ASSET_API_URL: ${{ vars.VITE_ASSET_API_URL || secrets.VITE_ASSET_API_URL }}
           VITE_BUILD_SHA: ${{ github.sha }}
 
       - name: Upload GitHub Pages artifact
