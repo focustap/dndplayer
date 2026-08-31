@@ -283,7 +283,7 @@ export const tabletopService = {
       try {
         const path = await getMapStoragePath(mapId);
         if (!path) return;
-        const url = await getSignedAssetUrl(path);
+        const url = await getSignedAssetUrl(path, path.split("/")[0] ?? "");
         prefetchImage(url);
       } catch {
         // Prefetch is best-effort; the normal scene load still handles failures.
@@ -402,7 +402,7 @@ export const tabletopService = {
   async addSceneLink(sceneId: string, destinationSceneId: string, label: string, x: number, y: number): Promise<SceneLink> { const local:SceneLink={id:crypto.randomUUID(),sceneId,destinationSceneId,label,x,y,musicMode:"KEEP",musicTrackId:null,musicLoop:true,musicNextTrackId:null,musicNextLoop:true,ambienceMode:"KEEP",ambienceTrackId:null,ambienceLoop:true}; if(!isSupabaseConfigured)return local; const {data,error}=await supabase.from("scene_links").insert({id:local.id,scene_id:sceneId,destination_scene_id:destinationSceneId,label,x,y}).select("id,scene_id,destination_scene_id,label,x,y,music_mode,music_track_id,music_loop,music_next_track_id,music_next_loop,ambience_mode,ambience_track_id,ambience_loop").single(); if(error)throw error; return asSceneLink(data as Record<string,unknown>); },
   async updateSceneLink(id: string, patch: Partial<Pick<SceneLink,"destinationSceneId"|"label"|"x"|"y"|"musicMode"|"musicTrackId"|"musicLoop"|"musicNextTrackId"|"musicNextLoop"|"ambienceMode"|"ambienceTrackId"|"ambienceLoop">>) { if(!isSupabaseConfigured)return; const payload:Record<string,unknown>={}; if(patch.destinationSceneId!==undefined)payload.destination_scene_id=patch.destinationSceneId; if(patch.label!==undefined)payload.label=patch.label; if(patch.x!==undefined)payload.x=patch.x; if(patch.y!==undefined)payload.y=patch.y; if(patch.musicMode!==undefined)payload.music_mode=patch.musicMode; if(patch.musicTrackId!==undefined)payload.music_track_id=patch.musicTrackId; if(patch.musicLoop!==undefined)payload.music_loop=patch.musicLoop; if(patch.musicNextTrackId!==undefined)payload.music_next_track_id=patch.musicNextTrackId; if(patch.musicNextLoop!==undefined)payload.music_next_loop=patch.musicNextLoop; if(patch.ambienceMode!==undefined)payload.ambience_mode=patch.ambienceMode; if(patch.ambienceTrackId!==undefined)payload.ambience_track_id=patch.ambienceTrackId; if(patch.ambienceLoop!==undefined)payload.ambience_loop=patch.ambienceLoop; const {error}=await supabase.from("scene_links").update(payload).eq("id",id); if(error)throw error; },
   async deleteSceneLink(id: string) { if(!isSupabaseConfigured)return; const {error}=await supabase.from("scene_links").delete().eq("id",id); if(error)throw error; },
-  async placeCharacterToken(sceneId: string, characterId: string, x: number, y: number) { const { data, error } = await supabase.rpc("place_character_token", { p_scene_id: sceneId, p_character_id: characterId, p_x: x, p_y: y }); if (error) throw error; if (!data) throw new Error("Character placement returned no token."); return signTokenImage(asToken(data as Record<string, unknown>), campaignId); },
+  async placeCharacterToken(sceneId: string, characterId: string, x: number, y: number) { const { data, error } = await supabase.rpc("place_character_token", { p_scene_id: sceneId, p_character_id: characterId, p_x: x, p_y: y }); if (error) throw error; if (!data) throw new Error("Character placement returned no token."); const token = asToken(data as Record<string, unknown>); return signTokenImage(token, token.imagePath?.split("/")[0] ?? ""); },
   async placeMonsterToken(sceneId: string, templateId: string, x: number, y: number) {
     const { data, error } = await supabase.rpc("place_monster_token", {
       p_scene_id: sceneId,
@@ -414,7 +414,8 @@ export const tabletopService = {
     const row = Array.isArray(data) ? data[0] : data;
     if (!row) throw new Error("Monster placement returned no token.");
 
-    const token = await signTokenImage(asToken(row as Record<string, unknown>));
+    const rawToken = asToken(row as Record<string, unknown>);
+    const token = await signTokenImage(rawToken, rawToken.imagePath?.split("/")[0] ?? "");
     if (!token.referenceId)
       throw new Error("Monster placement returned a token without an instance.");
 
@@ -432,7 +433,7 @@ export const tabletopService = {
       instance: await asMonsterInstance(instanceRow as Record<string, unknown>),
     };
   },
-  async placeNpcToken(sceneId:string,templateId:string,x:number,y:number){const {data,error}=await supabase.rpc("place_npc_token",{p_scene_id:sceneId,p_template_id:templateId,p_x:x,p_y:y});if(error)throw error;const row=Array.isArray(data)?data[0]:data;if(!row)throw new Error("NPC placement returned no token.");return signTokenImage(asToken(row as Record<string,unknown>), campaignId);},
+  async placeNpcToken(sceneId:string,templateId:string,x:number,y:number){const {data,error}=await supabase.rpc("place_npc_token",{p_scene_id:sceneId,p_template_id:templateId,p_x:x,p_y:y});if(error)throw error;const row=Array.isArray(data)?data[0]:data;if(!row)throw new Error("NPC placement returned no token.");const token=asToken(row as Record<string,unknown>);return signTokenImage(token,token.imagePath?.split("/")[0]??"");},
   async updateToken(tokenId: string, patch: Partial<Pick<Token,"visible"|"rotation"|"size"|"locked"|"conditions"|"imageUrl">>) {
     if (!isSupabaseConfigured) return;
     const payload: Record<string, unknown> = {};
