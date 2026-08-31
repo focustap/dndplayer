@@ -32,3 +32,22 @@
 .attack-target-hint { position:absolute; z-index:80; top:18px; left:50%; translate:-50%; display:flex; align-items:center; gap:7px; padding:8px 10px; border:1px solid #ae8855; background:#16130eee; color:#d9c19b; font-size:9px; letter-spacing:.06em; box-shadow:0 8px 24px #0009; }
 .attack-target-hint b { color:#f0c67e; }
 .attack-target-hint button { border:0; border-left:1px solid #65513a; background:none; color:#e6a293; padding-left:7px; font-size:8px; }
+
+
+/* Initiative setup: auto-roll monsters, manually enter player totals. */
+.combat-menu .roll-all-initiative { border-color:#8b6b43; background:#342819; color:#e8c488; }
+.manual-player-initiative { margin-top:9px; padding:9px; border:1px solid #37413b; background:#121714; }
+.manual-player-initiative>b { display:block; color:#d9ba83; font:600 10px Georgia; }
+.manual-player-initiative>small { display:block; margin:3px 0 7px; color:#77827b; font-size:7px; line-height:1.4; }
+.combat-menu .manual-player-initiative form { display:grid; grid-template-columns:minmax(0,1fr) 54px auto; align-items:center; gap:5px; margin:4px 0 0; padding:0; border:0; background:none; }
+.manual-player-initiative form>span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#c7cfc9; font-size:8px; }
+.manual-player-initiative input { padding:5px!important; text-align:center; }
+.manual-player-initiative button { padding:5px 6px!important; }
+
+/* DM-controlled player combat buttons. */
+.character-combat-abilities { margin:0 0 13px; padding:10px; border:1px solid #39433e; background:#151a17; }
+.character-combat-abilities .dm-notes { margin:4px 0 8px; }
+.character-combat-ability-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:5px; }
+.character-combat-ability-grid button { padding:7px 5px; border:1px solid #38413c; background:#1b211e; color:#929d96; font-size:8px; }
+.character-combat-ability-grid button.active { border-color:#a67f4d; background:#45331f; color:#edcb91; }
+.character-combat-abilities .save-combat-abilities { width:100%; margin-top:7px; padding:8px; border:1px solid #8a6b43; background:#322719; color:#e3bf83; font-size:8px; }
