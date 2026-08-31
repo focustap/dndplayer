@@ -82,7 +82,12 @@ const signTrack = async (row: Row) => {
   const url = data?.signedUrl ?? "";
 
   if (url && isR2AssetServiceConfigured) {
-    void r2AssetService.importLegacy(campaignId, path, url).catch(() => undefined);
+    try {
+      const migrated = await r2AssetService.importLegacy(campaignId, path, url);
+      return asTrack(row, migrated.url);
+    } catch {
+      // Keep the Supabase URL as a temporary fallback if migration fails.
+    }
   }
 
   return asTrack(row, url);
