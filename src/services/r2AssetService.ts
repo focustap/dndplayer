@@ -1,6 +1,6 @@
 import { supabase } from "../lib/supabase";
 
-const rawBaseUrl = String(import.meta.env.VITE_ASSET_API_URL ?? "https://wayfinder-assets.wayfinder-assets.workers.dev").trim();
+const rawBaseUrl = String(import.meta.env.VITE_ASSET_API_URL || "https://wayfinder-assets.wayfinder-assets.workers.dev").trim();
 export const isR2AssetServiceConfigured = rawBaseUrl.length > 0;
 const assetApiBaseUrl = rawBaseUrl.replace(/\/+$/, "");
 
