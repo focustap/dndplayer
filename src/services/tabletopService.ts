@@ -470,21 +470,73 @@ export const tabletopService = {
     if (deleteError) throw deleteError;
     const storagePath = overlay?.storage_path ? String(overlay.storage_path) : null;
     if (storagePath) {
+      if (isR2AssetServiceConfigured) {
+        try { await r2AssetService.remove(storagePath.split("/")[0] ?? "", storagePath); } catch { /* Legacy cleanup still runs below. */ }
+      }
       const { error: assetError } = await supabase.storage.from("campaign-assets").remove([storagePath]);
       if (assetError) throw assetError;
     }
   },
-  async createNpcTemplate(campaignId:string,name:string,file:File):Promise<NpcTemplate>{const id=crypto.randomUUID();const path=`${campaignId}/npc-templates/${id}-${file.name.replace(/[^a-z0-9.-]/gi,"-")}`;const {error:uploadError}=await supabase.storage.from("campaign-assets").upload(path,file,{cacheControl:"43200"});if(uploadError)throw uploadError;const {data:signed,error:signError}=await supabase.storage.from("campaign-assets").createSignedUrl(path,60*60*12);if(signError)throw signError;const {data,error}=await supabase.from("npc_templates").insert({id,name,image_path:path,image_url:null}).select("*").single();if(error){void supabase.storage.from("campaign-assets").remove([path]);throw error;}const item=asNpcTemplate(data as Record<string,unknown>);return {...item,imageUrl:signed.signedUrl};},
-  async deleteNpcTemplate(id:string){const {data,error}=await supabase.from("npc_templates").select("image_path").eq("id",id).single();if(error)throw error;const {error:deleteError}=await supabase.from("npc_templates").delete().eq("id",id);if(deleteError)throw deleteError;if(data?.image_path){const {error:assetError}=await supabase.storage.from("campaign-assets").remove([String(data.image_path)]);if(assetError)throw assetError;}},
+  async createNpcTemplate(campaignId:string,name:string,file:File):Promise<NpcTemplate>{
+    const id=crypto.randomUUID();
+    let path:string;
+    let imageUrl:string|null=null;
+    if(isR2AssetServiceConfigured){
+      const uploaded=await r2AssetService.upload(campaignId,"npc-templates",file);
+      path=uploaded.path;
+      imageUrl=uploaded.url;
+    }else{
+      path=`${campaignId}/npc-templates/${id}-${file.name.replace(/[^a-z0-9.-]/gi,"-")}`;
+      const {error:uploadError}=await supabase.storage.from("campaign-assets").upload(path,file,{cacheControl:"43200"});
+      if(uploadError)throw uploadError;
+      const {data:signed,error:signError}=await supabase.storage.from("campaign-assets").createSignedUrl(path,60*60*12);
+      if(signError)throw signError;
+      imageUrl=signed.signedUrl;
+    }
+    const {data,error}=await supabase.from("npc_templates").insert({id,name,image_path:path,image_url:null}).select("*").single();
+    if(error){
+      if(isR2AssetServiceConfigured) void r2AssetService.remove(campaignId,path).catch(()=>undefined);
+      else void supabase.storage.from("campaign-assets").remove([path]);
+      throw error;
+    }
+    const item=asNpcTemplate(data as Record<string,unknown>);
+    return {...item,imageUrl};
+  },
+  async deleteNpcTemplate(id:string){const {data,error}=await supabase.from("npc_templates").select("image_path").eq("id",id).single();if(error)throw error;const {error:deleteError}=await supabase.from("npc_templates").delete().eq("id",id);if(deleteError)throw deleteError;if(data?.image_path){const path=String(data.image_path);if(isR2AssetServiceConfigured){try{await r2AssetService.remove(path.split("/")[0]??"",path);}catch{/* Legacy cleanup below still runs. */}}const {error:assetError}=await supabase.storage.from("campaign-assets").remove([path]);if(assetError)throw assetError;}},
   async addZoneMarker(sceneId:string,campaignId:string,label:string,radiusFt:number,color:string,x:number,y:number):Promise<SceneZoneMarker>{const local:SceneZoneMarker={id:crypto.randomUUID(),campaignId,sceneId,label,x,y,radiusFt,color,opacity:.28,visible:true,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};if(!isSupabaseConfigured)return local;const {data,error}=await supabase.from("scene_zone_markers").insert({id:local.id,campaign_id:campaignId,scene_id:sceneId,label,x,y,radius_ft:radiusFt,color,opacity:local.opacity,visible:true}).select("*").single();if(error)throw error;return asZoneMarker(data as Record<string,unknown>);},
   async updateZoneMarker(id:string,patch:Partial<Pick<SceneZoneMarker,"label"|"x"|"y"|"radiusFt"|"color"|"opacity"|"visible">>){if(!isSupabaseConfigured)return;const payload:Record<string,unknown>={};if(patch.label!==undefined)payload.label=patch.label;if(patch.x!==undefined)payload.x=patch.x;if(patch.y!==undefined)payload.y=patch.y;if(patch.radiusFt!==undefined)payload.radius_ft=patch.radiusFt;if(patch.color!==undefined)payload.color=patch.color;if(patch.opacity!==undefined)payload.opacity=patch.opacity;if(patch.visible!==undefined)payload.visible=patch.visible;payload.updated_at=new Date().toISOString();const {error}=await supabase.from("scene_zone_markers").update(payload).eq("id",id);if(error)throw error;},
   async deleteZoneMarker(id:string){if(!isSupabaseConfigured)return;const {error}=await supabase.from("scene_zone_markers").delete().eq("id",id);if(error)throw error;},
-  async addOverlay(sceneId: string, campaignId: string, file: File): Promise<SceneOverlay> { let aspectRatio = 4 / 3; try { const bitmap = await createImageBitmap(file); if (bitmap.width > 0 && bitmap.height > 0) aspectRatio = bitmap.width / bitmap.height; bitmap.close(); } catch { /* Rendering also preserves the texture ratio, so this is only an initial-size fallback. */ } const width = 240; const height = width / aspectRatio; const local: SceneOverlay = { id: crypto.randomUUID(), sceneId, name: file.name, imageUrl: URL.createObjectURL(file), kind: "EFFECT", x: 700, y: 450, width, height, rotation: 0, opacity: 1, zIndex: 5, visible: true, locked: false }; if (!isSupabaseConfigured) return local; const path = `${campaignId}/overlays/${local.id}-${file.name.replace(/[^a-z0-9.-]/gi,"-")}`; const { error: uploadError } = await supabase.storage.from("campaign-assets").upload(path, file, { cacheControl: "43200" }); if (uploadError) throw uploadError; const { data: signed, error: signError } = await supabase.storage.from("campaign-assets").createSignedUrl(path, 60 * 60 * 12); if (signError) throw signError; const { data, error } = await supabase.from("scene_overlays").insert({ id: local.id, scene_id: sceneId, name: file.name, storage_path: path, image_url: signed.signedUrl, kind: "EFFECT", x: local.x, y: local.y, width: local.width, height: local.height, z_index: local.zIndex }).select("*").single(); if (error) throw error; return asOverlay(data as Record<string, unknown>); },
-  async addDiscoverable(sceneId:string,campaignId:string,name:string,file:File,hidden:boolean):Promise<SceneDiscoverable>{const id=crypto.randomUUID();const local:SceneDiscoverable={id,campaignId,sceneId,name,storagePath:null,imageUrl:URL.createObjectURL(file),x:700,y:450,hidden,discoveredAt:null,discoveredBy:null,createdAt:new Date().toISOString()};if(!isSupabaseConfigured)return local;const path=`${campaignId}/discoverables/${id}-${file.name.replace(/[^a-z0-9.-]/gi,"-")}`;const {error:uploadError}=await supabase.storage.from("campaign-assets").upload(path,file,{cacheControl:"43200"});if(uploadError)throw uploadError;const {data,error}=await supabase.from("scene_discoverables").insert({id,campaign_id:campaignId,scene_id:sceneId,name,storage_path:path,x:local.x,y:local.y,hidden}).select("*").single();if(error)throw error;return asDiscoverable(data as Record<string,unknown>);},
+  async addOverlay(sceneId: string, campaignId: string, file: File): Promise<SceneOverlay> {
+    let aspectRatio = 4 / 3;
+    try { const bitmap = await createImageBitmap(file); if (bitmap.width > 0 && bitmap.height > 0) aspectRatio = bitmap.width / bitmap.height; bitmap.close(); } catch { /* initial-size fallback */ }
+    const width = 240; const height = width / aspectRatio;
+    const local: SceneOverlay = { id: crypto.randomUUID(), sceneId, name: file.name, imageUrl: URL.createObjectURL(file), kind: "EFFECT", x: 700, y: 450, width, height, rotation: 0, opacity: 1, zIndex: 5, visible: true, locked: false };
+    if (!isSupabaseConfigured) return local;
+    let path:string; let imageUrl:string;
+    if(isR2AssetServiceConfigured){
+      const uploaded=await r2AssetService.upload(campaignId,"overlays",file); path=uploaded.path; imageUrl=uploaded.url;
+    }else{
+      path=`${campaignId}/overlays/${local.id}-${file.name.replace(/[^a-z0-9.-]/gi,"-")}`;
+      const { error: uploadError } = await supabase.storage.from("campaign-assets").upload(path, file, { cacheControl: "43200" }); if (uploadError) throw uploadError;
+      const { data: signed, error: signError } = await supabase.storage.from("campaign-assets").createSignedUrl(path, 60 * 60 * 12); if (signError) throw signError; imageUrl=signed.signedUrl;
+    }
+    const { data, error } = await supabase.from("scene_overlays").insert({ id: local.id, scene_id: sceneId, name: file.name, storage_path: path, image_url: null, kind: "EFFECT", x: local.x, y: local.y, width: local.width, height: local.height, z_index: local.zIndex }).select("*").single();
+    if (error) throw error;
+    return { ...asOverlay(data as Record<string, unknown>), imageUrl };
+  },
+  async addDiscoverable(sceneId:string,campaignId:string,name:string,file:File,hidden:boolean):Promise<SceneDiscoverable>{
+    const id=crypto.randomUUID();const local:SceneDiscoverable={id,campaignId,sceneId,name,storagePath:null,imageUrl:URL.createObjectURL(file),x:700,y:450,hidden,discoveredAt:null,discoveredBy:null,createdAt:new Date().toISOString()};
+    if(!isSupabaseConfigured)return local;
+    let path:string;
+    if(isR2AssetServiceConfigured){path=(await r2AssetService.upload(campaignId,"discoverables",file)).path;}
+    else{path=`${campaignId}/discoverables/${id}-${file.name.replace(/[^a-z0-9.-]/gi,"-")}`;const {error:uploadError}=await supabase.storage.from("campaign-assets").upload(path,file,{cacheControl:"43200"});if(uploadError)throw uploadError;}
+    const {data,error}=await supabase.from("scene_discoverables").insert({id,campaign_id:campaignId,scene_id:sceneId,name,storage_path:path,x:local.x,y:local.y,hidden}).select("*").single();if(error)throw error;
+    return asDiscoverable(data as Record<string,unknown>);
+  },
   async updateDiscoverable(id:string,patch:Partial<Pick<SceneDiscoverable,"name"|"x"|"y"|"hidden">>){const {error}=await supabase.from("scene_discoverables").update({name:patch.name,x:patch.x,y:patch.y,hidden:patch.hidden}).eq("id",id);if(error)throw error;},
-  async deleteDiscoverable(id:string){const {data,error}=await supabase.from("scene_discoverables").select("storage_path").eq("id",id).single();if(error)throw error;const {error:deleteError}=await supabase.from("scene_discoverables").delete().eq("id",id);if(deleteError)throw deleteError;if(data.storage_path){const {error:assetError}=await supabase.storage.from("campaign-assets").remove([data.storage_path]);if(assetError)throw assetError;}},
-  async previewDiscoverable(item:SceneDiscoverable):Promise<SceneDiscoverable>{if(item.imageUrl)return item;if(!isSupabaseConfigured)return item;let storagePath=item.storagePath;if(!storagePath){const {data,error}=await supabase.from("scene_discoverables").select("storage_path").eq("id",item.id).single();if(error)throw error;storagePath=data?.storage_path?String(data.storage_path):null;}if(!storagePath)return item;const imageUrl=await getSignedAssetUrl(storagePath);return imageUrl?{...item,storagePath,imageUrl}:{...item,storagePath};},
-  async discover(id:string){const {data,error}=await supabase.rpc("discover_scene_discoverable",{p_discoverable_id:id});if(error)throw error;const item=asDiscoverable(data as Record<string,unknown>);if(!item.storagePath)return item;const imageUrl=await getSignedAssetUrl(item.storagePath, campaignId);return imageUrl?{...item,imageUrl}:item;},
+  async deleteDiscoverable(id:string){const {data,error}=await supabase.from("scene_discoverables").select("storage_path").eq("id",id).single();if(error)throw error;const {error:deleteError}=await supabase.from("scene_discoverables").delete().eq("id",id);if(deleteError)throw deleteError;if(data.storage_path){const path=String(data.storage_path);if(isR2AssetServiceConfigured){try{await r2AssetService.remove(path.split("/")[0]??"",path);}catch{/* Legacy cleanup below still runs. */}}const {error:assetError}=await supabase.storage.from("campaign-assets").remove([path]);if(assetError)throw assetError;}},
+  async previewDiscoverable(item:SceneDiscoverable):Promise<SceneDiscoverable>{if(item.imageUrl)return item;if(!isSupabaseConfigured)return item;let storagePath=item.storagePath;if(!storagePath){const {data,error}=await supabase.from("scene_discoverables").select("storage_path").eq("id",item.id).single();if(error)throw error;storagePath=data?.storage_path?String(data.storage_path):null;}if(!storagePath)return item;const imageUrl=await getSignedAssetUrl(storagePath,item.campaignId);return imageUrl?{...item,storagePath,imageUrl}:{...item,storagePath};},
+  async discover(id:string){const {data,error}=await supabase.rpc("discover_scene_discoverable",{p_discoverable_id:id});if(error)throw error;const item=asDiscoverable(data as Record<string,unknown>);if(!item.storagePath)return item;const imageUrl=await getSignedAssetUrl(item.storagePath,item.campaignId);return imageUrl?{...item,imageUrl}:item;},
   async triggerAttack(campaignId: string, attackerTokenId: string, targetTokenId: string, preset: AttackPreset, color:string|null=null): Promise<AttackAnimationEvent> { const local: AttackAnimationEvent = { id: crypto.randomUUID(), campaignId, attackerTokenId, targetTokenId, preset, color, createdAt: new Date().toISOString() }; if (!isSupabaseConfigured) return local; const { data, error } = await supabase.from("tabletop_animation_events").insert({ campaign_id: campaignId, attacker_token_id: attackerTokenId, target_token_id: targetTokenId, preset, color }).select("id,campaign_id,attacker_token_id,target_token_id,preset,color,created_at").single(); if (error) throw error; return asAttackEvent(data as Record<string, unknown>); },
   async triggerCinematic(campaignId: string,name: string,duration: number,steps: CinematicEvent["steps"]): Promise<CinematicEvent> { const local={id:crypto.randomUUID(),campaignId,name,duration,steps,createdAt:new Date().toISOString()};if(!isSupabaseConfigured)return local;const {data,error}=await supabase.from("tabletop_cinematic_events").insert({campaign_id:campaignId,name,duration,steps}).select("id,campaign_id,name,duration,steps,created_at").single();if(error)throw error;return asCinematicEvent(data as Record<string,unknown>); },
   async resetDreadOnTableLaunch(campaignId: string) {
