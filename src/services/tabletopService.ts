@@ -16,7 +16,7 @@ const asMotionSegment=(r:Record<string,unknown>):TokenMotionSegment=>({tokenId:S
 const asShopItem=(r:Record<string,unknown>):NpcShopItem=>({id:String(r.id),interactionId:String(r.interaction_id),name:String(r.name),description:String(r.description??""),priceGp:Number(r.price_gp),quantity:r.quantity===null||r.quantity===undefined?null:Number(r.quantity),sortOrder:Number(r.sort_order)});
 const asInteraction=(r:Record<string,unknown>):TokenInteraction=>{const legacy=String(r.dialogue_text??"");const rawPages=Array.isArray(r.dialogue_pages)?r.dialogue_pages:[];const dialoguePages=rawPages.map((page)=>String(page)).filter((page)=>page.trim().length>0);return {tokenId:String(r.token_id),campaignId:String(r.campaign_id),enabled:Boolean(r.enabled),type:r.type as TokenInteraction["type"],displayName:String(r.display_name??""),dialogueText:legacy,dialoguePages:dialoguePages.length?dialoguePages:(legacy.trim()?[legacy]:[]),shopItems:((r.npc_shop_items as Record<string,unknown>[]|null)??[]).map(asShopItem).sort((a,b)=>a.sortOrder-b.sortOrder)};};
 const SIGNED_ASSET_CACHE_MS = 11 * 60 * 60 * 1000;
-const SIGNED_ASSET_STORAGE_PREFIX = "wayfinder:r2-signed-asset:v1:";
+const SIGNED_ASSET_STORAGE_PREFIX = "wayfinder:r2-signed-asset:v2:";
 const signedAssetCache = new Map<string, { url: string; expiresAt: number }>();
 const signedAssetInflight = new Map<string, Promise<string | null>>();
 const mapStoragePathCache = new Map<string, string | null>();
