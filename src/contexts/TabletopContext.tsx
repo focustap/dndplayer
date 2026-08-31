@@ -118,6 +118,7 @@ interface TabletopActions {
   ): Promise<void>;
   deleteDiscoverable(id: string): Promise<void>;
   discover(id: string): Promise<void>;
+  previewDiscoverable(id: string): void;
   closeDiscovery(): void;
   createPatrol(tokenId: string): Promise<void>;
   patchPatrol(
@@ -1162,6 +1163,15 @@ export function TabletopProvider({
                 discoveryReveal: item,
               }
             : current,
+        );
+      },
+      previewDiscoverable(id) {
+        const s = stateRef.current;
+        if (!s || !isDmRole(s.role)) return;
+        const item = s.discoverables.find((candidate) => candidate.id === id);
+        if (!item) return;
+        setState((current) =>
+          current ? { ...current, discoveryReveal: item } : current,
         );
       },
       closeDiscovery() {

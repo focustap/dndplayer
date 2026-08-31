@@ -49,6 +49,7 @@ export function MapCanvas() {
       },
       onSceneLinkActivate: (id) => void actions.travelSceneLink(id),
       onDiscover: (id) => void actions.discover(id),
+      onDiscoverablePreview: (id) => actions.previewDiscoverable(id),
       onPlace: (x, y) => void actions.placeToken(x, y),
       onAttackTarget: (id) => void actions.targetAttack(id),
       onContext: (id, x, y) => setMenu({ id, x, y }),

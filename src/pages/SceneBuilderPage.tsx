@@ -1,4 +1,4 @@
-import { ArrowLeft, Eye, EyeOff, Grid3X3, Layers3, Link2, Pause, Play, Route, Sun, Trash2, Upload, Users } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, Grid3X3, Layers3, Link2, Pause, Play, Route, Sun, Trash2, Upload, Users, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { TabletopProvider, useTabletop } from "../contexts/TabletopContext";
@@ -42,6 +42,7 @@ function SceneBuilder({ campaignId }: { campaignId: string }) {
   return <main className="scene-builder">
     <LiveAudio />
     {previewInteraction&&previewInteractionToken&&<NpcInteractionModal interaction={previewInteraction} token={previewInteractionToken} preview onClose={actions.closeNpcInteraction}/>}
+    {state.discoveryReveal&&<div className="discovery-viewer"><section role="dialog" aria-modal="true"><button aria-label="Close discovery preview" onClick={actions.closeDiscovery}><X/></button><small>PARTY DISCOVERY</small><h2>{state.discoveryReveal.name}</h2>{state.discoveryReveal.imageUrl?<img src={state.discoveryReveal.imageUrl} alt={state.discoveryReveal.name}/>:<p>Preparing this discovery…</p>}</section></div>}
     <header className="scene-builder-header"><Link to={`/campaign/${campaignId}`}><ArrowLeft/>Campaign setup</Link><div><small>DM-ONLY SCENE BUILDER</small><h1>{scene.name}</h1><p>{scene.active ? scene.revealed ? "LIVE · REVEALED TO PLAYERS" : "LIVE · HIDDEN FROM PLAYERS" : "DRAFT · PLAYERS CONTINUE ON THE CURRENT LIVE SCENE"}</p></div><div className="scene-builder-actions"><label className="scene-builder-switcher"><span>EDIT SCENE</span><select value={scene.id} onChange={event=>navigate(`/campaign/${campaignId}/scene/${event.target.value}/builder`)}>{state.scenes.map(candidate=><option key={candidate.id} value={candidate.id}>{candidate.name}{candidate.active?" · Live":""}</option>)}</select></label><button className="secondary-action" onClick={() => void makeLive()}>Make Live</button><button className="secondary-action" onClick={() => void reveal(!scene.revealed)}>{scene.revealed ? <><EyeOff/>Hide Scene</> : <><Eye/>Reveal Scene</>}</button><button className="launch-table" onClick={() => navigate(`/campaign/${campaignId}/dm`)}><Layers3/><span><small>GAMEPLAY</small>OPEN TABLE</span></button></div></header>
     <aside className="builder-sidebar">
       <section><p className="eyebrow">MAP TRANSFORM</p><NumberField label="Horizontal position" value={scene.mapX} onChange={value => number("mapX", value)}/><NumberField label="Vertical position" value={scene.mapY} onChange={value => number("mapY", value)}/><NumberField label="Map scale" value={scene.mapScale} min={.1} max={4} step={.05} onChange={value => number("mapScale", value)}/></section>
