@@ -1,0 +1,12 @@
+name = "wayfinder-assets"
+main = "src/index.ts"
+compatibility_date = "2026-08-31"
+
+[[r2_buckets]]
+binding = "ASSETS"
+bucket_name = "wayfinder-assets"
+
+[vars]
+SUPABASE_URL = "https://feqwcrytaponcbhvfozc.supabase.co"
+SUPABASE_PUBLISHABLE_KEY = "sb_publishable_zo15HwhtEjde34RNMaQZ3Q_Og9SBVCg"
+ALLOWED_ORIGINS = "https://focustap.github.io,http://localhost:5173"
