@@ -1,4 +1,5 @@
 import { supabase } from "../lib/supabase";
+import { isR2AssetServiceConfigured, r2AssetService } from "./r2AssetService";
 
 export interface CampaignAudioTrack {
   id: string;
@@ -63,11 +64,28 @@ const fail = (error: { message?: string } | null, fallback: string) => {
 
 const signTrack = async (row: Row) => {
   const path = String(row.storage_path);
+  const campaignId = String(row.campaign_id);
+
+  if (isR2AssetServiceConfigured) {
+    try {
+      const r2 = await r2AssetService.sign(campaignId, path);
+      if (r2) return asTrack(row, r2.url);
+    } catch {
+      // Fall back while legacy Supabase audio finishes migrating.
+    }
+  }
+
   const { data, error } = await supabase.storage
     .from("campaign-audio")
     .createSignedUrl(path, 60 * 60 * 24);
   fail(error, "Could not open campaign audio.");
-  return asTrack(row, data?.signedUrl ?? "");
+  const url = data?.signedUrl ?? "";
+
+  if (url && isR2AssetServiceConfigured) {
+    void r2AssetService.importLegacy(campaignId, path, url).catch(() => undefined);
+  }
+
+  return asTrack(row, url);
 };
 
 export const campaignAudioService = {
@@ -116,11 +134,17 @@ export const campaignAudioService = {
 
     const id = crypto.randomUUID();
     const safeName = file.name.replace(/[^a-z0-9._-]/gi, "-");
-    const path = `${campaignId}/${id}-${safeName}`;
-    const { error: uploadError } = await supabase.storage
-      .from("campaign-audio")
-      .upload(path, file, { contentType: "audio/mpeg", cacheControl: "43200" });
-    fail(uploadError, "Audio upload failed.");
+    let path: string;
+
+    if (isR2AssetServiceConfigured) {
+      path = (await r2AssetService.upload(campaignId, "audio", file)).path;
+    } else {
+      path = `${campaignId}/${id}-${safeName}`;
+      const { error: uploadError } = await supabase.storage
+        .from("campaign-audio")
+        .upload(path, file, { contentType: "audio/mpeg", cacheControl: "43200" });
+      fail(uploadError, "Audio upload failed.");
+    }
 
     const name = file.name.replace(/\.[^.]+$/, "").trim() || "Untitled track";
     const { data, error } = await supabase
@@ -130,7 +154,8 @@ export const campaignAudioService = {
       .single();
 
     if (error || !data) {
-      void supabase.storage.from("campaign-audio").remove([path]);
+      if (isR2AssetServiceConfigured) void r2AssetService.remove(campaignId, path).catch(() => undefined);
+      else void supabase.storage.from("campaign-audio").remove([path]);
       fail(error, "Could not save uploaded audio.");
       throw new Error("Could not save uploaded audio.");
     }
@@ -145,6 +170,9 @@ export const campaignAudioService = {
       .eq("id", track.id);
     fail(error, "Could not delete audio track.");
 
+    if (isR2AssetServiceConfigured) {
+      try { await r2AssetService.remove(track.campaignId, track.storagePath); } catch { /* Legacy cleanup below still runs. */ }
+    }
     const { error: assetError } = await supabase.storage
       .from("campaign-audio")
       .remove([track.storagePath]);
