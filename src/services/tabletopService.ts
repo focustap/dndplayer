@@ -303,7 +303,7 @@ export const tabletopService = {
     if (combatRow) {
       const { data: entries, error } = await supabase.from("initiative_entries").select("*").eq("combat_session_id", combatRow.id).order("sort_order");
       throwQueryError(error, "Unable to load scene initiative.");
-      combat = { id: combatRow.id, campaignId, sceneId: scene.id, active: true, round: combatRow.round, currentIndex: combatRow.current_index, entries: (entries ?? []).map((entry) => ({ id: entry.id, combatSessionId: entry.combat_session_id, tokenId: entry.token_id, monsterInstanceId: entry.monster_instance_id, characterId: entry.character_id, name: entry.name, imageUrl: entry.image_url, initiative: entry.initiative, sortOrder: entry.sort_order, groupKey: entry.group_key, groupCount: entry.group_count })) };
+      combat = { id: combatRow.id, campaignId, sceneId: scene.id, active: true, round: combatRow.round, currentIndex: combatRow.current_index, entries: (entries ?? []).map((entry) => ({ id: entry.id, combatSessionId: entry.combat_session_id, tokenId: entry.token_id, monsterInstanceId: entry.monster_instance_id, characterId: entry.character_id, name: entry.name, imageUrl: entry.image_url, initiative: entry.initiative, sortOrder: entry.sort_order, groupKey: entry.group_key, groupCount: entry.group_count })).sort((a,b)=>b.initiative-a.initiative||a.sortOrder-b.sortOrder).map((entry,index)=>({...entry,sortOrder:index})) };
     }
 
     const sceneLinks = ((linkRows ?? []) as Record<string, unknown>[]).map(asSceneLink);
