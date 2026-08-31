@@ -81,15 +81,15 @@ const getSignedAssetUrl = async (path: string, campaignId: string): Promise<stri
     persistSignedAsset(path, value);
 
     if (isR2AssetServiceConfigured) {
-      void r2AssetService.importLegacy(campaignId, path, data.signedUrl)
-        .then((migrated) => {
-          const migratedValue = { url: migrated.url, expiresAt: Math.min(migrated.expiresAt, Date.now() + SIGNED_ASSET_CACHE_MS) };
-          signedAssetCache.set(path, migratedValue);
-          persistSignedAsset(path, migratedValue);
-        })
-        .catch(() => {
-          // Lazy migration is best-effort. The Supabase URL remains valid.
-        });
+      try {
+        const migrated = await r2AssetService.importLegacy(campaignId, path, data.signedUrl);
+        const migratedValue = { url: migrated.url, expiresAt: Math.min(migrated.expiresAt, Date.now() + SIGNED_ASSET_CACHE_MS) };
+        signedAssetCache.set(path, migratedValue);
+        persistSignedAsset(path, migratedValue);
+        return migrated.url;
+      } catch (migrationError) {
+        console.warn("R2 legacy migration failed; using Supabase Storage for this asset.", migrationError);
+      }
     }
 
     return data.signedUrl;
