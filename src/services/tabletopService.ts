@@ -1,6 +1,7 @@
 import type { AttackAnimationEvent, AttackPreset, CampaignRole, Character, CinematicEvent, CombatSession, DiceRoll, MonsterInstance, MonsterTemplate, NpcShopItem, NpcTemplate, Scene, SceneDiscoverable, SceneLink, SceneOverlay, SceneZoneMarker, TabletopState, Token, TokenInteraction, TokenMotionSegment, TokenPatrol } from "../domain/types";
 import { isSupabaseConfigured, supabase } from "../lib/supabase";
 import { createDemoState } from "../domain/demoData";
+import { isR2AssetServiceConfigured, r2AssetService } from "./r2AssetService";
 
 const asSceneLighting=(value:unknown):Scene["lighting"]=>value==="NIGHT"||value==="DARK"?"NIGHT":value==="MIDDAY"||value==="DIM"?"MIDDAY":"DAY";
 const asScene = (r: Record<string, unknown>): Scene => ({ id: String(r.id), campaignId: String(r.campaign_id), mapId: r.map_id ? String(r.map_id) : null, name: String(r.name), mapUrl: r.map_url ? String(r.map_url) : null, width: Number(r.width), height: Number(r.height), gridType: r.grid_type as Scene["gridType"], gridSize: Number(r.grid_size), feetPerCell: Number(r.feet_per_cell), gridColor: String(r.grid_color), gridOpacity: Number(r.grid_opacity), gridLineWidth: Number(r.grid_line_width ?? 1), active: Boolean(r.active), revealed: Boolean(r.revealed), mapX: Number(r.map_x ?? 0), mapY: Number(r.map_y ?? 0), mapScale: Number(r.map_scale ?? 1), gridOffsetX: Number(r.grid_offset_x ?? 0), gridOffsetY: Number(r.grid_offset_y ?? 0), lighting: asSceneLighting(r.lighting), playerCameraX: r.player_camera_x === null || r.player_camera_x === undefined ? null : Number(r.player_camera_x), playerCameraY: r.player_camera_y === null || r.player_camera_y === undefined ? null : Number(r.player_camera_y), playerCameraZoom: Number(r.player_camera_zoom ?? 1) });
@@ -46,7 +47,7 @@ const persistSignedAsset = (path: string, value: { url: string; expiresAt: numbe
   }
 };
 
-const getSignedAssetUrl = async (path: string): Promise<string | null> => {
+const getSignedAssetUrl = async (path: string, campaignId: string): Promise<string | null> => {
   const cached = signedAssetCache.get(path);
   if (cached && cached.expiresAt > Date.now()) return cached.url;
 
@@ -59,11 +60,38 @@ const getSignedAssetUrl = async (path: string): Promise<string | null> => {
   const inflight = signedAssetInflight.get(path);
   if (inflight) return inflight;
   const request = (async () => {
+    if (isR2AssetServiceConfigured) {
+      try {
+        const r2 = await r2AssetService.sign(campaignId, path);
+        if (r2) {
+          const value = { url: r2.url, expiresAt: Math.min(r2.expiresAt, Date.now() + SIGNED_ASSET_CACHE_MS) };
+          signedAssetCache.set(path, value);
+          persistSignedAsset(path, value);
+          return r2.url;
+        }
+      } catch (error) {
+        console.warn("R2 asset lookup failed; falling back to Supabase Storage.", error);
+      }
+    }
+
     const { data, error } = await supabase.storage.from("campaign-assets").createSignedUrl(path, 60 * 60 * 12);
     if (error || !data?.signedUrl) return null;
     const value = { url: data.signedUrl, expiresAt: Date.now() + SIGNED_ASSET_CACHE_MS };
     signedAssetCache.set(path, value);
     persistSignedAsset(path, value);
+
+    if (isR2AssetServiceConfigured) {
+      void r2AssetService.importLegacy(campaignId, path, data.signedUrl)
+        .then((migrated) => {
+          const migratedValue = { url: migrated.url, expiresAt: Math.min(migrated.expiresAt, Date.now() + SIGNED_ASSET_CACHE_MS) };
+          signedAssetCache.set(path, migratedValue);
+          persistSignedAsset(path, migratedValue);
+        })
+        .catch(() => {
+          // Lazy migration is best-effort. The Supabase URL remains valid.
+        });
+    }
+
     return data.signedUrl;
   })().finally(() => signedAssetInflight.delete(path));
   signedAssetInflight.set(path, request);
@@ -83,7 +111,7 @@ const hydrateSceneMap = async (scene: Scene): Promise<Scene> => {
   if (!scene.mapId) return scene;
   const path = await getMapStoragePath(scene.mapId);
   if (!path) return scene;
-  const url = await getSignedAssetUrl(path);
+  const url = await getSignedAssetUrl(path, scene.campaignId);
   return url ? { ...scene, mapUrl: url } : scene;
 };
 
@@ -96,19 +124,19 @@ const prefetchImage = (url: string | null) => {
   image.src = url;
 };
 
-const signTokenImage = async (token: Token) => {
+const signTokenImage = async (token: Token, campaignId: string) => {
   if (!token.imagePath) return token;
-  const url = await getSignedAssetUrl(token.imagePath);
+  const url = await getSignedAssetUrl(token.imagePath, campaignId);
   return url ? { ...token, imageUrl: url } : token;
 };
 const signCharacterImage = async (character: Character) => {
   if (!character.imagePath) return character;
-  const url = await getSignedAssetUrl(character.imagePath);
+  const url = await getSignedAssetUrl(character.imagePath, character.campaignId);
   return url ? { ...character, imageUrl: url } : character;
 };
-const signMonsterTemplateImage = async (template: MonsterTemplate) => {
+const signMonsterTemplateImage = async (template: MonsterTemplate, campaignId: string) => {
   if (!template.imagePath) return template;
-  const url = await getSignedAssetUrl(template.imagePath);
+  const url = await getSignedAssetUrl(template.imagePath, campaignId);
   return url ? { ...template, imageUrl: url } : template;
 };
 const throwQueryError = (error: { message?: string } | null, fallback: string) => { if (error) throw new Error(error.message || fallback); };
@@ -144,7 +172,7 @@ const asMonsterInstance = async (r: Record<string, unknown>): Promise<MonsterIns
     ? (relation[0] as Record<string, unknown> | undefined)
     : (relation as Record<string, unknown> | null | undefined);
   const template = templateRow
-    ? await signMonsterTemplateImage(asMonsterTemplate(templateRow))
+    ? await signMonsterTemplateImage(asMonsterTemplate(templateRow), String(r.campaign_id))
     : undefined;
   return {
     id: String(r.id),
@@ -215,18 +243,18 @@ export const tabletopService = {
     let combat: CombatSession = { id: "none", campaignId, sceneId: scene.id, active: false, round: 1, currentIndex: 0, entries: [] };
     if (combatRow) { const { data: entries, error } = await supabase.from("initiative_entries").select("*").eq("combat_session_id", combatRow.id).order("sort_order"); throwQueryError(error, "Unable to load initiative."); combat = { id: combatRow.id, campaignId, sceneId: scene.id, active: true, round: combatRow.round, currentIndex: combatRow.current_index, entries: (entries ?? []).map((e) => ({ id: e.id, combatSessionId: e.combat_session_id, tokenId: e.token_id, monsterInstanceId: e.monster_instance_id, characterId: e.character_id, name: e.name, imageUrl: e.image_url, initiative: e.initiative, sortOrder: e.sort_order, groupKey: e.group_key, groupCount: e.group_count })).sort((a,b)=>b.initiative-a.initiative||a.sortOrder-b.sortOrder).map((entry,index)=>({...entry,sortOrder:index})) }; }
     const characters: Character[] = await Promise.all(((characterRows ?? []) as Record<string, unknown>[]).map(asCharacter).map(signCharacterImage));
-    const npcTemplates: NpcTemplate[] = await Promise.all(((npcTemplateRows ?? []) as Record<string,unknown>[]).map(asNpcTemplate).map(async(item)=>{if(!item.imagePath)return item;const url=await getSignedAssetUrl(item.imagePath);return url?{...item,imageUrl:url}:item;}));
-    const monsterTemplates: MonsterTemplate[] = await Promise.all(((templateRows ?? []) as Record<string, unknown>[]).map(asMonsterTemplate).map(signMonsterTemplateImage));
-    const overlays = await Promise.all(((overlayRows ?? []) as Record<string, unknown>[]).map(async (r) => { if (r.storage_path) { const url=await getSignedAssetUrl(String(r.storage_path)); if(url)r.image_url=url; } return asOverlay(r); }));
+    const npcTemplates: NpcTemplate[] = await Promise.all(((npcTemplateRows ?? []) as Record<string,unknown>[]).map(asNpcTemplate).map(async(item)=>{if(!item.imagePath)return item;const url=await getSignedAssetUrl(item.imagePath, campaignId);return url?{...item,imageUrl:url}:item;}));
+    const monsterTemplates: MonsterTemplate[] = await Promise.all(((templateRows ?? []) as Record<string, unknown>[]).map(asMonsterTemplate).map((template) => signMonsterTemplateImage(template, campaignId)));
+    const overlays = await Promise.all(((overlayRows ?? []) as Record<string, unknown>[]).map(async (r) => { if (r.storage_path) { const url=await getSignedAssetUrl(String(r.storage_path), campaignId); if(url)r.image_url=url; } return asOverlay(r); }));
     const tokens = await Promise.all(((tokenRows ?? []) as Record<string, unknown>[]).map(asToken).map(async (token) => {
-      if (token.imagePath) return signTokenImage(token);
+      if (token.imagePath) return signTokenImage(token, campaignId);
       if (token.imageUrl) return token;
       const characterImage = token.type === "PLAYER" ? characters.find((character) => character.id === token.referenceId)?.imageUrl : null;
       const monsterImage = token.type === "MONSTER" ? monsterInstances.find((monster) => monster.id === token.referenceId)?.template?.imageUrl : null;
       const npcImage = token.type === "NPC" ? npcTemplates.find((npc) => npc.id === token.referenceId)?.imageUrl : null;
       return { ...token, imageUrl: characterImage ?? monsterImage ?? npcImage ?? null };
     }));
-    const signDiscoverable=async(item:SceneDiscoverable)=>{if(!item.storagePath)return item;const url=await getSignedAssetUrl(item.storagePath);return url?{...item,imageUrl:url}:item;};
+    const signDiscoverable=async(item:SceneDiscoverable)=>{if(!item.storagePath)return item;const url=await getSignedAssetUrl(item.storagePath, campaignId);return url?{...item,imageUrl:url}:item;};
     const treasure=await Promise.all(((treasureRows??[]) as Record<string,unknown>[]).map(asDiscoverable).map(signDiscoverable));
     const loadedState: TabletopState = { campaign: { id: campaign.id, name: campaign.name, joinCode: campaign.join_code, ownerId: campaign.owner_id, role, memberCount: 0, updatedAt: campaign.updated_at }, role, scene, scenes: ((sceneRows ?? []) as Record<string, unknown>[]).map(asScene), sceneLinks: ((linkRows ?? []) as Record<string, unknown>[]).map(asSceneLink), discoverables:((discoverableRows??[]) as Record<string,unknown>[]).map(asDiscoverable),treasure,discoveryReveal:null, overlays, zoneMarkers:((zoneMarkerRows??[]) as Record<string,unknown>[]).map(asZoneMarker), tokens, transientTokenIds:[],motionSegments:((motionRows??[]) as Record<string,unknown>[]).map(asMotionSegment),tokenInteractions:((interactionRows??[]) as Record<string,unknown>[]).map(asInteraction), patrols:((patrolRows??[]) as Record<string,unknown>[]).map(asPatrol),patrolEditTokenId:null, characters, npcTemplates, monsterTemplates, monsterInstances, combat, diceRolls: ((diceRows ?? []) as Record<string, unknown>[]).map(asDiceRoll), selectedTokenId: null, selectedTokenIds: [], activeInteractionTokenId: null, placement: null, attackSelection: null, attackEvent: null, cinematicEvent: null, dreadActive: dreadRow?.name === "Dread", previewPlayerView: false, shiftIntel: false, connected: true };
     prefetchImage(scene.mapUrl);
@@ -325,7 +353,7 @@ export const tabletopService = {
       return asOverlay(row);
     }));
     const tokens = await Promise.all(((tokenRows ?? []) as Record<string, unknown>[]).map(asToken).map(async (token) => {
-      if (token.imagePath) return signTokenImage(token);
+      if (token.imagePath) return signTokenImage(token, campaignId);
       if (token.imageUrl) return token;
       const characterImage = token.type === "PLAYER" ? base.characters.find((character) => character.id === token.referenceId)?.imageUrl : null;
       const monsterImage = token.type === "MONSTER" ? monsterInstances.find((monster) => monster.id === token.referenceId)?.template?.imageUrl : null;
@@ -374,7 +402,7 @@ export const tabletopService = {
   async addSceneLink(sceneId: string, destinationSceneId: string, label: string, x: number, y: number): Promise<SceneLink> { const local:SceneLink={id:crypto.randomUUID(),sceneId,destinationSceneId,label,x,y,musicMode:"KEEP",musicTrackId:null,musicLoop:true,musicNextTrackId:null,musicNextLoop:true,ambienceMode:"KEEP",ambienceTrackId:null,ambienceLoop:true}; if(!isSupabaseConfigured)return local; const {data,error}=await supabase.from("scene_links").insert({id:local.id,scene_id:sceneId,destination_scene_id:destinationSceneId,label,x,y}).select("id,scene_id,destination_scene_id,label,x,y,music_mode,music_track_id,music_loop,music_next_track_id,music_next_loop,ambience_mode,ambience_track_id,ambience_loop").single(); if(error)throw error; return asSceneLink(data as Record<string,unknown>); },
   async updateSceneLink(id: string, patch: Partial<Pick<SceneLink,"destinationSceneId"|"label"|"x"|"y"|"musicMode"|"musicTrackId"|"musicLoop"|"musicNextTrackId"|"musicNextLoop"|"ambienceMode"|"ambienceTrackId"|"ambienceLoop">>) { if(!isSupabaseConfigured)return; const payload:Record<string,unknown>={}; if(patch.destinationSceneId!==undefined)payload.destination_scene_id=patch.destinationSceneId; if(patch.label!==undefined)payload.label=patch.label; if(patch.x!==undefined)payload.x=patch.x; if(patch.y!==undefined)payload.y=patch.y; if(patch.musicMode!==undefined)payload.music_mode=patch.musicMode; if(patch.musicTrackId!==undefined)payload.music_track_id=patch.musicTrackId; if(patch.musicLoop!==undefined)payload.music_loop=patch.musicLoop; if(patch.musicNextTrackId!==undefined)payload.music_next_track_id=patch.musicNextTrackId; if(patch.musicNextLoop!==undefined)payload.music_next_loop=patch.musicNextLoop; if(patch.ambienceMode!==undefined)payload.ambience_mode=patch.ambienceMode; if(patch.ambienceTrackId!==undefined)payload.ambience_track_id=patch.ambienceTrackId; if(patch.ambienceLoop!==undefined)payload.ambience_loop=patch.ambienceLoop; const {error}=await supabase.from("scene_links").update(payload).eq("id",id); if(error)throw error; },
   async deleteSceneLink(id: string) { if(!isSupabaseConfigured)return; const {error}=await supabase.from("scene_links").delete().eq("id",id); if(error)throw error; },
-  async placeCharacterToken(sceneId: string, characterId: string, x: number, y: number) { const { data, error } = await supabase.rpc("place_character_token", { p_scene_id: sceneId, p_character_id: characterId, p_x: x, p_y: y }); if (error) throw error; if (!data) throw new Error("Character placement returned no token."); return signTokenImage(asToken(data as Record<string, unknown>)); },
+  async placeCharacterToken(sceneId: string, characterId: string, x: number, y: number) { const { data, error } = await supabase.rpc("place_character_token", { p_scene_id: sceneId, p_character_id: characterId, p_x: x, p_y: y }); if (error) throw error; if (!data) throw new Error("Character placement returned no token."); return signTokenImage(asToken(data as Record<string, unknown>), campaignId); },
   async placeMonsterToken(sceneId: string, templateId: string, x: number, y: number) {
     const { data, error } = await supabase.rpc("place_monster_token", {
       p_scene_id: sceneId,
@@ -404,7 +432,7 @@ export const tabletopService = {
       instance: await asMonsterInstance(instanceRow as Record<string, unknown>),
     };
   },
-  async placeNpcToken(sceneId:string,templateId:string,x:number,y:number){const {data,error}=await supabase.rpc("place_npc_token",{p_scene_id:sceneId,p_template_id:templateId,p_x:x,p_y:y});if(error)throw error;const row=Array.isArray(data)?data[0]:data;if(!row)throw new Error("NPC placement returned no token.");return signTokenImage(asToken(row as Record<string,unknown>));},
+  async placeNpcToken(sceneId:string,templateId:string,x:number,y:number){const {data,error}=await supabase.rpc("place_npc_token",{p_scene_id:sceneId,p_template_id:templateId,p_x:x,p_y:y});if(error)throw error;const row=Array.isArray(data)?data[0]:data;if(!row)throw new Error("NPC placement returned no token.");return signTokenImage(asToken(row as Record<string,unknown>), campaignId);},
   async updateToken(tokenId: string, patch: Partial<Pick<Token,"visible"|"rotation"|"size"|"locked"|"conditions"|"imageUrl">>) {
     if (!isSupabaseConfigured) return;
     const payload: Record<string, unknown> = {};
@@ -455,7 +483,7 @@ export const tabletopService = {
   async updateDiscoverable(id:string,patch:Partial<Pick<SceneDiscoverable,"name"|"x"|"y"|"hidden">>){const {error}=await supabase.from("scene_discoverables").update({name:patch.name,x:patch.x,y:patch.y,hidden:patch.hidden}).eq("id",id);if(error)throw error;},
   async deleteDiscoverable(id:string){const {data,error}=await supabase.from("scene_discoverables").select("storage_path").eq("id",id).single();if(error)throw error;const {error:deleteError}=await supabase.from("scene_discoverables").delete().eq("id",id);if(deleteError)throw deleteError;if(data.storage_path){const {error:assetError}=await supabase.storage.from("campaign-assets").remove([data.storage_path]);if(assetError)throw assetError;}},
   async previewDiscoverable(item:SceneDiscoverable):Promise<SceneDiscoverable>{if(item.imageUrl)return item;if(!isSupabaseConfigured)return item;let storagePath=item.storagePath;if(!storagePath){const {data,error}=await supabase.from("scene_discoverables").select("storage_path").eq("id",item.id).single();if(error)throw error;storagePath=data?.storage_path?String(data.storage_path):null;}if(!storagePath)return item;const imageUrl=await getSignedAssetUrl(storagePath);return imageUrl?{...item,storagePath,imageUrl}:{...item,storagePath};},
-  async discover(id:string){const {data,error}=await supabase.rpc("discover_scene_discoverable",{p_discoverable_id:id});if(error)throw error;const item=asDiscoverable(data as Record<string,unknown>);if(!item.storagePath)return item;const imageUrl=await getSignedAssetUrl(item.storagePath);return imageUrl?{...item,imageUrl}:item;},
+  async discover(id:string){const {data,error}=await supabase.rpc("discover_scene_discoverable",{p_discoverable_id:id});if(error)throw error;const item=asDiscoverable(data as Record<string,unknown>);if(!item.storagePath)return item;const imageUrl=await getSignedAssetUrl(item.storagePath, campaignId);return imageUrl?{...item,imageUrl}:item;},
   async triggerAttack(campaignId: string, attackerTokenId: string, targetTokenId: string, preset: AttackPreset, color:string|null=null): Promise<AttackAnimationEvent> { const local: AttackAnimationEvent = { id: crypto.randomUUID(), campaignId, attackerTokenId, targetTokenId, preset, color, createdAt: new Date().toISOString() }; if (!isSupabaseConfigured) return local; const { data, error } = await supabase.from("tabletop_animation_events").insert({ campaign_id: campaignId, attacker_token_id: attackerTokenId, target_token_id: targetTokenId, preset, color }).select("id,campaign_id,attacker_token_id,target_token_id,preset,color,created_at").single(); if (error) throw error; return asAttackEvent(data as Record<string, unknown>); },
   async triggerCinematic(campaignId: string,name: string,duration: number,steps: CinematicEvent["steps"]): Promise<CinematicEvent> { const local={id:crypto.randomUUID(),campaignId,name,duration,steps,createdAt:new Date().toISOString()};if(!isSupabaseConfigured)return local;const {data,error}=await supabase.from("tabletop_cinematic_events").insert({campaign_id:campaignId,name,duration,steps}).select("id,campaign_id,name,duration,steps,created_at").single();if(error)throw error;return asCinematicEvent(data as Record<string,unknown>); },
   async resetDreadOnTableLaunch(campaignId: string) {
