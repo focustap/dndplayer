@@ -27,7 +27,7 @@ export function createSceneStructureKey(snapshot: SceneStructureSnapshot) {
   return JSON.stringify({
     scene: {
       id: scene.id,
-      map: scene.mapId ? `map:${scene.mapId}` : stableAssetIdentity(null, scene.mapUrl),
+      map: scene.mapId ? `map:${scene.mapId}:${scene.mapUrl ?? "missing"}` : stableAssetIdentity(null, scene.mapUrl),
       width: scene.width, height: scene.height, gridType: scene.gridType, gridSize: scene.gridSize,
       feetPerCell: scene.feetPerCell, gridColor: scene.gridColor, gridOpacity: scene.gridOpacity, gridLineWidth: scene.gridLineWidth,
 mapX: scene.mapX, mapY: scene.mapY,
