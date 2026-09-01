@@ -124,6 +124,16 @@ export const refreshSignedAssetUrl = async (url: string): Promise<string | null>
     };
     signedAssetCache.set(path, value);
     persistSignedAsset(path, value);
+
+    // The Worker signs with second-level timestamps, so an immediate retry can
+    // legitimately produce the exact same URL that just failed. Add a harmless
+    // cache-buster in that case so the browser/Pixi cannot reuse a poisoned HTTP
+    // cache entry. The Worker verifies only campaignId/path/expires/sig.
+    if (refreshed.url === url) {
+      const retryUrl = new URL(refreshed.url);
+      retryUrl.searchParams.set("_wf_retry", String(Date.now()));
+      return retryUrl.toString();
+    }
     return refreshed.url;
   } catch (error) {
     console.warn("Unable to refresh signed asset URL.", error);
