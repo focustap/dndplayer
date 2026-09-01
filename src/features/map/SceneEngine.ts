@@ -1,7 +1,7 @@
 import { Application, Assets, Container, FederatedPointerEvent, Graphics, Sprite, Text, TextStyle, Texture } from "pixi.js";
 import type { AttackAnimationEvent, AttackSelection, CinematicEvent, Placement, Scene, SceneDiscoverable, SceneLink, SceneOverlay, SceneZoneMarker, Token, TokenMotionSegment, TokenPatrol } from "../../domain/types";
 import { createSceneStructureKey, stableAssetIdentity, type SceneStructureSnapshot } from "./sceneStructureKey";
-import { PATROL_PRESENTATION_DELAY_MS, serverNowMs } from "../../services/tabletopService";
+import { PATROL_PRESENTATION_DELAY_MS, refreshSignedAssetUrl, serverNowMs } from "../../services/tabletopService";
 
 export interface EngineSnapshot extends SceneStructureSnapshot { builder: boolean; shiftIntel: boolean; placement: Placement | null; patrolEdit: TokenPatrol | null; motionSegments: TokenMotionSegment[]; attackSelection: AttackSelection | null; attackEvent: AttackAnimationEvent | null; cinematicEvent: CinematicEvent | null; selectedTokenId: string | null; selectedTokenIds: string[]; transientTokenIds: string[]; monsterIntel: Record<string, { hp: number; maxHp: number; ac: number }>; canMove(token: Token): boolean; canInteract(token:Token):boolean; }
 interface EngineCallbacks { onSelect(id: string | null, additive?: boolean): void; onSelectMany(ids: string[], additive?: boolean): void; onMoveCommit(id: string, x: number, y: number): void; onTokenMove(id:string,x:number,y:number,final:boolean):void; onInteract(id:string):void; onOverlayCommit(id: string, x: number, y: number): void; onSceneLinkCommit(id: string, x: number, y: number): void; onDiscoverableCommit(id:string,x:number,y:number):void; onPatrolWaypointAdd(x:number,y:number):void; onPatrolWaypointMove(id:string,x:number,y:number):void; onPatrolWaypointDelete(id:string):void; onSceneLinkActivate(id: string): void; onDiscover(id:string):void; onDiscoverablePreview(id:string):void; onPlace(x: number, y: number): void; onAttackTarget(id: string | null): void; onContext(id: string, x: number, y: number): void; }
@@ -432,7 +432,7 @@ export class SceneEngine {
   }
   private applyPlacement(snapshot: EngineSnapshot | null) { if (!snapshot) return; const placement=snapshot.placement; const identity=!placement?null:placement.kind==="CHARACTERS"?placement.referenceIds.join(","):placement.kind==="SCENE_LINK"?placement.destinationSceneId:placement.kind==="ZONE_MARKER"?`${placement.radiusFt}:${placement.color}`:placement.referenceId;const key=placement?`${placement.kind}:${identity}:${placement.name}:${snapshot.scene.gridSize}:${snapshot.scene.feetPerCell}`:null; if (key===this.placementKey) return; this.placementGhost?.destroy({children:true}); this.placementGhost=null; this.placementKey=key; if (placement) this.renderPlacementGhost(placement,snapshot.scene.gridSize); }
   private async renderBackground(scene: Scene) {
-    if (scene.mapUrl) { try { const texture = await Assets.load<Texture>(scene.mapUrl); const sprite = new Sprite(texture); const scale=Math.min(scene.width/texture.width,scene.height/texture.height)*scene.mapScale; sprite.width=texture.width*scale; sprite.height=texture.height*scale; sprite.position.set((scene.width-sprite.width)/2+scene.mapX,(scene.height-sprite.height)/2+scene.mapY); sprite.zIndex = 0; this.root.addChild(sprite); return; } catch { /* fall through to a recognizable offline demo scene */ } }
+    if (scene.mapUrl) { const texture = await this.loadAssetTexture(scene.mapUrl); if (texture) { const sprite = new Sprite(texture); const scale=Math.min(scene.width/texture.width,scene.height/texture.height)*scene.mapScale; sprite.width=texture.width*scale; sprite.height=texture.height*scale; sprite.position.set((scene.width-sprite.width)/2+scene.mapX,(scene.height-sprite.height)/2+scene.mapY); sprite.zIndex = 0; this.root.addChild(sprite); return; } }
     const floor = new Graphics().rect(0,0,scene.width,scene.height).fill(0x3d382f); floor.zIndex = 0; this.root.addChild(floor);
     const room = (x:number,y:number,w:number,h:number,color:number) => { const g = new Graphics().rect(x,y,w,h).fill(color).stroke({ color: 0x1b201d, width: 18 }); g.zIndex = 1; this.root.addChild(g); };
     room(90,90,620,330,0x5c5040); room(870,510,620,390,0x55493a); room(460,470,520,220,0x4c4438);
@@ -460,7 +460,7 @@ export class SceneEngine {
   }
   private async renderOverlay(overlay: SceneOverlay, canDm: boolean) {
     let display: Sprite|Container;
-    let displayHeight=overlay.height; if (overlay.imageUrl) { try { const texture = await Assets.load<Texture>(overlay.imageUrl); const sprite = new Sprite(texture); sprite.anchor.set(.5); sprite.width=overlay.width; const naturalWidth=texture.width; const naturalHeight=texture.height; sprite.height=naturalWidth>0&&naturalHeight>0?overlay.width*(naturalHeight/naturalWidth):overlay.height; displayHeight=sprite.height; display=sprite; } catch { display=this.fallbackEffect(overlay); } } else display=this.fallbackEffect(overlay);
+    let displayHeight=overlay.height; if (overlay.imageUrl) { const texture = await this.loadAssetTexture(overlay.imageUrl); if (texture) { const sprite = new Sprite(texture); sprite.anchor.set(.5); sprite.width=overlay.width; const naturalWidth=texture.width; const naturalHeight=texture.height; sprite.height=naturalWidth>0&&naturalHeight>0?overlay.width*(naturalHeight/naturalWidth):overlay.height; displayHeight=sprite.height; display=sprite; } else { display=this.fallbackEffect(overlay); } } else display=this.fallbackEffect(overlay);
     display.position.set(overlay.x,overlay.y); display.rotation=overlay.rotation; display.alpha=overlay.visible?overlay.opacity:(canDm?.3:0); display.zIndex=100+overlay.zIndex; display.eventMode=canDm&&!overlay.locked?"static":"none"; display.cursor="move"; display.on("pointerdown",(e: FederatedPointerEvent)=>{ if(e.button!==0)return; e.stopPropagation(); const p=this.root.toLocal(e.global); const currentX=display.position.x,currentY=display.position.y; this.pointerCandidate={kind:"OVERLAY",id:overlay.id,startX:e.global.x,startY:e.global.y,originX:currentX,originY:currentY,dx:p.x-currentX,dy:p.y-currentY,display,additive:false}; }); this.overlayDisplays.set(overlay.id,display); this.root.addChild(display);
     if (canDm && overlay.locked) { const lock = new Text({ text:"◆", style:{ fill:0xd3ad76,fontSize:16 } }); lock.anchor.set(.5); lock.position.set(overlay.x,overlay.y-displayHeight/2-14); lock.zIndex=250; this.root.addChild(lock); }
   }
@@ -475,9 +475,22 @@ export class SceneEngine {
   }
   private renderDiscoverable(item:SceneDiscoverable,canDm:boolean){const c=new Container();c.position.set(item.x,item.y);c.zIndex=270;c.eventMode="static";c.cursor=canDm?"grab":"pointer";const marker=new Graphics().circle(0,0,15).fill({color:item.hidden?0x65513c:0x3c5b55,alpha:item.hidden?.46:.96}).stroke({color:item.hidden?0xe3b978:0xf0d48c,width:2});const icon=new Text({text:"✦",style:{fill:0xfff0bd,fontSize:20,fontWeight:"700"}});icon.anchor.set(.5);c.addChild(marker,icon);if(canDm){const label=new Text({text:`${item.hidden?"HIDDEN · ":""}${item.name}`,style:{fill:0xf4ead9,fontSize:11,fontWeight:"700",stroke:{color:0x0a0f0d,width:4}}});label.anchor.set(.5,0);label.position.set(0,20);c.addChild(label);}c.on("pointerdown",(e:FederatedPointerEvent)=>{if(e.button!==0)return;e.stopPropagation();if(!canDm){if(!item.discoveredAt)this.callbacks.onDiscover(item.id);return;}const p=this.root.toLocal(e.global);this.pointerCandidate={kind:"DISCOVERABLE",id:item.id,startX:e.global.x,startY:e.global.y,originX:c.x,originY:c.y,dx:p.x-c.x,dy:p.y-c.y,display:c,additive:false};});c.on("rightclick",(e:FederatedPointerEvent)=>{if(!canDm)return;e.stopPropagation();this.callbacks.onDiscoverablePreview(item.id);});this.discoverableDisplays.set(item.id,c);this.root.addChild(c);}
   private renderPatrolPath(snapshot:EngineSnapshot){this.patrolLayer?.destroy({children:true});this.patrolLayer=null;const patrol=snapshot.builder&&snapshot.canDm?snapshot.patrolEdit:null;if(!patrol)return;const layer=new Container();layer.zIndex=600;layer.sortableChildren=true;layer.eventMode="none";const line=new Graphics();if(patrol.waypoints.length>1){line.moveTo(patrol.waypoints[0].x,patrol.waypoints[0].y);for(const point of patrol.waypoints.slice(1))line.lineTo(point.x,point.y);line.stroke({color:0x74b6a2,width:3,alpha:.75});}layer.addChild(line);for(const [index,point] of patrol.waypoints.entries()){const marker=new Container();marker.position.set(point.x,point.y);marker.eventMode="static";marker.cursor="grab";const circle=new Graphics().circle(0,0,14).fill({color:0x183f39,alpha:.95}).stroke({color:0xe4c77f,width:2});const label=new Text({text:String(index+1),style:{fill:0xfff3ce,fontSize:13,fontWeight:"700"}});label.anchor.set(.5);marker.addChild(circle,label);marker.on("pointerdown",(e:FederatedPointerEvent)=>{if(e.button!==0)return;e.stopPropagation();const p=this.root.toLocal(e.global);this.pointerCandidate={kind:"PATROL_WAYPOINT",id:point.id,startX:e.global.x,startY:e.global.y,originX:marker.x,originY:marker.y,dx:p.x-marker.x,dy:p.y-marker.y,display:marker,additive:false};});marker.on("rightclick",(e:FederatedPointerEvent)=>{e.stopPropagation();this.callbacks.onPatrolWaypointDelete(point.id);});layer.addChild(marker);}this.patrolLayer=layer;this.root.addChild(layer);}
+  private async loadAssetTexture(url: string): Promise<Texture | null> {
+    try {
+      return await Assets.load<Texture>(url);
+    } catch {
+      const refreshedUrl = await refreshSignedAssetUrl(url);
+      if (!refreshedUrl || refreshedUrl === url) return null;
+      try {
+        return await Assets.load<Texture>(refreshedUrl);
+      } catch {
+        return null;
+      }
+    }
+  }
   private async loadTokenTexture(url: string) {
     let pending = this.tokenTextures.get(url);
-    if (!pending) { pending = Assets.load<Texture>(url).catch(() => null); this.tokenTextures.set(url, pending); }
+    if (!pending) { pending = this.loadAssetTexture(url); this.tokenTextures.set(url, pending); }
     return pending;
   }
   private tokenRenderKey(token:Token,snapshot:EngineSnapshot){
