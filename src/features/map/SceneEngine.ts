@@ -479,18 +479,31 @@ export class SceneEngine {
     try {
       return await Assets.load<Texture>(url);
     } catch {
+      // Pixi keeps loader state globally. A failed request must be evicted before
+      // retrying or the same browser session can remain stuck on the fallback.
+      try { await Assets.unload(url); } catch { /* Nothing cached to unload. */ }
+
       const refreshedUrl = await refreshSignedAssetUrl(url);
-      if (!refreshedUrl || refreshedUrl === url) return null;
+      if (!refreshedUrl) return null;
       try {
         return await Assets.load<Texture>(refreshedUrl);
       } catch {
+        try { await Assets.unload(refreshedUrl); } catch { /* Ignore cleanup failure. */ }
         return null;
       }
     }
   }
   private async loadTokenTexture(url: string) {
     let pending = this.tokenTextures.get(url);
-    if (!pending) { pending = this.loadAssetTexture(url); this.tokenTextures.set(url, pending); }
+    if (!pending) {
+      pending = this.loadAssetTexture(url).then((texture) => {
+        // Do not permanently memoize a failed portrait load. A later state sync
+        // or rerender should be allowed to recover it.
+        if (!texture) this.tokenTextures.delete(url);
+        return texture;
+      });
+      this.tokenTextures.set(url, pending);
+    }
     return pending;
   }
   private tokenRenderKey(token:Token,snapshot:EngineSnapshot){
