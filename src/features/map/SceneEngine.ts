@@ -1,4 +1,4 @@
-import { Application, Assets, Container, FederatedPointerEvent, Graphics, Sprite, Text, TextStyle, Texture } from "pixi.js";
+import { Application, Container, FederatedPointerEvent, Graphics, Sprite, Text, TextStyle, Texture } from "pixi.js";
 import type { AttackAnimationEvent, AttackSelection, CinematicEvent, Placement, Scene, SceneDiscoverable, SceneLink, SceneOverlay, SceneZoneMarker, Token, TokenMotionSegment, TokenPatrol } from "../../domain/types";
 import { createSceneStructureKey, stableAssetIdentity, type SceneStructureSnapshot } from "./sceneStructureKey";
 import { PATROL_PRESENTATION_DELAY_MS, refreshSignedAssetUrl, serverNowMs } from "../../services/tabletopService";
@@ -475,23 +475,33 @@ export class SceneEngine {
   }
   private renderDiscoverable(item:SceneDiscoverable,canDm:boolean){const c=new Container();c.position.set(item.x,item.y);c.zIndex=270;c.eventMode="static";c.cursor=canDm?"grab":"pointer";const marker=new Graphics().circle(0,0,15).fill({color:item.hidden?0x65513c:0x3c5b55,alpha:item.hidden?.46:.96}).stroke({color:item.hidden?0xe3b978:0xf0d48c,width:2});const icon=new Text({text:"✦",style:{fill:0xfff0bd,fontSize:20,fontWeight:"700"}});icon.anchor.set(.5);c.addChild(marker,icon);if(canDm){const label=new Text({text:`${item.hidden?"HIDDEN · ":""}${item.name}`,style:{fill:0xf4ead9,fontSize:11,fontWeight:"700",stroke:{color:0x0a0f0d,width:4}}});label.anchor.set(.5,0);label.position.set(0,20);c.addChild(label);}c.on("pointerdown",(e:FederatedPointerEvent)=>{if(e.button!==0)return;e.stopPropagation();if(!canDm){if(!item.discoveredAt)this.callbacks.onDiscover(item.id);return;}const p=this.root.toLocal(e.global);this.pointerCandidate={kind:"DISCOVERABLE",id:item.id,startX:e.global.x,startY:e.global.y,originX:c.x,originY:c.y,dx:p.x-c.x,dy:p.y-c.y,display:c,additive:false};});c.on("rightclick",(e:FederatedPointerEvent)=>{if(!canDm)return;e.stopPropagation();this.callbacks.onDiscoverablePreview(item.id);});this.discoverableDisplays.set(item.id,c);this.root.addChild(c);}
   private renderPatrolPath(snapshot:EngineSnapshot){this.patrolLayer?.destroy({children:true});this.patrolLayer=null;const patrol=snapshot.builder&&snapshot.canDm?snapshot.patrolEdit:null;if(!patrol)return;const layer=new Container();layer.zIndex=600;layer.sortableChildren=true;layer.eventMode="none";const line=new Graphics();if(patrol.waypoints.length>1){line.moveTo(patrol.waypoints[0].x,patrol.waypoints[0].y);for(const point of patrol.waypoints.slice(1))line.lineTo(point.x,point.y);line.stroke({color:0x74b6a2,width:3,alpha:.75});}layer.addChild(line);for(const [index,point] of patrol.waypoints.entries()){const marker=new Container();marker.position.set(point.x,point.y);marker.eventMode="static";marker.cursor="grab";const circle=new Graphics().circle(0,0,14).fill({color:0x183f39,alpha:.95}).stroke({color:0xe4c77f,width:2});const label=new Text({text:String(index+1),style:{fill:0xfff3ce,fontSize:13,fontWeight:"700"}});label.anchor.set(.5);marker.addChild(circle,label);marker.on("pointerdown",(e:FederatedPointerEvent)=>{if(e.button!==0)return;e.stopPropagation();const p=this.root.toLocal(e.global);this.pointerCandidate={kind:"PATROL_WAYPOINT",id:point.id,startX:e.global.x,startY:e.global.y,originX:marker.x,originY:marker.y,dx:p.x-marker.x,dy:p.y-marker.y,display:marker,additive:false};});marker.on("rightclick",(e:FederatedPointerEvent)=>{e.stopPropagation();this.callbacks.onPatrolWaypointDelete(point.id);});layer.addChild(marker);}this.patrolLayer=layer;this.root.addChild(layer);}
-  private async loadAssetTexture(url: string): Promise<Texture | null> {
+  private async loadBrowserTexture(url: string): Promise<Texture | null> {
+    if (typeof Image === "undefined") return null;
     try {
-      return await Assets.load<Texture>(url);
+      const image = new Image();
+      image.crossOrigin = "anonymous";
+      image.decoding = "async";
+      await new Promise<void>((resolve, reject) => {
+        image.onload = () => resolve();
+        image.onerror = () => reject(new Error("Image load failed."));
+        image.src = url;
+      });
+      return Texture.from(image);
     } catch {
-      // Pixi keeps loader state globally. A failed request must be evicted before
-      // retrying or the same browser session can remain stuck on the fallback.
-      try { await Assets.unload(url); } catch { /* Nothing cached to unload. */ }
-
-      const refreshedUrl = await refreshSignedAssetUrl(url);
-      if (!refreshedUrl) return null;
-      try {
-        return await Assets.load<Texture>(refreshedUrl);
-      } catch {
-        try { await Assets.unload(refreshedUrl); } catch { /* Ignore cleanup failure. */ }
-        return null;
-      }
+      return null;
     }
+  }
+  private async loadAssetTexture(url: string): Promise<Texture | null> {
+    // Signed Supabase/R2 URLs are browser image URLs, not application assets.
+    // Loading them through Pixi's global Assets cache can permanently memoize a
+    // rejected request for the life of the tab. Use a real Image element instead,
+    // matching the path that already works in the React UI and browser cache.
+    const direct = await this.loadBrowserTexture(url);
+    if (direct) return direct;
+
+    const refreshedUrl = await refreshSignedAssetUrl(url);
+    if (!refreshedUrl) return null;
+    return this.loadBrowserTexture(refreshedUrl);
   }
   private async loadTokenTexture(url: string) {
     let pending = this.tokenTextures.get(url);
