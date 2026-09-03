@@ -9,7 +9,7 @@ export function CreatureInspector() {
   const { user } = useAuth();
   const token = state?.tokens.find((item) => item.id === state.selectedTokenId);
   if (!state) return null;
-  if (!isDmRole(state.role) && (!token || token.type !== "PLAYER" || token.ownerUserId !== user?.id)) return null;
+  if (!isDmRole(state.role) && (!token || token.type !== "PLAYER")) return null;
   if (!token) return <aside className="inspector-panel empty-inspector"><div className="empty-mark">W</div><h2>Select a creature</h2><p>Combat details appear here without covering the map.</p><small>SHIFT</small><span>Hold for map intel</span></aside>;
   return <InspectorContent key={token.id} tokenId={token.id} />;
 }
