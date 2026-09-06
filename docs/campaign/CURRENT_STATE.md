@@ -132,3 +132,21 @@ Operational state:
 - maps, party entry tokens, NPCs, dialogue, Nessa's shop, hidden enemy placements, prepared encounters, discoverables, transitions, boss anchor markers, and DM-only campaign notes are loaded
 - Veyrholt assets are stored in private R2; no Supabase Storage files were migrated or deleted
 - the production campaign has not been switched to Veyrholt or otherwise advanced
+
+## Required Veyrholt presentation refactor before play
+
+The currently loaded Veyrholt content is narratively usable, but the town overview is too compressed spatially: the grand Veyrholt map currently carries party tokens, multiple NPCs, investigation clues, and direct links into several adventure areas.
+
+Before running Veyrholt, follow:
+
+`docs/campaign/chapters/VEYRHOLT_SCENE_RESTRUCTURE.md`
+
+That document is the locked presentation target for Wayfinder:
+
+- keep the grand Veyrholt art as a **gridless location-selection hub**
+- do not use the overview as a normal tactical walking map
+- create dedicated top-down scenes for The Brass Lamb, Reeve's Hall & Civic Archive, Calder Bellworks, Chapel of the Last Chime, and Old Tithe Barn
+- keep Sunward Farms primarily investigative and move the barn combat to its own tactical scene
+- move major NPCs and discoverables off the overview into the locations where they physically belong
+- concentrate combat at Bellpost Road, Old Tithe Barn, optional Processional Court, Bellfoundry, and the Bell Regent
+- preserve all Veyrholt lore, clues, rewards, R2 assets, DM notes, and current live reveal/active state while refactoring
