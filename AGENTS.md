@@ -58,7 +58,7 @@ When asked to create a new chapter, Hollow, town, dungeon, or major story segmen
 
 ## Wayfinder implementation rules
 
-Before implementing a campaign feature or chapter, inspect the existing patterns in `src/`, `supabase/`, and the relevant services/domain types.
+Before implementing a campaign feature or chapter, inspect the existing patterns in `src/`, `supabase/`, `cloudflare/wayfinder-assets/`, and the relevant services/domain types.
 
 Reuse Wayfinder's existing concepts wherever possible, including:
 
@@ -72,7 +72,7 @@ Reuse Wayfinder's existing concepts wherever possible, including:
 - campaign notes
 - combat sessions and initiative
 - discoverables/interactables/NPC dialogue/shop systems that exist in the current codebase
-- Supabase Storage for campaign assets
+- the existing Cloudflare R2 asset pipeline for heavy campaign assets
 - centralized realtime/tabletop state
 
 Do **not** create a parallel campaign engine when an existing system can represent the content.
@@ -81,7 +81,32 @@ Do not weaken RLS or expose DM-only information to make implementation easier.
 
 If a schema change is genuinely necessary, create a normal Supabase migration and preserve existing data and permissions.
 
-Do not place service-role keys, database passwords, or other secrets in frontend code or committed files.
+Do not place service-role keys, database passwords, R2 access keys, signing secrets, or other secrets in frontend code or committed files.
+
+## Asset storage architecture — important
+
+Wayfinder uses **Cloudflare R2** for heavy campaign assets such as maps, portraits, token images, and similar files. Supabase remains the database/auth/realtime backend.
+
+The existing R2 implementation lives under `cloudflare/wayfinder-assets/`.
+
+Established R2 details:
+
+- bucket: `wayfinder-assets`
+- Worker binding: `ASSETS`
+- signing secret: `ASSET_SIGNING_SECRET`
+- browser clients must never receive R2 access keys or secrets
+- the Worker validates the existing Supabase access token before signing, uploading, importing, or deleting assets
+- signed R2 URLs are intentionally cacheable and should continue to use the existing asset flow
+- legacy Supabase Storage assets may be imported through the existing Worker migration path, but new heavy campaign assets should follow the current R2 architecture rather than adding new direct Supabase Storage usage
+
+When generating or integrating new campaign artwork:
+
+1. inspect the existing frontend/service calls and `cloudflare/wayfinder-assets/` Worker first
+2. reuse the existing R2 upload/signing/import path
+3. do not commit large generated binary assets to Git unless the repository already has an explicit pattern requiring that asset to live there
+4. do not introduce direct browser-to-R2 credentials
+5. do not move asset bytes back into Supabase Storage merely because Supabase stores the metadata
+6. keep database records and asset references compatible with the current Wayfinder asset model
 
 ## Planning before implementation
 
@@ -112,6 +137,8 @@ The chapter plan should include:
 ## Asset rules
 
 Do not invent fake asset URLs.
+
+If image generation is available for a campaign-authoring task and the user asks Codex to generate the artwork, generate the required maps, portraits, token art, discoverables, and similar assets where practical, then integrate them through Wayfinder's existing **Cloudflare R2 asset pipeline**.
 
 If a required map, portrait, token image, or illustration is not present and cannot be created by the available tools, create a clearly named asset requirement/placeholder in the chapter plan and continue implementing everything that does not depend on the final image bytes.
 
