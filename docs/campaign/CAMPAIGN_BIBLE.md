@@ -234,7 +234,18 @@ Veyrholt should share the same broader artistic/world aesthetic as Greymere whil
 
 The party should travel through multiple Hollows over the campaign, leveling up and learning more about Hollow history and behavior before the campaign's largest truth is revealed.
 
-The exact Veyrholt plot is intentionally not locked here yet. It should be designed from the current campaign state and story rules rather than improvised without context.
+Veyrholt is now locked in `docs/campaign/chapters/VEYRHOLT.md`.
+
+Lasting canon introduced there:
+
+- Castle Veyr stands inside a long-established Hollow that Veyrholt's people learned to farm, travel, and build around.
+- Its renewed activity begins on the same night the Greymere Catalyst is destroyed. This remains a correlation, not confirmed causation.
+- Veyrholt's signature phenomenon is the **Second Motion**: a bell-regulated replay of physical actions after six seconds.
+- The apparently mundane livestock disappearances are an ancient tithe process replaying through modern farms.
+- Ser Caldris Veyr became the **Bell Regent**, a constructed Catalyst used to impose a predictable civic pattern on something older.
+- Catalysts can therefore be built or installed as restraints. This does not explain the origin of all Catalysts or the campaign's final world-scale truth.
+- The chapter ends with a route to **Lornwatch Abbey**, where the expected watcher is absent.
+- The meaning of `VII`, the relationship between the two Hollow events, and the inconsistent doorway sketches remain unresolved.
 
 ## Canon discipline
 

@@ -116,3 +116,19 @@ When Codex is asked to build Veyrholt, it should first create:
 That file should lock the chapter design before large implementation work begins.
 
 Then inspect Wayfinder's current campaign-management, scene, token, encounter, NPC, discoverable, interactable, and Supabase patterns and implement as much of the chapter as the existing architecture supports.
+
+## Prepared next chapter
+
+Veyrholt is fully designed in `docs/campaign/chapters/VEYRHOLT.md` and prepared in Wayfinder, but the current live scene has not been switched away from the existing Greymere-era state.
+
+The intended progression is now:
+
+**Greymere Catalyst → Level 2 → Messenger → Bellpost Road → Level 3 → Veyrholt → Castle Veyr → Bell Regent → Level 4 → Lornwatch Abbey**
+
+Operational state:
+
+- the existing hidden Greymere Messenger has updated, player-safe Veyrholt dialogue
+- all Veyrholt scenes are inactive and unrevealed until the DM chooses to begin them
+- maps, party entry tokens, NPCs, dialogue, Nessa's shop, hidden enemy placements, prepared encounters, discoverables, transitions, boss anchor markers, and DM-only campaign notes are loaded
+- Veyrholt assets are stored in private R2; no Supabase Storage files were migrated or deleted
+- the production campaign has not been switched to Veyrholt or otherwise advanced

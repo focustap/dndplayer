@@ -11,6 +11,7 @@
     "build": "tsc -b && vite build && node scripts/write-pages-fallback.mjs",
     "typecheck": "tsc -b --pretty false",
     "lint": "eslint . --ignore-pattern dist",
+    "campaign:veyholt": "node scripts/import-veyholt.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
