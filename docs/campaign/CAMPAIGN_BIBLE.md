@@ -240,10 +240,14 @@ Lasting canon introduced there:
 
 - Castle Veyr stands inside a long-established Hollow that Veyrholt's people learned to farm, travel, and build around.
 - Its renewed activity begins on the same night the Greymere Catalyst is destroyed. This remains a correlation, not confirmed causation.
-- Veyrholt's signature phenomenon is **the Answer**: ringing a specially tuned bell creates a Call, and about six seconds later the Hollow answers through the most recently rung tuned bell. The Answer does **not** replay attacks, spells, movement, or other actions.
-- The old builders learned to exploit that six-second rule to ground and redirect Hollow resonance, creating the bell network around the town and Castle Veyr.
-- The apparently mundane livestock disappearances are an ancient tithe process using inherited tuned bells to call the animals back toward the castle.
-- The party learns the bell rule progressively and ultimately uses it against the Bell Regent by redirecting its own Answers into the anchor bells sustaining it.
+- Veyrholt's defining custom is **first bell: stop; second bell: continue**. Modern residents mostly follow it because their families always have, not because they understand the original reason.
+- The forgotten reason is a six-second unstable interval in the Hollow. After the first toll, the Hollow catches the **first meaningful physical change** made before the second toll. At the second toll it produces one distorted **Second Motion** based on that change.
+- Only one First Motion is stored per bell cycle. The DM does not replay an entire round or reproduce attacks/spells exactly; the Second Motion is a simple force trace, impact burst, repeated object movement, or similar scene-specific echo.
+- Veyrholt's ancestors did not invent the instability. They learned its timing and built the bells as a warning system so people would know when to stop moving and when it was safe to continue.
+- Later builders learned that tuned bronze creates especially predictable Second Motions. This let them use bells, gates, foundry pieces, and Castle Veyr's anchors as controlled parts of the containment system.
+- The apparently mundane livestock disappearances are an ancient tithe process reasserting itself through the old bell-and-route infrastructure around the farms and castle.
+- The party learns the Second Motion rule progressively, then learns that striking tuned bronze during the dangerous interval makes the bronze reproduce its own vibration at the second toll.
+- In the Bell Regent fight, the party can deliberately make an anchor-bell strike the First Motion. At the second toll, that anchor's vibration repeats internally and cracks the anchor. This uses the same rule behind Veyrholt's inherited stop-between-bells tradition without requiring delayed duplicate attack rolls.
 - Ser Caldris Veyr became the **Bell Regent**, a constructed Catalyst used to impose a predictable civic pattern on something older.
 - Catalysts can therefore be built or installed as restraints. This does not explain the origin of all Catalysts or the campaign's final world-scale truth.
 - The chapter ends with a route to **Lornwatch Abbey**, where the expected watcher is absent.
