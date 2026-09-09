@@ -111,7 +111,7 @@ The Bell Regent is sustained by three tuned anchor bells in the belfry.
    - Destroying it removes Commanding Toll.
 
 3. **Crown Anchor**
-   - While intact, the Bell Regent has AC 15.
+   - While intact, the Bell Regent has AC 16.
    - Destroying it lowers the Bell Regent to AC 14.
 
 Each anchor is AC 13 with 14 HP, immune to psychic and poison damage, and resistant to ordinary weapon damage. Thunder damage bypasses that resistance.
