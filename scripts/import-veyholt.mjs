@@ -124,21 +124,29 @@ async function main() {
       let token = await one("tokens", { scene_id: scene.id, type: "NPC", display_name: npc.name }, `${npc.name} token in ${scene.name}`);
       if (!token) token = await insert("tokens", { scene_id: scene.id, reference_id: template.id, type: "NPC", display_name: npc.name, image_path: template.image_path, x: place.x, y: place.y, size: 1, visible: true, locked: false });
       let interaction = await one("token_interactions", { token_id: token.id }, `interaction for ${npc.name}`);
-      if (!interaction) interaction = await insert("token_interactions", { token_id: token.id, campaign_id: campaignId, enabled: true, type: npc.type ?? "DIALOGUE", display_name: npc.name, dialogue_text: npc.pages[0], dialogue_pages: npc.pages });
+      const interactionPayload = { campaign_id: campaignId, enabled: true, type: npc.type ?? "DIALOGUE", display_name: npc.name, dialogue_text: npc.pages[0], dialogue_pages: npc.pages };
+      if (interaction) interaction = await update("token_interactions", "token_id", token.id, interactionPayload);
+      else interaction = await insert("token_interactions", { token_id: token.id, ...interactionPayload });
       if (npc.shop?.length) {
-        const { data: itemRows, error } = await supabase.from("npc_shop_items").select("name").eq("interaction_id", token.id);
+        const { data: itemRows, error } = await supabase.from("npc_shop_items").select("id,name").eq("interaction_id", token.id);
         if (error) throw error;
-        const existing = new Set((itemRows ?? []).map((item) => item.name));
-        const missing = npc.shop.filter((item) => !existing.has(item.name)).map((item, index) => ({ interaction_id: token.id, ...item, price_gp: item.priceGp, sort_order: index, priceGp: undefined }));
-        for (const item of missing) { delete item.priceGp; await insert("npc_shop_items", item); }
+        const existingByName = new Map((itemRows ?? []).map((item) => [item.name, item]));
+        for (const [index, item] of npc.shop.entries()) {
+          const itemPayload = { interaction_id: token.id, name: item.name, description: item.description, price_gp: item.priceGp, quantity: item.quantity, sort_order: index };
+          const existing = existingByName.get(item.name);
+          if (existing) await update("npc_shop_items", "id", existing.id, itemPayload);
+          else await insert("npc_shop_items", itemPayload);
+        }
       }
     }
   }
 
   const monsterRows = new Map();
   for (const monster of monsters) {
+    const templatePayload = { image_path: await ensureAsset(assets.monsters[monster.asset], "monster-templates"), creature_size: monster.size, creature_type: monster.type, max_hp: monster.maxHp, hp_formula: monster.hpFormula, ac: monster.ac, speed: monster.speed, movement: monster.movement, initiative: monster.initiative, abilities: monster.abilities, saving_throws: monster.savingThrows, skills: monster.skills, damage_vulnerabilities: monster.vulnerabilities, damage_resistances: monster.resistances, damage_immunities: monster.immunities, condition_immunities: monster.conditionImmunities, senses: monster.senses, passive_perception: monster.passivePerception, languages: monster.languages, notes: monster.notes, traits: monster.traits, actions: monster.actions, bonus_actions: monster.bonusActions, reactions: monster.reactions, legendary_actions: monster.legendaryActions, legendary_action_uses: monster.legendaryActionUses, spellcasting: monster.spellcasting, default_token_size: monster.tokenSize };
     let template = await one("monster_templates", { name: monster.name }, `monster template named ${monster.name}`);
-    if (!template) template = await insert("monster_templates", { name: monster.name, image_path: await ensureAsset(assets.monsters[monster.asset], "monster-templates"), creature_size: monster.size, creature_type: monster.type, max_hp: monster.maxHp, hp_formula: monster.hpFormula, ac: monster.ac, speed: monster.speed, movement: monster.movement, initiative: monster.initiative, abilities: monster.abilities, saving_throws: monster.savingThrows, skills: monster.skills, damage_vulnerabilities: monster.vulnerabilities, damage_resistances: monster.resistances, damage_immunities: monster.immunities, condition_immunities: monster.conditionImmunities, senses: monster.senses, passive_perception: monster.passivePerception, languages: monster.languages, notes: monster.notes, traits: monster.traits, actions: monster.actions, bonus_actions: monster.bonusActions, reactions: monster.reactions, legendary_actions: monster.legendaryActions, legendary_action_uses: monster.legendaryActionUses, spellcasting: monster.spellcasting, default_token_size: monster.tokenSize });
+    if (!template) template = await insert("monster_templates", { name: monster.name, ...templatePayload });
+    else template = await update("monster_templates", "id", template.id, templatePayload);
     monsterRows.set(monster.name, template);
   }
   const existingNeeded = new Set(encounters.flatMap((encounter) => encounter.members.map(([name]) => name)).filter((name) => !monsterRows.has(name)));
@@ -151,6 +159,7 @@ async function main() {
   for (const encounter of encounters) {
     let row = await one("encounters", { campaign_id: campaignId, name: encounter.name }, `encounter named ${encounter.name}`);
     if (!row) row = await insert("encounters", { campaign_id: campaignId, name: encounter.name, notes: encounter.notes });
+    else row = await update("encounters", "id", row.id, { notes: encounter.notes });
     const { data: members, error } = await supabase.from("encounter_members").select("monster_template_id").eq("encounter_id", row.id);
     if (error) throw error;
     if (!(members ?? []).length) for (const [name, quantity] of encounter.members) await insert("encounter_members", { encounter_id: row.id, monster_template_id: monsterRows.get(name).id, quantity });
@@ -189,6 +198,7 @@ async function main() {
   for (const note of notes) {
     const row = await one("campaign_notes", { campaign_id: campaignId, title: note.title }, `campaign note ${note.title}`);
     if (!row) await insert("campaign_notes", { campaign_id: campaignId, title: note.title, body: note.body });
+    else await update("campaign_notes", "id", row.id, { body: note.body });
   }
 
   const messenger = await one("tokens", { scene_id: (await sceneByRef("Greymere")).id, type: "NPC", display_name: "Veyrholt Messenger" }, "existing Veyrholt Messenger token");
@@ -197,7 +207,7 @@ async function main() {
   const payload = { campaign_id: campaignId, enabled: true, type: "DIALOGUE", display_name: "Veyrholt Messenger", dialogue_text: messengerPages[0], dialogue_pages: messengerPages };
   if (interaction) await update("token_interactions", "token_id", messenger.id, payload); else await insert("token_interactions", { token_id: messenger.id, ...payload });
 
-  console.log(JSON.stringify({ imported: true, campaignId, ...summary, preservedActiveScene: true, newScenesRevealed: false }, null, 2));
+  console.log(JSON.stringify({ imported: true, campaignId, ...summary, preservedActiveScene: true, newScenesRevealed: false, refreshedAuthoredContent: true }, null, 2));
 }
 
 main().catch((error) => { console.error(error.message); process.exitCode = 1; });
