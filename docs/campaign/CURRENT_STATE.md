@@ -133,6 +133,31 @@ Operational state:
 - Veyrholt assets are stored in private R2; no Supabase Storage files were migrated or deleted
 - the production campaign has not been switched to Veyrholt or otherwise advanced
 
+## Current Veyrholt bell mechanic — supersedes older chapter text
+
+The current mechanic is locked in:
+
+`docs/campaign/chapters/VEYRHOLT_BELL_REVISION.md`
+
+That file **supersedes any older Veyrholt text describing the Second Motion as a replay of attacks, spells, movement, or other actions**.
+
+Current rule:
+
+- a specially tuned bell creates a **Call**
+- about six seconds later the Hollow produces an **Answer**
+- the Answer does not repeat the action that happened before it
+- if another tuned bell rings during the six-second window, the **last tuned bell rung determines where the Answer goes**
+- players learn to ground and redirect the Answer during the chapter
+- the Bell Regent fight is the payoff: the party redirects the Regent's own Answers into the three anchor bells sustaining it
+
+Learning progression:
+
+**Bellpost Road grounds the Answer → Nessa explains it clearly → Tithe Barn teaches redirection → Castle Court reinforces it → Bellfoundry weaponizes it → Bell Regent requires mastery of it.**
+
+Veyrholt NPCs should speak in clear modern conversational English when conveying important lore or mechanics. Ancient inscriptions and oaths can still sound old or ceremonial; ordinary NPC exposition should not.
+
+The repository Veyrholt manifest has been revised to match this mechanic and dialogue direction. The importer is intended to refresh existing authored NPC dialogue, monster templates, encounter notes, shop text, and campaign notes when the Veyrholt import is applied again rather than leaving stale prepared content in place.
+
 ## Required Veyrholt presentation refactor before play
 
 The currently loaded Veyrholt content is narratively usable, but the town overview is too compressed spatially: the grand Veyrholt map currently carries party tokens, multiple NPCs, investigation clues, and direct links into several adventure areas.
