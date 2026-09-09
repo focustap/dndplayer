@@ -234,18 +234,22 @@ Veyrholt should share the same broader artistic/world aesthetic as Greymere whil
 
 The party should travel through multiple Hollows over the campaign, leveling up and learning more about Hollow history and behavior before the campaign's largest truth is revealed.
 
-Veyrholt is now locked in `docs/campaign/chapters/VEYRHOLT.md`.
+Veyrholt is now locked across `docs/campaign/chapters/VEYRHOLT.md` plus the newer mechanic override in `docs/campaign/chapters/VEYRHOLT_BELL_REVISION.md`.
 
 Lasting canon introduced there:
 
 - Castle Veyr stands inside a long-established Hollow that Veyrholt's people learned to farm, travel, and build around.
 - Its renewed activity begins on the same night the Greymere Catalyst is destroyed. This remains a correlation, not confirmed causation.
-- Veyrholt's signature phenomenon is the **Second Motion**: a bell-regulated replay of physical actions after six seconds.
-- The apparently mundane livestock disappearances are an ancient tithe process replaying through modern farms.
+- Veyrholt's signature phenomenon is **the Answer**: ringing a specially tuned bell creates a Call, and about six seconds later the Hollow answers through the most recently rung tuned bell. The Answer does **not** replay attacks, spells, movement, or other actions.
+- The old builders learned to exploit that six-second rule to ground and redirect Hollow resonance, creating the bell network around the town and Castle Veyr.
+- The apparently mundane livestock disappearances are an ancient tithe process using inherited tuned bells to call the animals back toward the castle.
+- The party learns the bell rule progressively and ultimately uses it against the Bell Regent by redirecting its own Answers into the anchor bells sustaining it.
 - Ser Caldris Veyr became the **Bell Regent**, a constructed Catalyst used to impose a predictable civic pattern on something older.
 - Catalysts can therefore be built or installed as restraints. This does not explain the origin of all Catalysts or the campaign's final world-scale truth.
 - The chapter ends with a route to **Lornwatch Abbey**, where the expected watcher is absent.
 - The meaning of `VII`, the relationship between the two Hollow events, and the inconsistent doorway sketches remain unresolved.
+
+Veyrholt NPCs should use clear modern conversational language when delivering important lore or mechanic explanations. Old-fashioned wording is appropriate for ancient inscriptions, preserved oaths, and deliberate atmosphere, not for ordinary exposition the players need to understand.
 
 ## Canon discipline
 
