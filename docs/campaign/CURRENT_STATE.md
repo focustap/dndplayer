@@ -139,24 +139,42 @@ The current mechanic is locked in:
 
 `docs/campaign/chapters/VEYRHOLT_BELL_REVISION.md`
 
-That file **supersedes any older Veyrholt text describing the Second Motion as a replay of attacks, spells, movement, or other actions**.
+That file supersedes both the older full-action replay version and the rejected `Call and Answer` redirection version.
 
 Current rule:
 
-- a specially tuned bell creates a **Call**
-- about six seconds later the Hollow produces an **Answer**
-- the Answer does not repeat the action that happened before it
-- if another tuned bell rings during the six-second window, the **last tuned bell rung determines where the Answer goes**
-- players learn to ground and redirect the Answer during the chapter
-- the Bell Regent fight is the payoff: the party redirects the Regent's own Answers into the three anchor bells sustaining it
+- Veyrholt's bells are **warning timers**, not the source of the Hollow effect
+- the town's inherited rule is **first bell: stop; second bell: continue**
+- after the first bell, the Hollow catches the **first meaningful physical change** made during the roughly six-second unsafe interval
+- only one First Motion is stored per cycle
+- at the second bell, the Hollow produces one distorted **Second Motion** based on that stored change
+- the DM does not repeat the whole round or reroll the original attack/spell
+- movement becomes a simple force path, an impact becomes a small force burst, machinery can repeat its movement, and tuned bronze can reproduce its vibration internally
+- if nobody does anything meaningful between the bells, nothing is stored
+
+Why the city behaves this way:
+
+- Veyrholt's ancestors learned the timing of the Hollow's unstable interval
+- they built the bells so everyone would know when to freeze and when it was safe to move again
+- later generations kept teaching the habit after the engineering reason was lost
+- modern residents mostly treat it as family tradition, etiquette, or superstition
 
 Learning progression:
 
-**Bellpost Road grounds the Answer → Nessa explains it clearly → Tithe Barn teaches redirection → Castle Court reinforces it → Bellfoundry weaponizes it → Bell Regent requires mastery of it.**
+**Bellpost Road shows why moving between bells is dangerous → Veyrholt visibly freezes between tolls → Nessa explains the lost rule → Tithe Barn teaches choosing the First Motion → Castle Court tests control under pressure → Bellfoundry shows tuned bronze can break itself → Bell Regent anchor bells are defeated with that exact principle.**
+
+Bell Regent payoff:
+
+- the party should position near an anchor **before** the First Toll
+- if ringing/striking that anchor is the First Motion, the Hollow stores the anchor's vibration
+- at the Second Toll, the vibration repeats inside the bronze for 14 thunder damage, ignoring the anchor's resistance
+- this is not a delayed duplicate weapon attack
+- Ward Anchor removes physical resistance, Command Anchor removes Commanding Toll, Crown Anchor lowers AC from 16 to 14
+- anchors can still be attacked normally
 
 Veyrholt NPCs should speak in clear modern conversational English when conveying important lore or mechanics. Ancient inscriptions and oaths can still sound old or ceremonial; ordinary NPC exposition should not.
 
-The repository Veyrholt manifest has been revised to match this mechanic and dialogue direction. The importer is intended to refresh existing authored NPC dialogue, monster templates, encounter notes, shop text, and campaign notes when the Veyrholt import is applied again rather than leaving stale prepared content in place.
+The repository Veyrholt manifest and the prepared live `The Hollow` campaign data have been revised to match this mechanic and dialogue direction. The importer refreshes existing authored NPC dialogue, monster templates, encounter notes, shop text, and campaign notes when applied again rather than leaving stale prepared content in place.
 
 ## Required Veyrholt presentation refactor before play
 
