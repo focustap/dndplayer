@@ -31,7 +31,7 @@ const creature = (input) => ({
   senses: [{ name: "darkvision", range: 60, unit: "ft" }],
   passivePerception: 10,
   languages: [],
-  notes: "DM-only Veyrholt creature. See the [Veyrholt] Encounter Mechanics campaign note and docs/campaign/chapters/VEYRHOLT.md.",
+  notes: "DM-only Veyrholt creature. See the [Veyrholt] Encounter Mechanics campaign note and docs/campaign/chapters/VEYRHOLT_BELL_REVISION.md.",
   traits: [],
   actions: [],
   bonusActions: [],
@@ -106,67 +106,67 @@ export const npcs = [
     key: "elian", name: "Reeve Elian Morrow", asset: "elian",
     placements: [{ scene: "town", x: 505, y: 405 }],
     pages: [
-      "Veyrholt can endure a bad harvest. It cannot endure roads that repeat travelers and a castle that changes its own doors.",
-      "The missing livestock looked like theft until the old tithe route appeared under every trail. I need proof before panic turns the town against itself.",
-      "The first double toll was recorded the same night your Greymere Hollow fell. That is a correlation, not a verdict—but I will not pretend it is comforting.",
+      "We've handled bad harvests and dangerous roads before. This is different. The bells are ringing on their own, and people are getting trapped on roads they've used their whole lives.",
+      "At first we thought someone was stealing livestock. Then we noticed every missing animal had an old bell, and every trail followed the same abandoned tithe route.",
+      "One more thing: our first double toll happened the same night the Greymere Hollow went quiet. I don't know if those events are connected, but I'm not going to hide it from you.",
     ],
   },
   {
     key: "bryn", name: "Captain Bryn Halvek", asset: "bryn",
     placements: [{ scene: "town", x: 730, y: 360 }, { scene: "gate", x: 245, y: 780 }],
     pages: [
-      "The keep has been predictable for longer than anyone alive. Since the double toll, my patrol reports are repeating themselves before I file them.",
-      "The old cadence is: stand, name, purpose, passage. Speak it at the court, and the processional guard may remember you as authorized.",
-      "I concealed one scout's disappearance to prevent a rush on the gates. That choice bought order and cost trust.",
+      "Castle Veyr used to be dangerous, but it was predictable. Now the bells ring when nobody touches them, and routes we've used safely for years stop working without warning.",
+      "Remember this inside the castle: when a tuned bell rings, you have about six seconds before the Hollow answers it. If another tuned bell rings first, the answer goes to that bell instead.",
+      "I lost a scout near the gate and kept it quiet because I was afraid the town would panic. That was a mistake.",
     ],
   },
   {
     key: "nessa", name: "Nessa Calder", asset: "nessa",
     placements: [{ scene: "town", x: 935, y: 565 }], type: "BOTH",
     pages: [
-      "A bell does not merely ring here. It tells the Hollow when an action begins and when the answer is due.",
-      "My missing master mold was taken toward the tithe barn. If it reaches the old foundry, the castle can recast the anchors that once kept it quiet.",
-      "Bring me a true sample and I can tell resonance from haunting. Those are different problems, no matter what the chapel says.",
+      "Here's the simple version: a tuned bell rings, then about six seconds later the Hollow answers. It does not copy what you did. It sends its force through the last tuned bell that rang.",
+      "That means you can redirect it. If the castle rings one bell, ring another before the six seconds are up and you can make the answer go somewhere else.",
+      "The old builders used that rule to keep Castle Veyr under control. My missing master mold can make the kind of anchor bell they used, which is why I need it back.",
     ],
     shop: [
-      { name: "Resonance chalk", description: "Marks one five-foot line so the next Second Motion is easy to track.", priceGp: 5, quantity: 4 },
+      { name: "Resonance chalk", description: "Marks a tuned bell or anchor so its active resonance is easier to track. Useful for identifying where the next Answer will land.", priceGp: 5, quantity: 4 },
       { name: "Bellwax", description: "One use; grants advantage on a save against a toll or bell effect.", priceGp: 3, quantity: 6 },
-      { name: "Brass earplugs", description: "Useful against noise, but not force created by a replay.", priceGp: 1, quantity: null },
+      { name: "Brass earplugs", description: "Useful against the sound of a bell, but not the force of the Hollow's Answer.", priceGp: 1, quantity: null },
     ],
   },
   {
     key: "avra", name: "Sister Avra Seln", asset: "avra",
     placements: [{ scene: "town", x: 330, y: 655 }],
     pages: [
-      "The Last Chime teaches that every duty must end. Veyrholt's old wards have forgotten that mercy.",
-      "Caldris Veyr swore: I hold the measure so no answering hand finds purchase. His name and oath may still reach whatever remains.",
-      "I dreamed of a door drawn three ways. I do not know what it means, and I will not build doctrine from a nightmare.",
+      "The chapel turned the old bell rules into tradition and religion. Most people here grew up following them without knowing what they were actually for.",
+      "Caldris Veyr was the last person assigned to keep the castle's anchors working. If anything of him is still in there, his name may still matter.",
+      "I've also dreamed about the same doorway drawn three different ways. I don't know what it means, so don't treat it like an answer just because it sounds important.",
     ],
   },
   {
     key: "tamsin", name: "Tamsin Reed", asset: "tamsin",
     placements: [{ scene: "town", x: 1110, y: 770 }, { scene: "farms", x: 295, y: 790 }],
     pages: [
-      "They did not steal the whole flock. Only the animals wearing bells passed down from our grandparents.",
-      "I saw my ram twice on the old road—one solid, one a few steps behind. Both turned toward the castle when the second bell sounded.",
-      "Kest lied about the culvert, but he was trying to hide smuggling, not this. I followed him far enough to know the animals are still alive.",
+      "They didn't take the whole flock. Only the animals wearing the old bells our families have passed down for generations disappeared.",
+      "I heard the castle bell ring, then a few seconds later every old collar in the field rang back. After that, the animals started walking toward the castle like they were being called.",
+      "Kest lied about the culvert because he was hiding smuggling, not because he caused this. I followed him far enough to know the animals are still alive.",
     ],
   },
   {
     key: "kest", name: "Kest Rane", asset: "kest",
     placements: [{ scene: "farms", x: 970, y: 705 }],
     pages: [
-      "I used the dry tithe culvert for untaxed wool. Then it started breathing warm air and putting my footprints down ahead of me.",
-      "I hid the route because confession means prison. The map is under the loose trough-stone. Take it—just do not call me the thing that woke the castle.",
+      "I used the old tithe tunnel to move untaxed wool. A few nights ago, the bell down there started answering the castle. Every time it rang, something deeper in the tunnel pulled back.",
+      "I hid the route because admitting what I was doing means prison. The map is under the loose stone by the trough. Take it. I just didn't wake the castle.",
     ],
   },
   {
     key: "mara", name: "Mara Venn", asset: "mara",
     placements: [{ scene: "town", x: 570, y: 540 }, { scene: "halls", x: 220, y: 825 }],
     pages: [
-      "The records never say the founders created the anomaly. They say they measured it, enclosed it, and taught it a schedule.",
-      "The useful leaves are filed under municipal repairs, not occult matters. Someone wanted the truth to look boring.",
-      "Do not confuse an incomplete archive with permission to finish its sentences. Some of these diagrams are observations, not explanations.",
+      "The founders didn't create the Hollow. They found it here, built around it, and learned that tuned bells could steer where its response went.",
+      "They buried the instructions in ordinary repair records. People kept maintaining the system even after they forgot what the system was actually doing.",
+      "These records tell us how they controlled part of it. They do not tell us where the Hollow came from. Don't turn a missing answer into one you want to hear.",
     ],
   },
 ];
@@ -174,7 +174,7 @@ export const npcs = [
 export const monsters = [
   creature({
     name: "Veyrholt Road Refrain", asset: "roadRefrain", maxHp: 9, ac: 12,
-    traits: [action("Violence Repeated", "The Refrain records the last weapon attack made within 10 feet. On its next initiative, it repeats that line against the attacker's former space at +4 for 1d6+2 force damage.")],
+    traits: [action("Fed by the Answer", "When an unresolved Answer lands within 10 feet of the Refrain, it can immediately move up to 10 feet without provoking opportunity attacks. If the Answer is grounded into the restored handbell, the Refrain cannot use this trait and has disadvantage on its next attack.")],
     actions: [action("Echo Slam", "Melee Attack: +4 to hit, reach 5 ft. Hit: 1d6+2 force damage.", 4, "1d6+2", "Force")],
   }),
   creature({
@@ -189,7 +189,7 @@ export const monsters = [
   }),
   creature({
     name: "Veyrholt Processional Echo", asset: "titheBailiff", maxHp: 18, ac: 13,
-    traits: [action("No Reactions", "The Processional Echo cannot take reactions and always charges in a straight line when possible.")],
+    traits: [action("Bound to the Gate Bell", "If the castle's pending Answer is redirected into the gate bell or its plinth, the Processional Echo is incapacitated until the end of its next turn.")],
     actions: [action("Echo Glaive", "Melee Attack: +4 to hit, reach 10 ft. Hit: 1d8+2 force damage.", 4, "1d8+2", "Force")],
   }),
   creature({
@@ -200,6 +200,7 @@ export const monsters = [
   }),
   creature({
     name: "Veyrholt Foundry Refrain", asset: "roadRefrain", maxHp: 14, ac: 12, vulnerabilities: ["Thunder"], immunities: ["Fire"],
+    traits: [action("Unstable Resonance", "When the foundry's Answer is redirected into a prepared mold, this Refrain loses its reactions and has disadvantage on attacks until the end of its next turn.")],
     actions: [action("Forge Touch", "Melee Attack: +4 to hit, reach 5 ft. Hit: 1d6+2 fire damage.", 4, "1d6+2", "Fire")],
   }),
   creature({
@@ -208,28 +209,29 @@ export const monsters = [
     actions: [action("Shortbow", "Ranged Attack: +4 to hit, range 80/320 ft. Hit: 1d6+2 piercing damage.", 4, "1d6+2", "Piercing")],
   }),
   creature({
-    name: "The Bell Regent", asset: "bellRegent", maxHp: 72, ac: 15, tokenSize: 1.5,
+    name: "The Bell Regent", asset: "bellRegent", maxHp: 72, ac: 16, tokenSize: 1.5,
     abilities: { str: 16, dex: 12, con: 16, int: 15, wis: 14, cha: 12 }, initiative: { modifier: 1, score: 11 }, savingThrows: { Constitution: 5, Wisdom: 3 },
     resistances: ["Nonmagical Bludgeoning", "Nonmagical Piercing", "Nonmagical Slashing"], languages: ["Common"], passivePerception: 12,
-    notes: "DM-only Catalyst. Physical resistance lasts only while two or more anchor bells remain. First bell removes it; second removes Command the Refrain; third lowers AC to 14. Use Record at initiative 20 and Second Motion at initiative 10.",
+    notes: "DM-only Catalyst. The boss uses the Answering Bell rule, not action replay. At initiative 20, resolve the previous Call, then begin a new one. A creature adjacent to a tuned anchor bell can ring it as a bonus action; the last anchor rung before the next initiative 20 receives the Answer. A redirected Answer deals 14 thunder damage to that anchor, ignores its resistance, and cancels the marked danger zone. Ward Bell removes physical resistance when destroyed. Command Bell removes Commanding Toll. Crown Bell lowers AC from 16 to 14.",
     traits: [
-      action("Three Anchor Bells", "Each bell is AC 13, 14 HP, immune to psychic and poison, resistant to ordinary weapons, and vulnerable to thunder and replayed damage. Replayed damage and the Anchor Hammer deal double damage."),
-      action("Toll of Assignment (once at half HP)", "Each creature makes a DC 13 Wisdom save. On a failure, speed becomes 0 until it uses an action to reject its assigned position. Pipp's tuning key or Caldris's oath grants advantage."),
+      action("Answering Lattice", "At initiative 20, the Regent begins a Call and marks one visible 15-foot-radius area. At initiative 20 next round, if no anchor bell was rung, creatures in that area make a DC 13 Dexterity save, taking 2d6 force damage and being pushed 10 feet on a failure, or half damage with no push on a success. If an anchor bell was rung, the Answer is redirected into the last anchor rung instead and the marked area is safe."),
+      action("Three Anchor Bells", "Ward, Command, and Crown bells are each AC 13 with 14 HP, immune to psychic and poison, and resistant to ordinary weapon damage. A redirected Answer deals 14 thunder damage to an anchor and ignores that resistance. The bells can also be attacked normally."),
+      action("Toll of Assignment (once at half HP)", "Each creature makes a DC 13 Wisdom save. On a failure, speed becomes 0 until it uses an action to reject its assigned position. Pipp's tuning key or speaking Caldris's name grants advantage."),
     ],
     actions: [
       { ...action("Multiattack", "The Bell Regent makes two Bellstaff attacks."), kind: "MULTIATTACK", multiattack: { count: 2, options: "Bellstaff", description: "The Bell Regent makes two Bellstaff attacks." } },
       action("Bellstaff", "Melee Attack: +5 to hit, reach 5 ft. Hit: 1d8+3 bludgeoning damage.", 5, "1d8+3", "Bludgeoning"),
-      { ...action("Command the Refrain", "Recharge 5–6. Immediately trigger one visible recorded attack or movement."), usage: { kind: "RECHARGE", value: "5–6" } },
+      { ...action("Commanding Toll", "Recharge 5–6. One creature within 60 feet must succeed on a DC 13 Wisdom save or move up to 15 feet toward an intact anchor bell by the safest available path. This ability is lost when the Command Bell is destroyed."), usage: { kind: "RECHARGE", value: "5–6" } },
     ],
   }),
 ];
 
 export const encounters = [
-  { name: "Veyrholt — Toll-Takers and Road Refrains", members: [["Veyrholt Greyhook Scout", 1], ["Bandit", 2], ["Veyrholt Road Refrain", 2]], notes: "Bellpost Road. Shallow water is difficult terrain; arches grant half cover. Initiative 10 replays the last channel crossing (DC 12 Dex, 1d6 force, push 5 ft). Ringing the handbell suppresses Refrains until initiative 10 next round. Easy: remove one Refrain. Hard: add one Bandit." },
-  { name: "Veyrholt — Bailiffs of the Empty Tithe", members: [["Veyrholt Tithe Bailiff", 3], ["Veyrholt Ledger Swarm", 1]], notes: "Old Tithe Barn. Pens are difficult terrain on odd rounds and solid cover on even rounds. At initiative 10, the last operated gate repeats. Reading a correct animal name diverts one Bailiff for a round. Easy: 2 Bailiffs, swarm 16 HP. Hard: add a fourth Bailiff on round 3." },
-  { name: "Veyrholt — Courtyard Sentinels", members: [["Animated Armor", 2], ["Veyrholt Processional Echo", 1]], notes: "Castle Court. Initiative 10 charges the last occupied patrol line (DC 12 Dex, 1d8 force and prone). Bryn's token/cadence prevents the Echo joining. Armors stop if returned to plinths at the second toll. Easy: one armor starts at 15 HP. Hard: use full armor HP." },
-  { name: "Veyrholt — The Recasting", members: [["Veyrholt Bronze Ram", 1], ["Veyrholt Foundry Refrain", 2]], notes: "Bellfoundry. Two marked pour channels replay on initiative 10 for 2d6 fire, DC 12 Dex half. Drop a mold (AC 12) for 2d8 bludgeoning and cool one route. A true bell, Pipp's tuning key, or Silence disables one Refrain for a round. Easy: one Refrain, 2d4 channels. Hard: Ram 45 HP and one 5 HP repair." },
-  { name: "Veyrholt — Catalyst: The Bell Regent", members: [["The Bell Regent", 1]], notes: "Regent's Belfry. Initiative 20 records spaces and recent lines; initiative 10 repeats them. Replayed weapon lines: +4, 1d6+2 force. Spells become 5-ft bursts for 1d6 force, DC 12 Dex half. Movement lines push 5 ft, DC 12 Str negates. Never repeat healing, conditions, slots, or resource costs. Every bell is reachable. Easier 58 HP/10 HP bells; harder 88 HP plus one Foundry Refrain." },
+  { name: "Veyrholt — Toll-Takers and Road Refrains", members: [["Veyrholt Greyhook Scout", 1], ["Bandit", 2], ["Veyrholt Road Refrain", 2]], notes: "Bellpost Road teaches the six-second Call -> Answer rule. At initiative 20, resolve the previous Answer, then start a new Call. If a character rang the recovered handbell since the last initiative 20, the Answer grounds harmlessly into it and both Road Refrains have disadvantage on their next attack. If nobody grounded it, choose a visible 10-foot-radius area: creatures there make DC 12 Dex saves or take 1d6 force and are pushed 5 feet. Ringing the handbell is a bonus action while adjacent. Easy: remove one Refrain. Hard: add one Bandit." },
+  { name: "Veyrholt — Bailiffs of the Empty Tithe", members: [["Veyrholt Tithe Bailiff", 3], ["Veyrholt Ledger Swarm", 1]], notes: "Old Tithe Barn teaches redirection. At initiative 20, resolve the pending tithe Answer, then the castle begins another Call through the inherited collars. If nobody rings the barn's tuned bell, every bell-collared animal moves 15 feet toward the castle and one Bailiff can move 10 feet for free. If a character rings the barn bell before the next initiative 20, the Answer redirects there instead; Bailiffs within 10 feet make DC 12 Str saves or fall prone. Reading a correct animal name still diverts one Bailiff for a round. Easy: 2 Bailiffs, swarm 16 HP. Hard: add a fourth Bailiff on round 3." },
+  { name: "Veyrholt — Courtyard Sentinels", members: [["Animated Armor", 2], ["Veyrholt Processional Echo", 1]], notes: "Castle Court reinforces redirection. At initiative 20, mark one visible processional lane for the next Answer. If the gate bell is rung before the next initiative 20, the Answer goes into its plinth and the Processional Echo is incapacitated until the end of its next turn. Otherwise creatures in the marked lane make DC 12 Dex saves or take 1d8 force and fall prone. Bryn's token/cadence can prevent the Echo from joining at all. Easy: one armor starts at 15 HP. Hard: use full armor HP." },
+  { name: "Veyrholt — The Recasting", members: [["Veyrholt Bronze Ram", 1], ["Veyrholt Foundry Refrain", 2]], notes: "Bellfoundry turns redirection into a weapon. At initiative 20, mark one pour channel as the destination of the next Answer. If nobody redirects it, the channel erupts for 2d6 fire, DC 12 Dex half. A character can ring the true foundry bell or use Pipp's tuned key before the next initiative 20 to send the Answer into a prepared mold instead: the mold cracks, dealing 2d8 bludgeoning to creatures within 5 feet, and one Foundry Refrain has disadvantage on attacks until the end of its next turn. Easy: one Refrain, 2d4 channel damage. Hard: Ram 45 HP and one 5 HP repair." },
+  { name: "Veyrholt — Catalyst: The Bell Regent", members: [["The Bell Regent", 1]], notes: "Regent's Belfry is the payoff for everything learned earlier. At initiative 20, resolve the previous Call, then the Regent starts another and marks one visible 15-foot-radius danger zone. A creature adjacent to an intact anchor bell can ring it as a bonus action. The LAST anchor rung before the next initiative 20 takes the Answer instead: 14 thunder damage to that anchor, ignoring resistance, and the marked danger zone does not trigger. If no anchor is rung, creatures in the marked zone make DC 13 Dex saves or take 2d6 force and are pushed 10 feet; success is half damage and no push. Ward Bell destroyed: remove physical resistance. Command Bell destroyed: remove Commanding Toll. Crown Bell destroyed: AC drops from 16 to 14. Bells can also be attacked. Easier: Regent 58 HP / bells 10 HP. Harder: Regent 88 HP and each redirected Answer deals only 10 damage to an anchor." },
 ];
 
 export const placements = [
@@ -288,37 +290,37 @@ export const links = [
 ];
 
 export const zoneMarkers = [
-  { scene: "belfry", label: "Anchor Bell I", x: 355, y: 385, radiusFt: 10, color: "#d49a3a" },
-  { scene: "belfry", label: "Anchor Bell II", x: 905, y: 380, radiusFt: 10, color: "#d49a3a" },
-  { scene: "belfry", label: "Anchor Bell III", x: 625, y: 905, radiusFt: 10, color: "#d49a3a" },
+  { scene: "belfry", label: "Ward Anchor Bell", x: 355, y: 385, radiusFt: 10, color: "#d49a3a" },
+  { scene: "belfry", label: "Command Anchor Bell", x: 905, y: 380, radiusFt: 10, color: "#d49a3a" },
+  { scene: "belfry", label: "Crown Anchor Bell", x: 625, y: 905, radiusFt: 10, color: "#d49a3a" },
 ];
 
 export const notes = [
   {
     title: "[Veyrholt] 00 — Run Sheet",
-    body: "DM ONLY. Greymere Catalyst -> Level 2 -> existing Messenger -> Bellpost Road -> Level 3 -> Veyrholt. Town investigation: missing livestock follows an old tithe route. Castle order: Gate/Pens/Court -> Hall/Archive/Banquet -> Bellfoundry -> Regent's Belfry. All new scenes begin inactive and unrevealed. Milestone to Level 4 after the Bell Regent. Never state that Greymere caused Veyrholt; present only the same-night correlation.",
+    body: "DM ONLY. Greymere Catalyst -> Level 2 -> existing Messenger -> Bellpost Road -> Level 3 -> Veyrholt. Town investigation: missing livestock follows an old tithe route. Castle order: Gate/Pens/Court -> Hall/Archive/Banquet -> Bellfoundry -> Regent's Belfry. All new scenes begin inactive and unrevealed. Milestone to Level 4 after the Bell Regent. Never state that Greymere caused Veyrholt; present only the same-night correlation. The current bell mechanic is defined in VEYRHOLT_BELL_REVISION.md and supersedes old action-replay text.",
   },
   {
     title: "[Veyrholt] 01 — Clue & Fail-Forward Map",
-    body: "Second Motions: automatic road demonstration / double toll / Gatewright lesson. Bells regulate: road handbell / Nessa / mural. Old tithe: farm tracks / archive map / Kest-Tamsin; if missed, a sheep walks it in daylight. Animals alive: witness / collection roll / visible Echo Pens. Castle predates current pattern: mural / archive baseline / Caldris memory; archive record is automatic. Replays break bells: Arcana DC 12 / foundry diagram / first accidental replay visibly cracks one. Lornwatch: route strip / Catalyst backup strip / Mara. A failed roll adds cost or danger, never removes access.",
+    body: "The Answer: automatic road demonstration -> Bryn/Nessa explain the six-second window -> Barn teaches redirection -> Court reinforces it -> Foundry turns redirection into a weapon -> Bell Regent requires it. Old tithe: farm tracks / archive map / Kest-Tamsin; if missed, a sheep follows the route in daylight. Animals alive: witness / collection roll / visible Echo Pens. Castle predates the current crisis: mural / archive baseline / Caldris memory; archive record is automatic. Anchor bells can be overloaded by redirecting an Answer into them. Lornwatch: route strip / Catalyst backup strip / Mara. A failed roll adds cost or danger, never removes access.",
   },
   {
     title: "[Veyrholt] 02 — NPC Secrets",
-    body: "Elian suppressed one same-night clock entry to prevent panic. Bryn concealed a missing scout. Nessa's ancestor helped maintain the anchor bells, and her stolen mold can recast them. Avra has heard the double toll in dreams and knows Caldris's oath. Tamsin followed Kest and knows the animals live. Kest used the culvert for smuggling but did not awaken the castle. Mara deliberately filed ward records as repairs. Caldris is the Bell Regent: a mortal duty made into a restraint, not the creator of the Hollow.",
+    body: "Elian suppressed one same-night clock entry to prevent panic. Bryn concealed a missing scout. Nessa's ancestor helped maintain the anchor bells, and her stolen mold can recast them. Avra has heard the double toll in dreams and knows Caldris's name and role. Tamsin followed Kest and knows the animals live. Kest used the culvert for smuggling but did not awaken the castle. Mara deliberately filed ward records as repairs. Caldris is the Bell Regent: a mortal duty made into a restraint, not the creator of the Hollow.",
   },
   {
     title: "[Veyrholt] 03 — Encounter Mechanics",
-    body: "Second Motion is this Hollow's signature. Record at initiative 20; replay at initiative 10. Telegraph every replay with visible positions and lines. Players can move away, aim a recorded line at enemies or bells, or deliberately record a useful action. Never replay healing, conditions, spell slots, or resources. Road: channel replay + handbell suppresses Refrains. Barn: alternating pens + repeating gates. Court: patrol lines. Foundry: moving pour routes. Boss: three bells dismantle resistance, command, then AC. See prepared encounter notes for exact DCs/scaling.",
+    body: "The Answer is this Hollow's signature. A tuned bell creates a Call; exactly one round later the Hollow Answers. It NEVER repeats attacks, spells, movement, healing, or other actions. If another tuned bell rings during the six-second window, the last bell rung becomes the Answer's destination. In combat, resolve the previous Answer at initiative 20, then start the next Call. Ringing a prepared bell is a bonus action while adjacent. Road teaches grounding, Barn teaches redirection, Court reinforces it, Foundry weaponizes it, and the Bell Regent uses three anchor bells that players can overload with redirected Answers.",
   },
   {
     title: "[Veyrholt] 04 — Lasting Canon & Aftermath",
-    body: "DM ONLY. The Veyrholt Catalyst was constructed to impose a stable, civic-shaped pattern on something older. This reveals Catalysts can be made or installed as restraints; it does not reveal the campaign's final world-scale truth. Destroying it ends forced replays, returns the animals, and makes the castle structurally unstable but finite. Rewards: Veyrholt Catalyst Shard, 120 gp, Echo-Step Brooch, Wayfarer Writ, and Level 4 milestone. Unresolved: whether Greymere triggered Veyrholt, who numbered RESPONSE VII, what is answering, and why Lornwatch's watcher is absent. Next: Lornwatch Abbey. The three inconsistent doorway sketches are atmosphere only; do not explain or name their true significance to players.",
+    body: "DM ONLY. The Veyrholt Catalyst was constructed to impose a stable, civic-shaped pattern on something older. The builders learned to steer the Hollow's delayed six-second Answer with tuned bells. This reveals Catalysts can be made or installed as restraints; it does not reveal the campaign's final world-scale truth. Destroying the Catalyst ends the uncontrolled Answers, returns the animals, and makes the castle structurally unstable but finite. Rewards: Veyrholt Catalyst Shard, 120 gp, Echo-Step Brooch, Wayfarer Writ, and Level 4 milestone. Unresolved: whether Greymere triggered Veyrholt, who numbered RESPONSE VII, what is answering, and why Lornwatch's watcher is absent. Next: Lornwatch Abbey. The three inconsistent doorway sketches are atmosphere only; do not explain or name their true significance to players.",
   },
 ];
 
 export const messengerPages = [
-  "A bronze-masked courier waits in Greymere, rain running from a seal marked by seven small notches.",
-  "Veyrholt's second bell has begun sounding on its own. The west road returns travelers to their own footprints, sometimes before they make them.",
-  "Flocks are vanishing from farms that have stood beside Castle Veyr for generations. Only the animals with inherited bells are taken.",
-  "The first double toll came the same night Greymere's Hollow went silent. I cannot tell you what that means. I can tell you the keep has begun to answer.",
+  "The courier pulls a sealed letter from a rain-soaked satchel. The seal has seven small notches.",
+  "Veyrholt's bells have started ringing when nobody touches them. On the west road, a bell rings once, then about six seconds later the Hollow hits somewhere else.",
+  "Animals are disappearing from farms around Castle Veyr. Every missing animal was wearing one of the old inherited bells.",
+  "The first double toll happened the same night Greymere's Hollow went quiet. I don't know if those events are connected. I do know Veyrholt needs help now.",
 ];
