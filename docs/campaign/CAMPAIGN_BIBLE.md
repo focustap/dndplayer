@@ -10,6 +10,8 @@ Across Elyndra are forbidden regions known as **Hollows**: unnatural dead zones 
 
 Each Hollow has a **Catalyst** at its center. A Catalyst may be a creature, artifact, structure, ritual source, or another concrete cause sustaining the local Hollow. Destroying or neutralizing the Catalyst ends or collapses that Hollow.
 
+A Hollow should not automatically be treated as though the dead zone itself has a standalone combat technique. Hollows can instead corrupt or amplify something already present in a Catalyst — a person's unusual sorcery, a creature's instinct, an object's function, or another existing trait — until that distorted thing becomes the chapter's specific supernatural mechanic. Greymere's Warden is the first explicit example of this principle, not proof that every Catalyst forms in exactly the same way.
+
 ### DM_SECRET — campaign-scale truth
 
 The players are **not** supposed to learn early that the world itself is connected to a much larger Hollow truth. The campaign should reveal the nature and history of Hollows gradually across multiple locations.
@@ -99,6 +101,8 @@ Do not invent definitive faction cosmology, morality, leadership, or history unl
 
 ## Chapter 1 — Greymere
 
+The detailed revised chapter notes are in `docs/campaign/chapters/GREYMERE.md`.
+
 ### Greymere
 
 Greymere is a small village near a strange forest and the first major campaign location.
@@ -117,6 +121,19 @@ They know:
 - people have been disappearing
 - the missing hunter **Edrin Vale** should be found
 - Greymere has recently seen an unusual number of strangers
+- **Harlan Voss**, once called the Warden, protected travelers in the north woods years ago by drawing strange circular wards around camps
+- Voss disappeared years ago and is generally assumed dead or lost
+- Edrin recently mentioned finding a fresh-looking old Warden circle near his traps
+
+The guards do not know that Voss became the Catalyst.
+
+### Hobb
+
+Hobb's existing line must remain separate from the Warden material:
+
+> Whole world's got walls. You just can't see 'em from this side. EhHEHeHEHEe
+
+This is campaign-scale foreshadowing about the world itself and is intentionally delivered by someone who sounds insane. Do not reinterpret it as a clue about Harlan Voss's circle magic.
 
 ### The Crooked Stag
 
@@ -128,7 +145,9 @@ Important details:
 
 - VII is carved into the wooden wall behind the bar
 - if asked, Jimmy Frog says the mark was already there when he bought the tavern
+- Jimmy can clarify that `VII` is not one of Harlan Voss's old ward marks; Voss's marks were circles
 - a suspicious man can point the party toward the north woods and the missing-hunter mystery
+- the suspicious man knows that a Catalyst may be something a Hollow twisted rather than something it created from nothing
 - the inn has a piano
 - a Hearthstone item has been available for 5 gp; it teleports the party back to an inn
 
@@ -159,6 +178,12 @@ An earlier lightweight combat profile used:
 
 Do not assume those numbers are mandatory for all future wolf uses.
 
+Optional Warden clue:
+
+- DC 13 Investigation beyond the marked tree can find an old faded charcoal circle around a long-dead campsite
+- the circle is harmless and predates the recent disappearances
+- it is an example of Voss's original protective practice, not a `VII` clue
+
 ### Edrin's Camp
 
 The camp is tucked off the trail and appears abandoned suddenly rather than looted.
@@ -177,6 +202,9 @@ Checks:
 - DC 11 Survival — fresh human footprints leave camp heading north
 - DC 13 Survival — footprints become erratic as though Edrin became confused or panicked
 - DC 15 Survival — notice drag marks pulling toward the Hollow
+- DC 12 Investigation after finding the knife — notice a small hand-scratched circle inside the sheath, copied from the fresh-looking Warden mark Edrin had found near his traps
+
+A partial ring can also be scored into the dirt at the edge of camp, broken outward where the drag marks begin.
 
 ### Hollow approach
 
@@ -188,6 +216,8 @@ Visual/environmental language established for the approach:
 - the beaten path continues toward the dead zone
 - footprints can be discovered on the path
 
+Add one automatic clue: an old ring of stones sits beside the path, with several stones on the inside shoved outward while the outside remains undisturbed.
+
 ## First Hollow dungeon
 
 ### Room 1
@@ -195,6 +225,8 @@ Visual/environmental language established for the approach:
 Zombie encounter.
 
 Exact final enemy count/stats were not permanently established here.
+
+Optional visual clue: one corpse has a faint pale circular mark around a wrist, as though a boundary had once been drawn directly around it.
 
 ### Puzzle room
 
@@ -212,11 +244,42 @@ Answer: **Tongue**.
 
 An earlier wrong-answer penalty suggestion was 5 necrotic damage, but that can be tuned if needed.
 
-### Hazard room
+### Circular hazard
 
 A combat/hazard room uses four circular marked areas.
 
 At the end of each round, creatures remaining in marked circles take damage. The purpose is to force movement while combat continues.
+
+Visually, these circles may foreshadow simplified or imperfect versions of the Catalyst's boundary technique, but the existing encounter should remain intact.
+
+## Greymere Catalyst — Harlan Voss, The Warden
+
+Before the Hollow, Harlan Voss possessed a modest personal form of sorcery: if he physically drew a closed circle around a campsite, ordinary beasts and physical threats resisted or failed to cross inward for a short time. Hunters and travelers valued the technique, and Voss became locally known as **the Warden**.
+
+Voss eventually found the strange dead patch north of Greymere and tried to contain it using his own boundaries. He disappeared.
+
+The Hollow corrupted and amplified the ability. Voss became a Wight-like Catalyst whose circles could partition space itself. His original protective instinct also distorted:
+
+**keep danger out** became **keep everyone in**.
+
+This is why the missing villagers, Jess's father, and Zach's Dog are imprisoned rather than simply killed.
+
+### Boss mechanic — Closed Circle
+
+Keep the existing Wight statistics and current circular cut-off mechanic.
+
+The circles are Voss's amplified technique, **Closed Circle**. Narrate each active boundary as a thin pale ring becoming unnaturally absolute and sealing off part of the room according to the existing encounter rules.
+
+Voss should be calm, possessive, and convinced he is protecting his prisoners.
+
+Useful lines:
+
+- "Stay inside the line."
+- "I can keep you safe."
+- "Stop leaving."
+- At low HP: "Why do you keep choosing the outside?"
+
+Prisoners can reveal afterward that he repeatedly called captivity "inside" and treated everything beyond his boundaries as dangerous "outside."
 
 ## First Hollow resolution
 
@@ -224,7 +287,11 @@ Jess's father and Zach's Dog are intended to be found in the first Hollow sequen
 
 A jail-cell area is part of the intended visual/story setup for these prisoners.
 
-The first Hollow culminates in the destruction/defeat of its **Catalyst**, after which the party needs a reason to continue to another Hollow rather than simply going home.
+The first Hollow culminates in the destruction/defeat of **The Warden**, after which the party can understand that Harlan Voss's strange boundary magic existed before he became the Catalyst and was amplified/corrupted by the Hollow.
+
+This does not establish that every Catalyst is created in the same way.
+
+Afterward, the party needs a reason to continue to another Hollow rather than simply going home.
 
 ## Next major location — Veyrholt
 
