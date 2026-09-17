@@ -38,6 +38,10 @@ node scripts/import-veyholt.mjs --campaign-id UUID --snapshot .tmp/before.json -
 
 Provided: user's 1448×1086 city illustration uploaded and rendered from R2. Reused: 1536×1024 ordinary inn and civic interiors plus existing ordinary NPC portraits. Campaign-specific paths are held in the private registry, not hardcoded in the repository.
 
+### Token portrait polish
+
+The Veyrholt token pass generates and uploads character portraits for Ysabet Morrow, Nera Vale, Rusk Fen, Sable Quill, Lady Ilyra Veyr and the Dealer; it also supplies distinct portraits for the road scout, road bandit, graveyard dog, Claim Usher and Wager Hound. Reuse an archetype portrait only for duplicate encounter placements. Assign image paths to campaign tokens rather than overwriting shared templates, then verify that every current Veyrholt NPC and monster token has art and that the worker-backed image loads in the scene builder. Retain already good portraits and avoid generic casino-background artwork.
+
 | Missing map key | Required file | Dimensions |
 | --- | --- | --- |
 | road | maps/east-road.png | 1254×1254 |
@@ -52,7 +56,7 @@ Provided: user's 1448×1086 city illustration uploaded and rendered from R2. Reu
 
 Local maps: true top-down, no baked grid/text/tokens, clear exits and usable floor. Final Table: circular room, central card table, Pot around perimeter, no throne or old anchor machinery. Grand Floor: red/black/gold carnival over older civic stone. City art remains a high bird's-eye hub.
 
-Missing portrait files: `portraits/dealer.png`, `portraits/ysabet-morrow.png`, `portraits/ilyra-veyr.png`, `portraits/nera-vale.png`, `portraits/rusk-fen.png`, `portraits/sable-quill.png`; monsters: `monsters/claim-usher.png`, `monsters/wager-hound.png`. Square 1024×1024 is suitable. These currently use text tokens. Ordinary road foes and dogs can stay as text tokens or receive suitable bestiary portraits. No image-backed discoverables are required for the note-based optional finds.
+Square 1024×1024 is suitable for character and creature portraits. No image-backed discoverables are required for the note-based optional finds.
 
 ## Applied and verified — 2026-09-16 local date
 

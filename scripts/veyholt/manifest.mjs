@@ -18,7 +18,7 @@ export const scenes = [
 
 export const assets = {
   town:'maps/veyrholt-city.png', road:'maps/east-road.png',inn:'maps/gilded-lamb.png',civic:'maps/civic-hall.png',arcana:'maps/morrows-arcana.png',graveyard:'maps/lucky-graveyard.png',market:'maps/strangers-market.png',grand:'maps/grand-floor.png',gallery:'maps/gallery-of-wagers.png',private:'maps/private-house.png',foundations:'maps/original-foundations.png',final:'maps/final-table.png',
-  dealer:'portraits/dealer.png',ysabet:'portraits/ysabet-morrow.png',ilyra:'portraits/ilyra-veyr.png',nera:'portraits/nera-vale.png',rusk:'portraits/rusk-fen.png',sable:'portraits/sable-quill.png',usher:'monsters/claim-usher.png',hound:'monsters/wager-hound.png',
+  dealer:'portraits/dealer.png',ysabet:'portraits/ysabet-morrow.png',ilyra:'portraits/ilyra-veyr.png',nera:'portraits/nera-vale.png',rusk:'portraits/rusk-fen.png',sable:'portraits/sable-quill.png',scout:'monsters/road-scout.png',bandit:'monsters/road-bandit.png',graveyardDog:'monsters/graveyard-dog.png',usher:'monsters/claim-usher.png',hound:'monsters/wager-hound.png',
 };
 const npc=(name,scene,x,y,pages,extra={})=>({name,scene,x,y,pages,...extra});
 export const npcs=[
@@ -44,12 +44,12 @@ export const npcs=[
  npc('The Dealer','grand',750,350,["Name a game. Name a stake. I will match it.","A challenge deserves an audience. The Gallery attendant will explain the arrangements.","Every game has rules."],{asset:'dealer'}),
  // Existing ordinary residents keep their identities and genuine portraits.
  npc('Dorrin Pike','inn',380,610,["I sell wool. The gamblers still need blankets, even when they cannot afford a room."]),
- npc('Yara Flint','inn',1000,650,["My contract is to escort a scholar home. It says nothing about paying her gambling debts."]),
- npc('Nessa Calder','market',350,700,["A bent hinge, a cracked pan, a wagon fitting: I can mend useful things. Luck charms are someone else's trade."]),
- npc('Sister Avra Seln','civic',950,330,["The flood records are older than the gaming halls. This city has survived fashions before."]),
- npc('Maela Thorn','graveyard',350,850,["My husband disliked cards. I leave him flowers, whatever the challengers do."]),
+ npc('Yara Flint','inn',1000,650,["My contract is to escort a scholar home. It says nothing about paying her gambling debts.","The Market alley reaches the circus delivery door. Kest Rane knows which crate stack hides it."]),
+ npc('Nessa Calder','market',350,700,["A bent hinge, a cracked pan, a wagon fitting: I can mend useful things. Luck charms are someone else's trade.","Civic writs carry blue wax. The Dealer's runners wave red paper and hope nobody reads it."]),
+ npc('Sister Avra Seln','civic',950,330,["The flood records are older than the gaming halls. This city has survived fashions before.","House Veyr's lower stonework predates the estate. The archive map marks a sealed maintenance route beneath it."]),
+ npc('Maela Thorn','graveyard',350,850,["My husband disliked cards. I leave him flowers, whatever the challengers do.","The Veyr names run along the old wall. Lady Ilyra still visits when she can bear it."]),
  npc('Edda Pike','graveyard',650,950,["This little coin was my mother's. I'm leaving it for her, not for the Dealer."]),
- npc('Corven Marr','graveyard',600,1120,["I came along the Glass Road. The graves here tell more honest stories than the bookmakers."]),
+ npc('Corven Marr','graveyard',600,1120,["I came along the Glass Road. The graves here tell more honest stories than the bookmakers.","Road talk says the House lights burn beneath the ground after midnight. I keep to inns after dark."]),
  npc('Sela Ward','market',320,820,["Fresh eggs, no wagers. If you want breakfast, pay for breakfast."]),
  npc('Oren Moss','market',550,900,["Keep the gate latched while the cart goes through. Crowds frighten the animals."]),
  ...['Ashbell — Sheep','Bracken — Goat','Patch — Farm Dog','Copper — Hen'].map((name,i)=>npc(name,'market',750+i*70,850,[],{interactive:false})),
@@ -57,9 +57,9 @@ export const npcs=[
 const action=(name,description,bonus=null,dice=null,type='Force',ranged=false)=>({name,description,kind:'ACTION',usage:null,attackType:bonus===null?'OTHER':ranged?'RANGED':'MELEE',attackBonus:bonus,reach:ranged?null:5,range:ranged?{normal:60,long:60,unit:'ft'}:null,damage:dice?[{average:null,dice,flatBonus:Number(dice.match(/\+(\d+)/)?.[1]??0),damageType:type}]:[],save:null,conditions:[],effects:[],variants:[]});
 const creature=(name,hp,ac,actions,extra={})=>({name,max_hp:hp,ac,speed:30,creature_size:'Medium',creature_type:'humanoid',abilities:{str:10,dex:14,con:12,int:10,wis:10,cha:10},actions,traits:[],bonus_actions:[],reactions:[],notes:'Prepared Veyrholt encounter. See DM campaign chapter notes.',...extra});
 export const monsters=[
- creature('Veyrholt — Road Scout',18,13,[{...action('Shortbow','One attack, +4, range 80/320 ft, 1d6+2 piercing.',4,'1d6+2','Piercing',true),range:{normal:80,long:320,unit:'ft'}}]),
- creature('Veyrholt — Road Bandit',11,12,[action('Blade','One melee attack, +3, 1d6+1 slashing.',3,'1d6+1','Slashing')]),
- creature('Veyrholt — Graveyard Dog',7,12,[action('Bite','One melee attack, +3, 1d4+1 piercing.',3,'1d4+1','Piercing')],{speed:40,creature_type:'beast'}),
+ creature('Veyrholt — Road Scout',18,13,[{...action('Shortbow','One attack, +4, range 80/320 ft, 1d6+2 piercing.',4,'1d6+2','Piercing',true),range:{normal:80,long:320,unit:'ft'}}],{asset:'scout'}),
+ creature('Veyrholt — Road Bandit',11,12,[action('Blade','One melee attack, +3, 1d6+1 slashing.',3,'1d6+1','Slashing')],{asset:'bandit'}),
+ creature('Veyrholt — Graveyard Dog',7,12,[action('Bite','One melee attack, +3, 1d4+1 piercing.',3,'1d4+1','Piercing')],{speed:40,creature_type:'beast',asset:'graveyardDog'}),
  creature('Veyrholt — Claim Usher',18,13,[{...action('Paper Lash','Reach 10 ft; +4, 1d6+2 force.',4,'1d6+2'),reach:10}],{creature_type:'construct',asset:'usher'}),
  creature('Veyrholt — Wager Hound',22,13,[action('Bite','Must first move at least 10 feet straight this turn; +4, 1d8+2 force.',4,'1d8+2')],{speed:40,creature_type:'construct',asset:'hound'}),
  creature('The Dealer',85,14,[
