@@ -1,3 +1,7 @@
 .overlay-row { grid-template-columns: 32px 1fr 28px 28px 28px; }
 .overlay-row > button.danger,
 .inspector-head > button.danger { border-color: #754842; color: #d99589; }
+
+/* Keep Party Treasure clear of the bottom-right dice / DM floor-effect controls. */
+.party-treasure-button { bottom: 68px; }
+.party-treasure { bottom: 106px; }
