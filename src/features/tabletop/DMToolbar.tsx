@@ -1,11 +1,11 @@
-import { CircleDot, Eye, EyeOff, Grid3X3, ImagePlus, Layers3, Lock, MousePointer2, Trash2, Unlock, X } from "lucide-react";
+import { CircleDot, Eye, EyeOff, Grid3X3, ImagePlus, Layers3, Lock, MousePointer2, ScrollText, Trash2, Unlock, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { useTabletop } from "../../contexts/TabletopContext";
 import { isDmRole } from "../../domain/types";
 
 export function DMToolbar() {
   const { state, actions, builder } = useTabletop();
-  const [panel, setPanel] = useState<"grid" | "layers" | "zones" | null>(null);
+  const [panel, setPanel] = useState<"grid" | "layers" | "zones" | "discoverables" | null>(null);
   const [zoneLabel,setZoneLabel]=useState("Darkness");
   const [zoneRadius,setZoneRadius]=useState(15);
   const [zoneColor,setZoneColor]=useState("#5b4b9d");
@@ -22,6 +22,7 @@ export function DMToolbar() {
       <button className={panel === "grid" ? "active" : ""} title="Grid settings" onClick={() => { if (panel !== "grid") setGridSize(state.scene.gridSize); setPanel(panel === "grid" ? null : "grid"); }}><Grid3X3 /></button>
       <button className={panel === "layers" ? "active" : ""} title="Scene layers" onClick={() => setPanel(panel === "layers" ? null : "layers")}><Layers3 /></button>
       <span /></>}
+      {dm&&!builder&&<button className={panel === "discoverables" ? "active" : ""} title="Discoverables" onClick={()=>setPanel(panel==="discoverables"?null:"discoverables")}><ScrollText/></button>}
       {dm&&<button className={panel === "zones" ? "active" : ""} title="Floor spell/effect markers" onClick={()=>setPanel(panel==="zones"?null:"zones")}><CircleDot/></button>}
       <button className={state.previewPlayerView ? "active" : ""} title="Preview player view" onClick={actions.togglePlayerPreview}><Eye /></button>
     </nav>
@@ -43,6 +44,17 @@ export function DMToolbar() {
         <button className="danger" title={`Delete ${overlay.name}`} aria-label={`Delete ${overlay.name}`} onClick={() => { if (confirm(`Delete ${overlay.name}? This removes it from the scene and deletes its uploaded asset.`)) void actions.deleteOverlay(overlay.id); }}><Trash2 /></button>
         <div className="overlay-controls"><label>Scale<input type="range" min="60" max="500" value={overlay.width} onChange={event => { const width = Number(event.target.value); void actions.patchOverlay(overlay.id, { width }); }} /></label><label>Rotate<input type="range" min="-180" max="180" value={Math.round(overlay.rotation * 180 / Math.PI)} onChange={event => void actions.patchOverlay(overlay.id, { rotation: Number(event.target.value) * Math.PI / 180 })} /></label></div>
       </div>)}
+    </div>}
+    {dm&&!builder&&panel==="discoverables"&&<div className="tool-popover zones-popover">
+      <div className="popover-title"><span><ScrollText/>Discoverables</span><button onClick={()=>setPanel(null)}><X/></button></div>
+      <p className="zone-help">Toggle whether each discoverable marker is visible to players on the live table.</p>
+      <div style={{display:"grid",gap:6}}>
+        {state.discoverables.length===0&&<p className="zone-help">No discoverables on this scene.</p>}
+        {state.discoverables.map(item=><div key={item.id} style={{display:"grid",gridTemplateColumns:"1fr auto",alignItems:"center",gap:8,padding:"8px 9px",border:"1px solid #303934",background:"#111614"}}>
+          <span style={{display:"flex",flexDirection:"column",gap:3,minWidth:0}}><b style={{fontSize:10,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{item.name}</b><small style={{fontSize:8,color:item.hidden?"#9a8170":"#82ad8e"}}>{item.hidden?"Hidden from players":"Visible to players"}</small></span>
+          <button title={item.hidden?"Reveal to players":"Hide from players"} onClick={()=>void actions.patchDiscoverable(item.id,{hidden:!item.hidden})}>{item.hidden?<EyeOff/>:<Eye/>}</button>
+        </div>)}
+      </div>
     </div>}
     {dm&&panel==="zones"&&<div className="tool-popover zones-popover">
       <div className="popover-title"><span><CircleDot/>Floor effect</span><button onClick={()=>setPanel(null)}><X/></button></div>
