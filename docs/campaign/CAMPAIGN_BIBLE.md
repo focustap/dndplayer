@@ -305,20 +305,14 @@ Veyrholt is now locked across `docs/campaign/chapters/VEYRHOLT.md` plus the newe
 
 Lasting canon introduced there:
 
-- Castle Veyr stands inside a long-established Hollow that Veyrholt's people learned to farm, travel, and build around.
-- Its renewed activity begins on the same night the Greymere Catalyst is destroyed. This remains a correlation, not confirmed causation.
-- Veyrholt's defining custom is **first bell: stop; second bell: continue**. Modern residents mostly follow it because their families always have, not because they understand the original reason.
-- The forgotten reason is a six-second unstable interval in the Hollow. After the first toll, the Hollow catches the **first meaningful physical change** made before the second toll. At the second toll it produces one distorted **Second Motion** based on that change.
-- Only one First Motion is stored per bell cycle. The DM does not replay an entire round or reproduce attacks/spells exactly; the Second Motion is a simple force trace, impact burst, repeated object movement, or similar scene-specific echo.
-- Veyrholt's ancestors did not invent the instability. They learned its timing and built the bells as a warning system so people would know when to stop moving and when it was safe to continue.
-- Later builders learned that tuned bronze creates especially predictable Second Motions. This let them use bells, gates, foundry pieces, and Castle Veyr's anchors as controlled parts of the containment system.
-- The apparently mundane livestock disappearances are an ancient tithe process reasserting itself through the old bell-and-route infrastructure around the farms and castle.
-- The party learns the Second Motion rule progressively, then learns that striking tuned bronze during the dangerous interval makes the bronze reproduce its own vibration at the second toll.
-- In the Bell Regent fight, the party can deliberately make an anchor-bell strike the First Motion. At the second toll, that anchor's vibration repeats internally and cracks the anchor. This uses the same rule behind Veyrholt's inherited stop-between-bells tradition without requiring delayed duplicate attack rolls.
-- Ser Caldris Veyr became the **Bell Regent**, a constructed Catalyst used to impose a predictable civic pattern on something older.
-- Catalysts can therefore be built or installed as restraints. This does not explain the origin of all Catalysts or the campaign's final world-scale truth.
-- The chapter ends with a route to **Lornwatch Abbey**, where the expected watcher is absent.
-- The meaning of `VII`, the relationship between the two Hollow events, and the inconsistent doorway sketches remain unresolved.
+- Veyrholt is an old, functioning city, not originally a gambling city.
+- The Dealer possessed personal card sorcery before arriving. He matched escalating wagers and lawfully won House Veyr from its owner, Lady Ilyra Veyr.
+- The estate became an enormous red/black/gold gambling circus; most neighborhoods remain ordinary.
+- DM_SECRET: A dormant Hollow beneath the estate attached to and amplified his existing technique, corrupting him into its Catalyst. The Hollow does not independently invent an unrelated power.
+- The enormous Pot attracts unusual challengers. Most optional objects and local stories are unrelated to Hollows.
+- Defeating the Dealer ends the local connection; his survival is a player-dependent outcome, not predetermined death.
+- Progression: Greymere Level 2 → East Road rescue → Level 3 Veyrholt → Dealer → Level 4 → Lornwatch Abbey.
+- VII, Hollow origins and the campaign-scale truth remain unresolved.
 
 Veyrholt NPCs should use clear modern conversational language when delivering important lore or mechanic explanations. Old-fashioned wording is appropriate for ancient inscriptions, preserved oaths, and deliberate atmosphere, not for ordinary exposition the players need to understand.
 

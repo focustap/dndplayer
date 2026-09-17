@@ -23,9 +23,9 @@ Avoid:
 - revealing the final nature of the world early
 - making every strange event immediately identifiable as "Hollow magic"
 
-## 2. Connect side content back into the story
+## 2. Let some side content connect; let most discoveries stand alone
 
-A preferred campaign pattern is:
+Most optional discoveries should be unrelated worldbuilding, local history, ordinary treasure or personal stories. Interesting does not automatically mean Hollow clue. Use this pattern for a smaller subset:
 
 1. the party encounters a local problem that appears independent
 2. they can interact with it without knowing its importance
@@ -44,7 +44,7 @@ Do not repeat:
 
 for every chapter.
 
-Each new Hollow should introduce at least one distinct behavior, rule, visual motif, social consequence, or encounter mechanic.
+A Hollow corrupts or amplifies something already present in its Catalyst; it does not independently acquire an arbitrary supernatural combat power. Rare people have specific personal sorcery with conditions, limits and exploitable interactions, alongside ordinary D&D classes and spells. Each chapter can express a distinct consequence of that corruption.
 
 Possible categories include:
 
@@ -61,7 +61,7 @@ Possible categories include:
 - people forgetting an important person/place
 - an effect that spreads through objects or rituals rather than terrain
 
-These are idea categories, not canon until selected.
+These are potential themes of a Catalyst's preexisting nature or ability, not independent powers assigned to a Hollow. They are not canon until selected.
 
 ## 4. Catalysts should be memorable
 
