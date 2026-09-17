@@ -218,6 +218,10 @@ A combat/hazard room uses four circular marked areas.
 
 At the end of each round, creatures remaining in marked circles take damage. The purpose is to force movement while combat continues.
 
+## Harlan Voss / The Warden
+
+See [Greymere](chapters/GREYMERE.md) for the preserved live revision. Voss's modest preexisting boundary sorcery was corrupted and amplified into Closed Circle: protection became imprisonment. Preserve the current boss stats and mechanics. Hobb's line is separate campaign-scale foreshadowing, never a reference to Voss.
+
 ## First Hollow resolution
 
 Jess's father and Zach's Dog are intended to be found in the first Hollow sequence, along with captured villagers/prisoners.
@@ -238,14 +242,14 @@ Veyrholt is now locked in `docs/campaign/chapters/VEYRHOLT.md`.
 
 Lasting canon introduced there:
 
-- Castle Veyr stands inside a long-established Hollow that Veyrholt's people learned to farm, travel, and build around.
-- Its renewed activity begins on the same night the Greymere Catalyst is destroyed. This remains a correlation, not confirmed causation.
-- Veyrholt's signature phenomenon is the **Second Motion**: a bell-regulated replay of physical actions after six seconds.
-- The apparently mundane livestock disappearances are an ancient tithe process replaying through modern farms.
-- Ser Caldris Veyr became the **Bell Regent**, a constructed Catalyst used to impose a predictable civic pattern on something older.
-- Catalysts can therefore be built or installed as restraints. This does not explain the origin of all Catalysts or the campaign's final world-scale truth.
-- The chapter ends with a route to **Lornwatch Abbey**, where the expected watcher is absent.
-- The meaning of `VII`, the relationship between the two Hollow events, and the inconsistent doorway sketches remain unresolved.
+- Veyrholt is an old, functioning city, not originally a gambling city.
+- The Dealer possessed personal card sorcery before arriving. He matched escalating wagers and lawfully won House Veyr from its owner, Lady Ilyra Veyr.
+- The estate became an enormous red/black/gold gambling circus; most neighborhoods remain ordinary.
+- DM_SECRET: A dormant Hollow beneath the estate attached to and amplified his existing technique, corrupting him into its Catalyst. The Hollow does not independently invent an unrelated power.
+- The enormous Pot attracts unusual challengers. Most optional objects and local stories are unrelated to Hollows.
+- Defeating the Dealer ends the local connection; his survival is a player-dependent outcome, not predetermined death.
+- Progression: Greymere Level 2 → East Road rescue → Level 3 Veyrholt → Dealer → Level 4 → Lornwatch Abbey.
+- VII, Hollow origins and the campaign-scale truth remain unresolved.
 
 ## Canon discipline
 
