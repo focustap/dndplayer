@@ -2,6 +2,7 @@ import { Clapperboard, Crosshair, Flashlight, Gauge, ShieldAlert, Undo2 } from "
 import { useState } from "react";
 import { useTabletop } from "../../contexts/TabletopContext";
 import type { CinematicEvent } from "../../domain/types";
+import { DealerCardBuilderPreview } from "./DealerCards";
 
 export function CinematicControls() {
   const { state, actions, builder } = useTabletop();
@@ -57,6 +58,7 @@ export function CinematicControls() {
         <button disabled={!selected} className="cinematic-power" onClick={() => selected && play("Power surge", 1200, powerSurge)}><Crosshair />Power surge</button>
         <button disabled={!selected} className="boss-entrance" onClick={() => void playBossEntrance()}><Clapperboard />Boss entrance demo</button>
       </div>
+      {builder && <DealerCardBuilderPreview />}
       <button className="cinematic-restore" onClick={actions.cancelCinematic}><Undo2 />Cancel / restore</button>
     </div>}
   </div>;
