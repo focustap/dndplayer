@@ -12,7 +12,7 @@ Preserve Greymere's Harlan Voss / Warden, maps, encounters, VII and Edrin clues,
 
 That line is separate campaign-scale foreshadowing, never a Warden reference.
 
-Route: Greymere aftermath → East Road rescue → city hub/investigation → Grand Floor → Gallery of Wagers → Private House → Original Foundations → Final Table → restitution → Lornwatch. City visits are freely ordered. No required successful roll or gambling ladder gates progress.
+Route: Greymere aftermath → East Road rescue → city hub/investigation → reconstruct the Dealer's favorite card → circus password → Jester fight → Final Table → restitution → Lornwatch. City visits are freely ordered. The three required clue pieces are automatic discoveries, never gated behind successful rolls. The former Gallery / Private House / Original Foundations investigation ladder is no longer mandatory progression and should not be required to reach the Dealer.
 
 **Chapter revelation:** A dormant Hollow can latch onto and amplify preexisting personal sorcery until its wielder becomes the Catalyst. The Warden was an early example; the Dealer is a dramatic one. The Hollow does not invent an unrelated combat power. Preserve the mystery of Hollow origins, VII and the Threshold. Do not establish that Greymere's defeat caused this awakening.
 
@@ -46,49 +46,57 @@ Use the supplied 1448×1086 illustration as a gridless hub with no ordinary NPC/
 
 ### The Gilded Lamb
 
-Warm, crowded, expensive; travelers, ruined challengers and mercenaries exchange rumors over roast onions. Cira Vale runs it. Lodging 2 gp/person, meal 5 sp; safe long rests. Tamsin Reed wants her family's wagon back; student Pell Aster lost his tuition. Rumor board points directly to Circus, Arcana and Civic Hall. No combat by default.
+Warm, crowded, expensive; travelers, ruined challengers and mercenaries exchange rumors over roast onions. Cira Vale runs it. Lodging 2 gp/person, meal 5 sp; safe long rests. Tamsin Reed wants her family's wagon back; student Pell Aster lost his tuition. No combat by default.
 
-Cira served the Dealer's first opponents and knows his cards predate the estate. Helping Tamsin earns her Gallery introduction without a roll. A pickpocket stole Tamsin's pawn ticket: DC 12 Perception spots the theft, failure leaves a scarf and a clear Market trail. Food persuades the thief to return it; redeeming it costs 5 gp. Pell's witnessed receipt teaches **Objection** after ten minutes; DC 12 Investigation speeds this up, never gates it.
+This is the party's primary Dealer-lore stop. Cira served some of his first opponents before he owned House Veyr. She remembers that he spoke often about a **favorite card** and used to say that anyone who knew it was welcome at his table, but she does not know the card itself. This establishes the investigation goal: identify the Dealer's favorite card. Cira also warns that a self-appointed cult called **the Jesters** has begun treating the Dealer like a god. The Dealer is not affiliated with them and did not create or command the group.
+
+Helping Tamsin and Pell remains optional side content. Their existing personal problems can stay, but they are not required to enter the circus or identify the favorite card.
 
 ### Morrow's Arcana
 
-Established shop of scroll drawers, repaired curios and pawned heirlooms. Proprietor Ysabet Morrow is unrelated to Reeve Elian. She identifies early magical cards and a recent change in how they react to the estate, but cannot explain Hollow cosmology. Describing an observed draw or showing a receipt earns **Read the Back** after ten minutes of testing. DC 13 Arcana additionally identifies a card before it is exposed during the first combat round.
+Established shop of scroll drawers, repaired curios and pawned heirlooms. Proprietor Ysabet Morrow is unrelated to Reeve Elian. This location should feel like a real shop first, not an exposition station. Ysabet knows the Dealer uses magical cards, but she does not know his history, motives, Hollow connection or favorite card.
+
+A small object in the back case came in with a challenger's pawned effects. Inspecting it automatically reveals the first password fragment: **RED**. The clue should be represented as a physical discoverable with its own image. A successful DC 13 Arcana check may identify faint residual card magic, but the check does not reveal additional required plot information and failure never hides **RED**.
 
 Stock: four healing potions (50 gp, 2d4+2 HP); one Feather Fall scroll (25 gp); one Detect Magic scroll (25 gp); two antitoxins (50 gp); two harmless luminous beads (5 gp). Normal table spell-scroll eligibility applies; no automatic restocking. Returning a pawned love letter earns a mundane favor. Exit: overview.
 
 ### The Stranger's Market
 
-Food, gear, wagons, performances, counterfeit charms and pawned tools. Kest Rane offers estate service-door directions for 5 gp or help moving a crate: bypass the queue, not the Gallery/foundation evidence. Ordinary entrance remains available. Nera demonstrates stored sounds; Rusk works as a porter (see NPCs). Both have lives beyond the plot.
+Food, gear, wagons, performances, counterfeit charms and pawned tools. Kest Rane may still know delivery routes around House Veyr, but no service route bypasses the circus password. Nera demonstrates stored sounds; Rusk works as a porter (see NPCs). Both have lives beyond the plot.
 
 Optional pickpocket chase: three contributions using DC 12 Perception/Athletics/Acrobatics or a clever barrier without a roll; two successes catch the thief. Failure leads to the food bargain above, not a dead end. Exit: overview; the DM may open the service link to Grand Floor after directions.
 
 ### The Lucky Graveyard
 
-Old cemetery crowded with coins, dice, cards and tiny personal offerings. Challenger luck superstition developed independently. This is not another Hollow dungeon. Deacon Olyss protects mourners and knows the Veyr genealogy; DC 12 History identifies Ilyra's succession, or Olyss explains it on failure. No cosmological insight.
+Old cemetery crowded with coins, dice, cards and tiny personal offerings. Challenger luck superstition developed independently. This is not another Hollow dungeon. Deacon Olyss protects mourners and knows the Veyr genealogy, but has no Hollow insight.
 
-Optional encounter only after stealing offerings despite warning: two ordinary graveyard dogs (AC 12, HP 7, speed 40, bite +3, 1d4+1 piercing). Bark first; retreat at half HP; food or DC 11 Animal Handling calms them. Olyss intervenes after two rounds. Easier: one dog; harder: no change needed. Returning offerings earns directions to an abandoned stonemason cache outside graves, 15 gp. No supernatural punishment. Exit: overview.
+After the party has spent a few minutes investigating or asks openly about the Dealer, the **Jesters** ambush them among the stones. This is the faction's first direct introduction. They are theatrical fanatics who worship the Dealer from afar; he did not recruit them and does not command them. Their purpose in the fight is to silence people they believe intend to ruin "his game."
+
+After the fight, searching the Jesters or the area automatically reveals the second password fragment: **9**. The clue should be a physical discoverable with its own image, ideally a Jester calling card, mask marking or ritual token that clearly presents the number without explaining the whole password. Optional history checks may still provide Veyr family context, but no successful roll is required to obtain **9**. Exit: overview.
 
 ### Civic Hall
 
-Petition queues, flood maps, old council chamber. Reeve Elian and Captain Bryn cannot seize an honestly won stake merely because its owner is unpopular. Ilyra's lawful estate transfer predates moving-card reports; records available without a roll. Ilyra can meet petitioners; clerk supplies the same records if she refuses.
+Petition queues, flood maps, an old council chamber and a long portrait hall recording Veyrholt civic history. The hall includes portraits of the documented owners of House Veyr in chronological order. Each older portrait is restrained, formal and carefully painted. The sequence ends with the Dealer's portrait, which is immediately wrong in tone: theatrical, unsettling and visually chaotic compared with every portrait before it.
 
-Tamsin's testimony or the Grand Floor incident earns an inspection writ, Gallery access and Mara's introduction. DC 13 Persuasion speeds paperwork; failure means a one-hour wait. Bryn offers 120 gp to stop unlawful collection while preserving claim records. No default combat. Exit: overview.
+Reeve Elian, Sister Avra or Lady Ilyra can direct the party to the portrait hall without a roll. Examining the Dealer's portrait automatically reveals the third password fragment: **HEARTS**. The artwork should communicate this through an unmistakable heart-suit motif or visible card detail while the discoverable text records the exact word **HEARTS**. The portrait can also establish that the Dealer supplied the image himself when the deed changed hands.
+
+The hall's ordinary records explain Veyrholt and House Veyr history, including that Ilyra lawfully owned and wagered the estate. They do not explain Hollow cosmology. No default combat. Exit: overview.
 
 ## NPC reference — DM only
 
 | NPC | Motive / manner | Knows / help | Limits / hidden concern |
 | --- | --- | --- | --- |
-| Cira Vale | Keep inn safe; warm, brisk | Dealer's early card games; introduction | Unpaid supplier bill; no magic expertise |
+| Cira Vale | Keep inn safe; warm, brisk | Dealer's early games; favorite-card invitation clue; warns about Jesters | Does not know the favorite card or magic theory |
 | Tamsin Reed | Recover wagon; practical | Collection route, pawn ticket | Voluntarily wagered it; ashamed to tell family |
-| Ysabet Morrow | Honest provenance; dry curiosity | Cards predate estate; shop and Read the Back | Bought a stolen brooch unknowingly; no escrow explanation |
+| Ysabet Morrow | Honest provenance; dry curiosity | Runs the shop; points out the odd back-case object containing **RED** | Knows little Dealer lore and no Hollow explanation |
 | Pell Aster | Recover tuition; precise, embarrassed | Written rules bind Dealer; Objection | Cheated in his challenge and still lost |
 | Kest Rane | Safe income; opportunist | Delivery routes, service entry | Smuggles spice; no supernatural conspiracy |
 | Nera Vale | Sell performances; playful | Stores up to six seconds of heard sound in one held copper coin, released once by flipping it | One charged coin at a time; no remote listening, stolen voices or combat silence |
 | Rusk Fen | Recover employer's cart; patient | Doubles one unattended object's weight while bare palm stays on it | Object at most 50 lb; no creatures, held objects or stacking; not a combat companion |
 | Sable Quill | Study techniques; aloof | Once/minute borrows sharpness from an unattended blade for one round, blunting it and letting her quill cut cord | No other properties or cumulative power; observes in Gallery; has never beaten Dealer |
-| Olyss | Protect mourners; gentle | Genealogy, cache directions | Superstition is not Hollow knowledge |
-| Elian / Bryn | Civic order; measured / blunt | Deeds, writ, reward | Cannot undo honest contracts without grounds |
-| Ilyra Veyr | Recover dignity; exhausted pride | Estate transfer; foundations were sealed | Hid escalating losses; never understood what slept below |
+| Olyss | Protect mourners; gentle | Knows Jesters have been trespassing; Veyr genealogy | Does not know why the clue **9** matters; no Hollow knowledge |
+| Elian / Bryn | Civic order; measured / blunt | Deeds, city history, portrait hall, reward | Cannot undo honest contracts without grounds |
+| Ilyra Veyr | Recover dignity; exhausted pride | Estate transfer; history of House Veyr portraits | Hid escalating losses; does not know why **HEARTS** matters |
 | Mara Venn | Protect people; cautious | Knows Pipp's father; partial old observations; route to Lornwatch | Retired Varakai contact, not a cosmology expert |
 | Dealer | Make rules settle everything; charming, sleepless | Must honor game terms and selected cards | Corruption discovered through evidence, not dialogue exposition |
 
@@ -96,7 +104,11 @@ Tamsin's testimony or the Grand Floor incident earns an inspection writ, Gallery
 
 ### Grand Floor / Dealer's Circus
 
-Red-black-gold canvas over old columns; challengers, performers, guards and tables. Entry is public. Gallery access through any of: civic writ, Cira's introduction, 10 gp refundable deposit, resolving collection incident, Kest's route. No gambling required. Optional best-of-three d6 game with an ordinary attendant, maximum 5 gp; tied rolls repeat, winner takes agreed pot. Attendants can lose. Never assume consent to wager Dog, PCs, memories or character control.
+Red-black-gold canvas over old columns. The main circus entrance is closed to outsiders and functions as the payoff to the city investigation. A speaking mask, attendant or other obvious gate asks: **"State his favorite card."** The required answer is **"The Red Nine of Hearts"** (accept "Red Nine of Hearts"). RED comes from Morrow's Arcana, 9 from the Lucky Graveyard, and HEARTS from the Civic Hall portrait. The Gilded Lamb tells the party that these fragments identify the Dealer's favorite card.
+
+The password is not solved by a skill check. Players must assemble the three discovered fragments. If they reach the entrance early, they may inspect it and hear the question, then leave freely to continue investigating. Once the correct phrase is spoken, the entrance opens and stays open for the party.
+
+The first interior room contains a prepared **Jester** fight. The Jesters greet the party as blasphemous challengers and try to stop them from reaching the Dealer. They remain an independent cult, not Dealer minions. After this fight, the main path proceeds toward the Final Table; the former Gallery / Private House / Foundations chain is optional material only and must not be required for access to the Dealer.
 
 **Collection incident:** A carpenter's already-paid toolbox drags toward the estate under a forged claim. Two Claim Ushers animate from wager paper (AC 13, HP 18, speed 30, lash +4, 1d6+2 force, reach 10 ft). Trigger: intervention. Present the paid receipt to stop both without combat; action Investigation DC 12 stops one, failure reveals whose signature to ask about and next action succeeds. Ushers shove people away from the box, never finish fallen PCs or pursue outside. Tables provide half cover. Easier: one Usher; harder: 23 HP each. Reward: access, 20 gp from traders, testimony. Summons represent amplified card enforcement, not independent Hollow magic.
 
@@ -126,7 +138,7 @@ Ancient masonry cut by fresh table supports; ward scratches unrelated to card su
 
 Party resources for this encounter only; duplicate clues do not multiply charges. Keep in DM notes, explain learned rules to players. At most TWO interventions per round and ONE per creature's draw. Resolve in initiative order; the Dealer cannot veto or rewrite them.
 
-- **Read the Back, 2 charges:** Before dealing, peek at next two cards and return in either order. No action. Arcana shop or training deck. Counts toward round cap.
+- **Read the Back, 2 charges:** Before dealing, peek at next two cards and return in either order. No action. Training deck or other optional House Veyr research only; Morrow's Arcana no longer teaches this mechanic. Counts toward round cap.
 - **Objection, 2 charges:** After selection, before turns, replace one kept card (including Dealer's) with next card, which must be kept. No action. Pell or Gallery.
 - **Cut the Deck, 1 charge:** Phase two: after a pair is exposed, holder chooses instead. Targeting Dealer lets party choose his card. No action. Private House.
 - **Burn a Card, 1 charge:** Between expiration and new draws, remove one named card from draw/discard permanently this fight. No action. Foundations. Counts toward cap.
@@ -220,6 +232,6 @@ Secrets and runnable mechanics go in OWNER/DM-only campaign_notes. All dialogue/
 
 The existing ordinary inn and civic-hall interiors have been visually reviewed and reused for the Gilded Lamb and Civic Hall. Their real R2 storage keys need not be renamed; they carry no discarded supernatural mechanic. Ordinary NPC portraits are retained. Other historical binary assets stay untouched but unused.
 
-Required missing maps: `maps/east-road.png`, `maps/morrows-arcana.png`, `maps/strangers-market.png`, `maps/lucky-graveyard.png`, `maps/grand-floor.png`, `maps/gallery-of-wagers.png`, `maps/private-house.png`, `maps/original-foundations.png`, `maps/final-table.png`. Required portraits: Dealer, Ysabet, Ilyra, Nera, Rusk, Sable. Required monster art: Claim Usher, Wager Hound. Road foes and graveyard dogs can use text tokens or ordinary bestiary portraits. See manifest registry for exact paths/dimensions. Blank scenes/text tokens keep missing-art locations playable until supplied. Do not pass discarded supernatural scenery off as new art.
+Required missing maps remain as inventoried until the Veyrholt cleanup pass decides which optional House Veyr scenes are retained. New required puzzle art: one Arcana-shop clue discoverable for **RED**, one graveyard/Jester clue discoverable for **9**, and the Dealer portrait / Civic Hall discoverable for **HEARTS**. Also prepare Jester token/portrait art for the graveyard and first circus-room fights if no suitable existing art is available. Required core portraits still include Dealer, Ysabet and Ilyra. Use the existing R2 asset pipeline and do not commit generated heavy binary assets directly to Git.
 
 Verification checklist: entry-to-exit reachability; valid IDs; deck timing/counterplay; mostly non-story optional finds; no player-secret leakage; no-op repeat import; protected-state equality including Hobb; real asset registry; lint/typecheck/build. Distinguish setup status from events actually played.
