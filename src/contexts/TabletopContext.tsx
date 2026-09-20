@@ -547,6 +547,7 @@ export function TabletopProvider({
           filter: `campaign_id=eq.${campaignId}`,
         },
         (payload) => {
+          if (builder) return;
           const event = asCinematicEvent(
             payload.new as Record<string, unknown>,
           );
@@ -589,7 +590,7 @@ export function TabletopProvider({
         movementChannelRef.current = null;
       void supabase.removeChannel(channel);
     };
-  }, [campaignId, playerView, reload, scheduleReload, scheduleFastSceneReload]);
+  }, [builder, campaignId, playerView, reload, scheduleReload, scheduleFastSceneReload]);
   useEffect(() => {
     if (!patrolRole || !isDmRole(patrolRole)) return;
     let disposed = false;
@@ -851,12 +852,21 @@ export function TabletopProvider({
       async triggerCinematic(name, duration, steps) {
         const s = stateRef.current;
         if (!s || !isDmRole(s.role)) return;
-        const event = await tabletopService.triggerCinematic(
-          s.campaign.id,
-          name,
-          duration,
-          steps,
-        );
+        const event: CinematicEvent = builder
+          ? {
+              id: `preview-${crypto.randomUUID()}`,
+              campaignId: s.campaign.id,
+              name,
+              duration,
+              steps,
+              createdAt: new Date().toISOString(),
+            }
+          : await tabletopService.triggerCinematic(
+              s.campaign.id,
+              name,
+              duration,
+              steps,
+            );
         setState((current) => {
           if (!current) return current;
           if (event.name === "Dread")
@@ -2379,7 +2389,7 @@ export function TabletopProvider({
       },
       reload,
     }),
-    [campaignId, reload, sendTokenMovement],
+    [builder, campaignId, reload, sendTokenMovement],
   );
   return (
     <TabletopContext.Provider
