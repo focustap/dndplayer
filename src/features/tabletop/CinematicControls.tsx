@@ -4,7 +4,7 @@ import { useTabletop } from "../../contexts/TabletopContext";
 import type { CinematicEvent } from "../../domain/types";
 
 export function CinematicControls() {
-  const { state, actions } = useTabletop();
+  const { state, actions, builder } = useTabletop();
   const [open, setOpen] = useState(false);
   if (!state) return null;
   const selected = state.selectedTokenId ? state.tokens.find((token) => token.id === state.selectedTokenId) : null;
@@ -37,7 +37,7 @@ export function CinematicControls() {
   const playBossEntrance = async () => {
     if (!selected) return;
     const revealToken = !selected.visible;
-    if (revealToken) await actions.patchToken(selected.id, { visible: true });
+    if (revealToken && !builder) await actions.patchToken(selected.id, { visible: true });
     await actions.triggerCinematic("Boss entrance", 6600, bossSteps(revealToken));
   };
 
@@ -45,7 +45,7 @@ export function CinematicControls() {
     <button className={open ? "active" : ""} onClick={() => setOpen((value) => !value)} title="Cinematic effects"><Clapperboard /><span>Cinematics</span></button>
     {open && <div className="cinematic-controls-menu">
       <div className="popover-title"><span><Clapperboard />Cinematic effects</span><button onClick={() => setOpen(false)}>×</button></div>
-      <p>Visual effects sync to everyone viewing this campaign.</p>
+      <p>{builder ? "Local preview only — nothing is broadcast to players or saved." : "Visual effects sync to everyone viewing this campaign."}</p>
       <div className="cinematic-action-grid">
         <button onClick={() => play("Light shake", 750, [{ at: 0, duration: 680, type: "SCREEN_SHAKE", intensity: .28 }])}><Gauge />Light shake</button>
         <button onClick={() => play("Heavy shake", 900, [{ at: 0, duration: 820, type: "SCREEN_SHAKE", intensity: .9 }, { at: 0, duration: 820, type: "MAP_SHAKE", intensity: .85 }])}><ShieldAlert />Heavy shake</button>

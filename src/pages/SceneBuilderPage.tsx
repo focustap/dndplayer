@@ -5,6 +5,8 @@ import { TabletopProvider, useTabletop } from "../contexts/TabletopContext";
 import { isDmRole, type NpcShopItem, type PatrolMode, type Scene, type SceneLighting, type SceneLink } from "../domain/types";
 import { MapCanvas } from "../features/map/MapCanvas";
 import { CreatureInspector } from "../features/tabletop/CreatureInspector";
+import { CinematicControls } from "../features/tabletop/CinematicControls";
+import { CinematicLayer } from "../features/tabletop/CinematicLayer";
 import { DMToolbar } from "../features/tabletop/DMToolbar";
 import { EncounterPanel } from "../features/tabletop/EncounterPanel";
 import { LiveAudio } from "../features/tabletop/LiveAudio";
@@ -41,6 +43,8 @@ function SceneBuilder({ campaignId }: { campaignId: string }) {
   const previewInteractionToken=previewInteraction?state.tokens.find(item=>item.id===previewInteraction.tokenId):undefined;
   return <main className="scene-builder">
     <LiveAudio />
+    <CinematicControls />
+    <CinematicLayer event={state.cinematicEvent} dreadActive={state.dreadActive} onFinished={actions.finishCinematic} />
     {previewInteraction&&previewInteractionToken&&<NpcInteractionModal interaction={previewInteraction} token={previewInteractionToken} preview onClose={actions.closeNpcInteraction}/>}
     {state.discoveryReveal&&<div className="discovery-viewer"><section role="dialog" aria-modal="true"><button aria-label="Close discovery preview" onClick={actions.closeDiscovery}><X/></button><small>PARTY DISCOVERY</small><h2>{state.discoveryReveal.name}</h2>{state.discoveryReveal.imageUrl?<img src={state.discoveryReveal.imageUrl} alt={state.discoveryReveal.name}/>:<p>Preparing this discovery…</p>}</section></div>}
     <header className="scene-builder-header"><Link to={`/campaign/${campaignId}`}><ArrowLeft/>Campaign setup</Link><div><small>DM-ONLY SCENE BUILDER</small><h1>{scene.name}</h1><p>{scene.active ? scene.revealed ? "LIVE · REVEALED TO PLAYERS" : "LIVE · HIDDEN FROM PLAYERS" : "DRAFT · PLAYERS CONTINUE ON THE CURRENT LIVE SCENE"}</p></div><div className="scene-builder-actions"><label className="scene-builder-switcher"><span>EDIT SCENE</span><select value={scene.id} onChange={event=>navigate(`/campaign/${campaignId}/scene/${event.target.value}/builder`)}>{state.scenes.map(candidate=><option key={candidate.id} value={candidate.id}>{candidate.name}{candidate.active?" · Live":""}</option>)}</select></label><button className="secondary-action" onClick={() => void makeLive()}>Make Live</button><button className="secondary-action" onClick={() => void reveal(!scene.revealed)}>{scene.revealed ? <><EyeOff/>Hide Scene</> : <><Eye/>Reveal Scene</>}</button><button className="launch-table" onClick={() => navigate(`/campaign/${campaignId}/dm`)}><Layers3/><span><small>GAMEPLAY</small>OPEN TABLE</span></button></div></header>

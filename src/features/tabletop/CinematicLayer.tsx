@@ -75,7 +75,7 @@ export function CinematicLayer({ event, dreadActive, onFinished, cardPresentatio
   }, [event, frame, dreadActive]);
 
   useEffect(() => {
-    const shell = document.querySelector<HTMLElement>(".tabletop-shell");
+    const shell = document.querySelector<HTMLElement>(".tabletop-shell, .scene-builder");
     if (!shell) return;
     const page = document.documentElement;
     shell.classList.toggle("cinematic-screen-shake", Boolean(view?.shake));
