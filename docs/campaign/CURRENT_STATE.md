@@ -119,9 +119,9 @@ Then inspect Wayfinder's current campaign-management, scene, token, encounter, N
 
 ## Prepared next chapter
 
-The canonical plan is [Veyrholt](chapters/VEYRHOLT.md): Greymere Catalyst → Level 2 → Messenger → East Road rescue → Level 3 → city investigation → House Veyr → Final Table / Dealer → Level 4 → Lornwatch Abbey.
+The canonical plan is [Veyrholt](chapters/VEYRHOLT.md): Greymere Catalyst → Level 2 → Messenger → East Road rescue → Level 3 → city investigation → reconstruct the Dealer's favorite card (RED / 9 / HEARTS) → speak "Red Nine of Hearts" at the circus entrance → Jester fight → Final Table / Dealer → Level 4 → Lornwatch Abbey.
 
-The Dealer's card technique predates the dormant Hollow beneath the estate. Its amplification is this chapter's limited revelation. The campaign's largest secrets remain DM-only. Most optional discoveries are ordinary worldbuilding.
+The Dealer's card technique predates the dormant Hollow beneath the estate. Its amplification is this chapter's limited revelation. The campaign's largest secrets remain DM-only. The city investigation is now anchored by a favorite-card password puzzle: Cira frames the goal at the Gilded Lamb, Morrow's Arcana supplies **RED**, the Lucky Graveyard supplies **9**, and the Civic Hall portrait sequence supplies **HEARTS**. The Jesters are an independent cult that worships the Dealer without his affiliation or command. Most other optional discoveries remain ordinary worldbuilding.
 
 The live Warden revision is preserved in [Greymere](chapters/GREYMERE.md). Hobb, VII, Edrin, maps, encounters, player positions and character statistics must not change. The existing Messenger's Veyrholt hook is the sole dialogue exception.
 
