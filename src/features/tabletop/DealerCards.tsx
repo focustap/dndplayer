@@ -66,6 +66,68 @@ export function DealerCardReveal() {
   </div>;
 }
 
+
+export function DealerCardBuilderPreview() {
+  const { state } = useTabletop();
+  const [assets, setAssets] = useState<Partial<Record<CardId, string>>>({});
+  const [selected, setSelected] = useState<CardId>('blade');
+  const [showGallery, setShowGallery] = useState(false);
+  const [reveal, setReveal] = useState<{ card: CardId; key: number } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!state?.campaign.id) return;
+    void campaignCardArtworkService.deck(state.campaign.id)
+      .then(result => { if (!cancelled) setAssets(result); })
+      .catch(() => { if (!cancelled) setAssets({}); });
+    return () => { cancelled = true; };
+  }, [state?.campaign.id]);
+
+  if (!state) return null;
+  const loaded = DEALER_CARDS.filter(card => Boolean(assets[card.id])).length;
+  const previewReveal = () => {
+    setReveal({ card: selected, key: Date.now() });
+    window.setTimeout(() => setReveal(current => current?.card === selected ? null : current), 6500);
+  };
+
+  return <>
+    <div className="dealer-builder-preview">
+      <div className="dealer-builder-preview-heading">
+        <strong>Dealer card preview</strong>
+        <small>{loaded}/12 artwork loaded</small>
+      </div>
+      <div className="dealer-builder-preview-row">
+        <select aria-label="Dealer card to preview" value={selected} onChange={event => setSelected(event.target.value as CardId)}>
+          {DEALER_CARDS.map(card => <option key={card.id} value={card.id}>{card.name}</option>)}
+        </select>
+        <button onClick={previewReveal}>Preview reveal</button>
+        <button onClick={() => setShowGallery(true)}>View all 12</button>
+      </div>
+    </div>
+
+    {reveal && <div className="dealer-reveal dealer-builder-reveal" key={reveal.key} aria-live="polite">
+      <div className="dealer-reveal-heading">Every game has rules. <small>Preview</small></div>
+      <div className="dealer-reveal-cards">
+        <div className="dealer-flip">
+          <strong>Player preview</strong>
+          <CardFace card={reveal.card} path={assets[reveal.card]} campaignId={state.campaign.id} />
+        </div>
+      </div>
+    </div>}
+
+    {showGallery && <div className="dealer-gallery-backdrop" role="presentation" onClick={() => setShowGallery(false)}>
+      <section className="dealer-gallery" role="dialog" aria-modal="true" aria-label="Dealer card artwork preview" onClick={event => event.stopPropagation()}>
+        <header><div><strong>Dealer deck artwork</strong><small>{loaded}/12 uploaded</small></div><button onClick={() => setShowGallery(false)}>Close</button></header>
+        <div className="dealer-gallery-grid">
+          {DEALER_CARDS.map(card => <button key={card.id} className={selected === card.id ? "selected" : ""} onClick={() => setSelected(card.id)}>
+            <CardFace card={card.id} path={assets[card.id]} campaignId={state.campaign.id} />
+          </button>)}
+        </div>
+      </section>
+    </div>}
+  </>;
+}
+
 export function DealerCards() {
   const { state, playerView, dealerCards } = useTabletop();
   const { user } = useAuth();
