@@ -1,5 +1,17 @@
 # Veyrholt setup and verification
 
+## Favorite-card upgrade (PR #23)
+
+For an existing campaign, use `--favorite-card` with the snapshot/registry/plan/SQL arguments below. This focused mode preserves current scene names, maps and positions, accepts the Dealer NPC in either Grand Floor or Final Table, and does not recreate optional rooms deleted by the DM. It replaces the graveyard dogs and Grand Room collection encounter with independent Jesters, installs RED / 9 / HEARTS discoverables, and updates dialogue and the spoken gate. The exact answer is **Red Nine of Hearts**; only the DM travels into the circus after hearing it. Existing scene activation/reveal controls remain authoritative.
+
+Required verified registry keys: `redClue`, `nineClue`, `heartsClue`; shared token art: `jester`. Upload them using the existing Worker script below, one key/file at a time. Missing clue art blocks the focused transaction rather than installing unusable discoverables. Never apply a test fixture's storage references. After reviewing operations, test the transaction with rollback, apply, export again and confirm a zero-operation rerun.
+
+Dealer presentation uses migrations `20260920035826` and `20260920041930`. During active combat, open **Dealer Cards**, start the deck, confirm participants and earned research charges, then **Deal Round**. End/expire cards explicitly before the next deal. Phase Two begins on the next deal; keep one exposed card, resolve any Objection, then expose the next pair. Cut records that the holder (or party for the Dealer) chooses; the DM clicks the selected card. Rules are applied manually. Upload individual artwork or all twelve correctly named files under **Piles & artwork**; uploads use authenticated R2 and persist in encounter state through reconnect/reset.
+
+Verification: `node --test scripts/dealer-cards.test.mjs scripts/veyholt/plan.test.mjs`. Generate the rollback-only database test with `node scripts/dealer-cards-rls.mjs .tmp/before.json .tmp/card-rls.sql` and run via the trusted SQL connector. See [implementation/verification status](../../docs/campaign/chapters/VEYRHOLT_IMPLEMENTATION.md) for the distinction between isolated browser tests and authenticated realtime verification.
+
+The asset inventory and applied-state notes below describe the earlier September 16 installation; they are historical, not proof the favorite-card upgrade has been applied.
+
 The single story source is [VEYRHOLT.md](../../docs/campaign/chapters/VEYRHOLT.md). `manifest.mjs` contains scene topology and player-safe dialogue; the importer copies the chapter's sections into DM-only campaign notes. `legacy.mjs` is an exact retirement allowlist, **not playable lore**. Historical binary artwork is retained rather than deleted.
 
 ## Reproducible workflow

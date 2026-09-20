@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { buildPlan, validateManifest } from './veyholt/plan.mjs';
+import { buildFavoriteCardPlan } from './veyholt/favorite-card-plan.mjs';
 import { snapshotSql, transactionSql } from './veyholt/sql.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
@@ -14,7 +15,7 @@ async function main(){
  const snapshot=JSON.parse(await readFile(resolve(flag('--snapshot')),'utf8'));
  const registry=flag('--assets')?JSON.parse(await readFile(resolve(flag('--assets')),'utf8')):{};
  const chapter=await readFile(resolve(root,'docs/campaign/chapters/VEYRHOLT.md'),'utf8');
- const plan=buildPlan(snapshot,campaignId,registry,chapter);
+ const plan=(args.includes('--favorite-card')?buildFavoriteCardPlan:buildPlan)(snapshot,campaignId,registry,chapter);
  const summary={valid:true,...validateManifest(),operations:plan.ops.length,byTable:Object.fromEntries([...new Set(plan.ops.map(o=>o.table))].map(t=>[t,plan.ops.filter(o=>o.table===t).length])),missingAssets:plan.missingAssets};
  if(flag('--plan'))await writeFile(resolve(flag('--plan')),JSON.stringify(plan,null,2));
  const sql=transactionSql(plan,snapshot);

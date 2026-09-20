@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { useParams } from "react-router-dom";
+import { useDealerCards } from './useDealerCards';
 import type {
   AttackPreset,
   Character,
@@ -150,6 +151,7 @@ interface TabletopActions {
   reload(): Promise<void>;
 }
 interface TabletopValue {
+  dealerCards: ReturnType<typeof useDealerCards>;
   state: TabletopState | null;
   loading: boolean;
   error: string | null;
@@ -157,7 +159,7 @@ interface TabletopValue {
   builder: boolean;
   actions: TabletopActions;
 }
-const TabletopContext = createContext<TabletopValue | null>(null);
+export const TabletopContext = createContext<TabletopValue | null>(null);
 
 export function TabletopProvider({
   children,
@@ -174,6 +176,7 @@ export function TabletopProvider({
   const [state, setState] = useState<TabletopState | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const dealerCards = useDealerCards(state?.combat.active ? state.combat.id : undefined, Boolean(state && isDmRole(state.role) && !playerView && !state.previewPlayerView), state?.campaign.id);
   const stateRef = useRef(state);
   useEffect(() => {
     stateRef.current = state;
@@ -2380,7 +2383,7 @@ export function TabletopProvider({
   );
   return (
     <TabletopContext.Provider
-      value={{ state, loading, error, playerView, builder, actions }}
+      value={{ state, loading, error, playerView, builder, actions, dealerCards }}
     >
       {children}
     </TabletopContext.Provider>

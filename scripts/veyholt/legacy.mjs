@@ -79,6 +79,10 @@ export const legacy = {
     "The Bell Regent"
   ],
   "placementNames": [
+    "[Veyrholt] graveyard — Graveyard Dog 1",
+    "[Veyrholt] graveyard — Graveyard Dog 2",
+    "[Veyrholt] grand — Claim Usher 1",
+    "[Veyrholt] grand — Claim Usher 2",
     "Greyhook Scout",
     "Greyhook Bandit 1",
     "Greyhook Bandit 2",
@@ -114,6 +118,8 @@ export const legacy = {
     "Veyrholt Catalyst Shard"
   ],
   "encounterNames": [
+    "Veyrholt — Graveyard Dogs (optional)",
+    "Veyrholt — Disputed Collection",
     "Veyrholt — Toll-Takers and Road Refrains",
     "Veyrholt — Bailiffs of the Empty Tithe",
     "Veyrholt — Courtyard Sentinels",
@@ -136,6 +142,8 @@ export const legacy = {
     "Crown Anchor Bell"
   ],
   "linkLabels": [
+    "Dealer's Circus / House Veyr",
+    "Dealer's Circus / House Veyr — password required",
     "Messenger: Bellpost Road",
     "Road to Veyrholt",
     "The Brass Lamb",

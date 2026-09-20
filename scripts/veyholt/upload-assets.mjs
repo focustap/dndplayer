@@ -22,7 +22,7 @@ async function main(){
  let registry={};try{registry=JSON.parse(await readFile(resolve(out),'utf8'));}catch(error){if(error.code!=='ENOENT')throw error;}
  const headers={authorization:`Bearer ${token}`};
  if(registry[key]?.sha256===sha256){const response=await fetch(`${worker}/v1/sign`,{method:'POST',headers:{...headers,'content-type':'application/json'},body:JSON.stringify({campaignId,path:registry[key].path})});if(response.ok){console.log(`${key}: existing R2 asset verified; no upload.`);return;}if(response.status!==404)throw new Error(`Asset verification failed (${response.status}).`);}
- const category=scene?'maps':['scout','bandit','graveyardDog','usher','hound'].includes(key)?'monster-templates':'npc-templates';
+ const category=scene?'maps':assets[key].startsWith('discoverables/')?'discoverables':['scout','bandit','graveyardDog','usher','hound','jester'].includes(key)?'monster-templates':'npc-templates';
  const response=await fetch(`${worker}/v1/upload?${new URLSearchParams({campaignId,category})}`,{method:'POST',headers:{...headers,'content-type':'image/png','x-file-name':basename(assets[key])},body:bytes});
  if(!response.ok)throw new Error(`Worker upload failed (${response.status}).`);
  const result=await response.json();

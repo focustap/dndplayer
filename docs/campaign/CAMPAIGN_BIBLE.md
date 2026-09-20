@@ -301,7 +301,7 @@ Veyrholt should share the same broader artistic/world aesthetic as Greymere whil
 
 The party should travel through multiple Hollows over the campaign, leveling up and learning more about Hollow history and behavior before the campaign's largest truth is revealed.
 
-Veyrholt is now locked across `docs/campaign/chapters/VEYRHOLT.md` plus the newer mechanic override in `docs/campaign/chapters/VEYRHOLT_BELL_REVISION.md`.
+Veyrholt is locked in `docs/campaign/chapters/VEYRHOLT.md`. `VEYRHOLT_BELL_REVISION.md` is retired historical material and must not override Dealer canon. The favorite-card investigation yields RED at Arcana, 9 after the independent Jester graveyard ambush, and HEARTS in Civic Hall. Red Nine of Hearts opens the circus; a second independent Jester fight precedes the existing Dealer boss.
 
 Lasting canon introduced there:
 

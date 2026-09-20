@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
-import { HOBB, scenes, assets, npcs, monsters, encounters, placements, links, messengerPages } from './manifest.mjs';
+import { HOBB, scenes, assets, npcs, monsters, encounters, placements, links, discoverables, messengerPages } from './manifest.mjs';
 import { legacy } from './legacy.mjs';
 
 const equal=isDeepStrictEqual;
@@ -15,7 +15,7 @@ export function validateManifest() {
  for(const n of npcs)if(!keys.has(n.scene)||n.scene==='town'||!n.pages.length&&n.interactive!==false)throw new Error('Invalid NPC');
  for(const e of encounters)for(const [name,count]of e.members)if(!monsters.some(m=>m.name===name)||count<1)throw new Error('Invalid encounter member');
  for(const p of placements)if(!keys.has(p.scene)||p.scene==='town'||!monsters.some(m=>m.name===p.monster))throw new Error('Invalid monster placement');
- const publicText=JSON.stringify({npcs,links,messengerPages});
+ const publicText=JSON.stringify({npcs,links,discoverables,messengerPages});
  if(/DM_SECRET|Catalyst|cosmology|world itself|Bell Regent|Second Motion/.test(publicText))throw new Error('Secret or obsolete content in public payload');
  return {scenes:scenes.length,npcs:npcs.length,encounters:encounters.length,links:links.length,assetRequirements:Object.keys(assets).length};
 }
@@ -111,6 +111,13 @@ export function buildPlan(snapshot,campaignId,registry,chapter) {
   const token=get('tokens',t=>t.scene_id===scene.id&&t.type==='MONSTER'&&t.reference_id===instance.id);if(!token)insert('tokens',{scene_id:scene.id,type:'MONSTER',reference_id:instance.id,display_name:p.name,image_path:path??template.image_path??null,x:p.x,y:p.y,size:1,visible:false,locked:false});else if(path)update('tokens',token,{image_path:path,image_url:null});
  }
  const wantedLinks=new Set();
+ for(const d of discoverables){
+  const scene=sceneRows.get(d.scene),path=assetPath(d.asset);
+  const existing=get('scene_discoverables',r=>r.scene_id===scene.id&&r.name===d.name);
+  if(existing){if(path)update('scene_discoverables',existing,{storage_path:path});}
+  else if(path)insert('scene_discoverables',{campaign_id:campaignId,scene_id:scene.id,name:d.name,storage_path:path,x:d.x,y:d.y,hidden:d.hidden,created_by:campaign.owner_id});
+  // No fake image path: missing bytes remain an explicit requirement.
+ }
  for(const [from,to,label,x,y]of links){const a=from==='Greymere'?greymere:sceneRows.get(from),b=to==='Greymere'?greymere:sceneRows.get(to);let row=get('scene_links',l=>l.scene_id===a.id&&l.label===label);
   if(!row&&from==='Greymere')row=get('scene_links',l=>l.scene_id===a.id&&l.label==='Messenger: Bellpost Road');
   if(row)update('scene_links',row,{label,destination_scene_id:b.id,...(from==='Greymere'?{}:{x,y})});else row=insert('scene_links',{scene_id:a.id,destination_scene_id:b.id,label,x,y,created_by:campaign.owner_id});wantedLinks.add(row.id);

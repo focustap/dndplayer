@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import type { CinematicEvent, CinematicStep } from "../../domain/types";
 import "./cinematic.css";
 
 interface CinematicLayerProps {
+  cardPresentation?: ReactNode;
   event: CinematicEvent | null;
   dreadActive: boolean;
   onFinished(): void;
@@ -19,7 +20,7 @@ const durationFor = (step: CinematicStep) => step.duration ?? 600;
 const progressFor = (step: CinematicStep, elapsed: number) => Math.min(1, Math.max(0, (elapsed - step.at) / durationFor(step)));
 const isActive = (step: CinematicStep, elapsed: number) => elapsed >= step.at && elapsed <= step.at + durationFor(step);
 
-export function CinematicLayer({ event, dreadActive, onFinished }: CinematicLayerProps) {
+export function CinematicLayer({ event, dreadActive, onFinished, cardPresentation }: CinematicLayerProps) {
   const [frame, setFrame] = useState<CinematicFrame>({ elapsed: 0, event: null });
 
   useEffect(() => {
@@ -92,7 +93,7 @@ export function CinematicLayer({ event, dreadActive, onFinished }: CinematicLaye
     };
   }, [view?.shake, view?.uiOpacity, view?.interactionLocked, view?.blur]);
 
-  if (!view) return null;
+  if (!view) return cardPresentation ?? null;
   const overlayStyle = {
     "--cinematic-flash": view.flash?.color ?? "#fff6d9",
     "--cinematic-flash-alpha": view.flash ? String(Math.max(.12, 1 - progressFor(view.flash, frame.elapsed))) : "0",
@@ -104,12 +105,12 @@ export function CinematicLayer({ event, dreadActive, onFinished }: CinematicLaye
   } as CSSProperties;
   const titleStyle = { "--cinematic-title-opacity": String(view.titleOpacity) } as CSSProperties;
 
-  return <div className={`cinematic-layer${view.letterboxExiting ? " cinematic-letterbox-exiting" : ""}`} style={overlayStyle} aria-live="polite" aria-atomic="true">
+  return <><div className={`cinematic-layer${view.letterboxExiting ? " cinematic-letterbox-exiting" : ""}`} style={overlayStyle} aria-live="polite" aria-atomic="true">
     <div className="cinematic-darkness" />
     <div className="cinematic-vignette" />
     <div className="cinematic-color-wash" />
     <div className="cinematic-flash" />
     <div className="cinematic-letterbox" />
     {view.title?.text && <div className="cinematic-title" style={titleStyle}><span>{view.title.text}</span></div>}
-  </div>;
+  </div>{cardPresentation}</>;
 }

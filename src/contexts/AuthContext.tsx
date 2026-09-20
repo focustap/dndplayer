@@ -12,7 +12,7 @@ interface AuthValue {
   signUp(email: string, password: string, displayName: string): Promise<string | null>;
   signOut(): Promise<void>;
 }
-const AuthContext = createContext<AuthValue | null>(null);
+export const AuthContext = createContext<AuthValue | null>(null);
 
 function sessionIsExpired(session: Session) {
   return typeof session.expires_at !== "number" || session.expires_at <= Date.now() / 1000;

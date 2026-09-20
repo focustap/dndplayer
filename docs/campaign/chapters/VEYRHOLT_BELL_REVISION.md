@@ -1,3 +1,5 @@
+> RETIRED HISTORICAL DOCUMENT. Superseded by VEYRHOLT.md and the Dealer favorite-card canon. Do not implement these former mechanics.
+
 # Veyrholt — Bell & Second Motion Revision
 
 ## Status

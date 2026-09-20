@@ -11,6 +11,7 @@ import { DiceRoller } from "../features/tabletop/DiceRoller";
 import { PlayerCreatureCard } from "../features/tabletop/PlayerCreatureCard";
 import { CinematicControls } from "../features/tabletop/CinematicControls";
 import { CinematicLayer } from "../features/tabletop/CinematicLayer";
+import { DealerCards, DealerCardReveal } from '../features/tabletop/DealerCards';
 import { LiveAudio } from "../features/tabletop/LiveAudio";
 import { NpcInteractionModal } from "../features/tabletop/NpcInteractionModal";
 
@@ -56,6 +57,7 @@ function TabletopSurface({ playerView }: { playerView: boolean }) {
   return (
     <main className={`tabletop-shell ${playerView ? "player-shell" : ""}`}>
       <InitiativeBar />
+      <DealerCards />
       <LiveAudio />
       {!playerView && <EncounterPanel />}
       <section className="map-stage">
@@ -142,6 +144,7 @@ function TabletopSurface({ playerView }: { playerView: boolean }) {
         </>
       )}
       <CinematicLayer
+        cardPresentation={<DealerCardReveal />}
         event={state.cinematicEvent}
         dreadActive={state.dreadActive}
         onFinished={actions.finishCinematic}

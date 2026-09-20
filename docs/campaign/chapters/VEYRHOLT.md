@@ -64,7 +64,7 @@ Stock: four healing potions (50 gp, 2d4+2 HP); one Feather Fall scroll (25 gp); 
 
 Food, gear, wagons, performances, counterfeit charms and pawned tools. Kest Rane may still know delivery routes around House Veyr, but no service route bypasses the circus password. Nera demonstrates stored sounds; Rusk works as a porter (see NPCs). Both have lives beyond the plot.
 
-Optional pickpocket chase: three contributions using DC 12 Perception/Athletics/Acrobatics or a clever barrier without a roll; two successes catch the thief. Failure leads to the food bargain above, not a dead end. Exit: overview; the DM may open the service link to Grand Floor after directions.
+Optional pickpocket chase: three contributions using DC 12 Perception/Athletics/Acrobatics or a clever barrier without a roll; two successes catch the thief. Failure leads to the food bargain above, not a dead end. Exit: overview. No service link or directions bypass the favorite-card entrance.
 
 ### The Lucky Graveyard
 
@@ -72,7 +72,7 @@ Old cemetery crowded with coins, dice, cards and tiny personal offerings. Challe
 
 After the party has spent a few minutes investigating or asks openly about the Dealer, the **Jesters** ambush them among the stones. This is the faction's first direct introduction. They are theatrical fanatics who worship the Dealer from afar; he did not recruit them and does not command them. Their purpose in the fight is to silence people they believe intend to ruin "his game."
 
-After the fight, searching the Jesters or the area automatically reveals the second password fragment: **9**. The clue should be a physical discoverable with its own image, ideally a Jester calling card, mask marking or ritual token that clearly presents the number without explaining the whole password. Optional history checks may still provide Veyr family context, but no successful roll is required to obtain **9**. Exit: overview.
+Use three Jesters (AC 12, HP 14, speed 30, knife +3, 1d6+1 slashing). Gravestones grant half cover. They surround conscious threats and flee when two fall; no executions or pursuit outside. Easy: two; hard: four. Recover 12 gp. After the fight, even if all cultists flee, the DM immediately reveals their dropped ritual token with no search roll. Searching the Jesters or the area automatically reveals the second password fragment: **9**. The clue should be a physical discoverable with its own image, ideally a Jester calling card, mask marking or ritual token that clearly presents the number without explaining the whole password. Optional history checks may still provide Veyr family context, but no successful roll is required to obtain **9**. Exit: overview.
 
 ### Civic Hall
 
@@ -104,15 +104,15 @@ The hall's ordinary records explain Veyrholt and House Veyr history, including t
 
 ### Grand Floor / Dealer's Circus
 
-Red-black-gold canvas over old columns. The main circus entrance is closed to outsiders and functions as the payoff to the city investigation. A speaking mask, attendant or other obvious gate asks: **"State his favorite card."** The required answer is **"The Red Nine of Hearts"** (accept "Red Nine of Hearts"). RED comes from Morrow's Arcana, 9 from the Lucky Graveyard, and HEARTS from the Civic Hall portrait. The Gilded Lamb tells the party that these fragments identify the Dealer's favorite card.
+Red-black-gold canvas over old columns. The main circus entrance is closed to outsiders and functions as the payoff to the city investigation. A speaking mask, attendant or other obvious gate asks: **"State his favorite card."** The required answer is **"Red Nine of Hearts"**. RED comes from Morrow's Arcana, 9 from the Lucky Graveyard, and HEARTS from the Civic Hall portrait. The Gilded Lamb tells the party that these fragments identify the Dealer's favorite card.
 
-The password is not solved by a skill check. Players must assemble the three discovered fragments. If they reach the entrance early, they may inspect it and hear the question, then leave freely to continue investigating. Once the correct phrase is spoken, the entrance opens and stays open for the party.
+DM control: read the hotspot prompt aloud. Only after the party says Red Nine of Hearts, use the existing DM-only scene link/activate-and-reveal control to open the Grand Floor. Keep the interior inaccessible beforehand. No Kest shortcut, payment, service entrance or skill check bypasses this gate. The password is not solved by a skill check. Players must assemble the three discovered fragments. If they reach the entrance early, they may inspect it and hear the question, then leave freely to continue investigating. Once the correct phrase is spoken, the entrance opens and stays open for the party.
 
 The first interior room contains a prepared **Jester** fight. The Jesters greet the party as blasphemous challengers and try to stop them from reaching the Dealer. They remain an independent cult, not Dealer minions. After this fight, the main path proceeds toward the Final Table; the former Gallery / Private House / Foundations chain is optional material only and must not be required for access to the Dealer.
 
-**Collection incident:** A carpenter's already-paid toolbox drags toward the estate under a forged claim. Two Claim Ushers animate from wager paper (AC 13, HP 18, speed 30, lash +4, 1d6+2 force, reach 10 ft). Trigger: intervention. Present the paid receipt to stop both without combat; action Investigation DC 12 stops one, failure reveals whose signature to ask about and next action succeeds. Ushers shove people away from the box, never finish fallen PCs or pursue outside. Tables provide half cover. Easier: one Usher; harder: 23 HP each. Reward: access, 20 gp from traders, testimony. Summons represent amplified card enforcement, not independent Hollow magic.
+**Jester encounter:** Three independent Jesters, AC 12, HP 14, speed 30, knife +3 for 1d6+1 slashing. Trigger: enter the first interior room. They surround conscious threats, using tables for half cover; flee when two fall; no attacks on fallen characters or pursuit outside. Two for a depleted party, four for five rested PCs. Reward: 10 gp and the direct passage to Final Table. No further password. They believe the party will ruin the Dealer's game; he never ordered them.
 
-Public demonstration: the Dealer draws Chains and cannot leave his chair until next draw. Printed rules say his card binds him too. No check. Exits: overview, Gallery.
+Public demonstration: the Dealer draws Chains and cannot leave his chair until next draw. Printed rules say his card binds him too. No check. Exits: overview, Final Table (direct), Gallery (optional).
 
 ### Gallery of Wagers
 
@@ -224,7 +224,7 @@ DM-note checks, not image popups. Careful ten-minute search once/location; use p
 
 ## Implementation and assets
 
-Reuse Wayfinder scenes/maps, scene links, tokens, NPC dialogue/shops, monster templates/instances, encounters and DM-only campaign notes. Cards run from this reference with a physical deck or d12 without replacement; existing initiative remains authoritative. No new engine/schema required.
+Reuse Wayfinder scenes/maps, scene links, tokens, NPC dialogue/shops, monster templates/instances, encounters and DM-only campaign notes. Dealer Cards uses the existing combat session and initiative with private persisted deck state and a synced public presentation. Card effects are applied manually; no statistics, conditions, movement or spell resources are automated. See VEYRHOLT_IMPLEMENTATION.md. A physical deck remains a fallback.
 
 Preserve scene IDs, active/revealed flags, player tokens/coordinates, combat state, fog, overlays and all unrelated data. Exact inventoried Veyrholt scenes are renamed/repointed. New scenes begin inactive/unrevealed. Only Greymere exceptions are existing Messenger's Veyrholt dialogue and existing road-link label/destination. Retire exact obsolete chapter records only, never scenes or PLAYER tokens. Snapshot before applying; stale-data guards and a transaction protect live edits.
 

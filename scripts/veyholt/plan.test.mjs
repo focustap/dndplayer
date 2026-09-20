@@ -6,6 +6,7 @@ import { buildPlan, validateManifest } from './plan.mjs';
 import { HOBB, scenes } from './manifest.mjs';
 import { legacy } from './legacy.mjs';
 import { transactionSql } from './sql.mjs';
+import { buildFavoriteCardPlan } from './favorite-card-plan.mjs';
 
 const campaignId='00000000-0000-4000-8000-000000000001';
 const ownerId='00000000-0000-4000-8000-000000000002';
@@ -27,3 +28,21 @@ test('ambiguous scene names and active combat fail before mutations',()=>{const 
 test('obsolete cleanup uses exact names in managed scenes only',()=>{const db=fixture();const road=db.scenes.find(s=>s.name===legacy.scenes.road[0]);const grey=db.scenes[0];const name=legacy.discoverableNames[0];db.scene_discoverables=[{id:randomUUID(),campaign_id:campaignId,scene_id:road.id,name,discovered_at:null},{id:randomUUID(),campaign_id:campaignId,scene_id:grey.id,name,discovered_at:null},{id:randomUUID(),campaign_id:campaignId,scene_id:road.id,name:'User-authored keepsake',discovered_at:null}];const plan=buildPlan(db,campaignId,{},chapter);assert.deepEqual(plan.after.scene_discoverables,db.scene_discoverables.slice(1));});
 test('unverified assets fail; missing assets never create fake references',()=>{const db=fixture();assert.throws(()=>buildPlan(db,campaignId,{town:{path:'https://fake.invalid/map.png',verified:true}},chapter),/Unverified/);const plan=buildPlan(db,campaignId,{},chapter);assert.equal(plan.after.maps.length,0);assert.ok(plan.missingAssets.includes('maps/final-table.png'));});
 test('transaction is atomic, uses RLS, checks protected rows and scene flags',()=>{const db=fixture();const sql=transactionSql(buildPlan(db,campaignId,{},chapter),db);assert.match(sql,/^begin;/);assert.match(sql,/set local role authenticated/);assert.match(sql,/Stale row/);assert.match(sql,/Protected row changed/);assert.match(sql,/Scene active\/reveal state changed/);assert.ok(sql.trimEnd().endsWith('commit;'));assert.doesNotMatch(sql,/disable row level security|truncate|service_role/i);});
+
+// Synthetic storage keys are confined to fixtures; production requires a verified upload registry.
+const clueRegistry=Object.fromEntries(['redClue','nineClue','heartsClue','jester'].map(key=>[key,{path:`${campaignId}/discoverables/fixture-${key}.png`,verified:true}]));
+test('focused favorite-card upgrade preserves maps, players, Dealer and scene flags; rerun is a no-op',()=>{
+ const before=buildPlan(fixture(),campaignId,{},chapter).after;
+ const plan=buildFavoriteCardPlan(before,campaignId,clueRegistry,chapter);
+ for(const table of ['characters','maps','scenes'])assert.deepEqual(plan.after[table],before[table]);
+ const dealer=before.monster_templates.find(m=>m.name.includes('Dealer'));
+ assert.deepEqual(plan.after.monster_templates.find(m=>m.id===dealer.id),dealer);
+ assert.equal(plan.after.scene_discoverables.length,3);
+ assert.deepEqual(buildFavoriteCardPlan(plan.after,campaignId,clueRegistry,chapter).ops,[]);
+});
+test('focused upgrade blocks missing clue assets and unexpected circus bypasses',()=>{
+ const before=buildPlan(fixture(),campaignId,{},chapter).after;
+ assert.throws(()=>buildFavoriteCardPlan(before,campaignId,{},chapter),/Required clue image missing/);
+ before.scene_links.push({id:randomUUID(),scene_id:before.scenes.find(s=>s.name===scenes.find(s=>s.key==='arcana').name).id,destination_scene_id:before.scenes.find(s=>s.name===scenes.find(s=>s.key==='grand').name).id,label:'Unapproved service entrance'});
+ assert.throws(()=>buildFavoriteCardPlan(before,campaignId,clueRegistry,chapter),/Unexpected circus bypass/);
+});
