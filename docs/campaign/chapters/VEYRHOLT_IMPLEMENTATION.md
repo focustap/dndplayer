@@ -53,4 +53,4 @@ In the separate Test Campaign, temporary initiative participants exercised the d
 
 ## Play-readiness follow-up — September 21, 2026
 
-Core Chapter 2 content is implemented and the live Veyrholt focused import is present. Before calling the chapter fully table-ready, complete one remaining technical check: use a genuinely separate signed-in PLAYER session against the live Supabase/Reatime path to confirm card presentation updates, reconnect behavior and absence of DM controls/private deck state. Also verify the live Final Table can support the new post-defeat VII reveal and that any History Hall VII foreshadowing remains optional and non-blocking.
+Core Chapter 2 content is implemented and the live Veyrholt focused import is present. Before calling the chapter fully table-ready, complete one remaining technical check: use a genuinely separate signed-in PLAYER session against the live Supabase/Realtime path to confirm card presentation updates, reconnect behavior and absence of DM controls/private deck state. Also verify the live Final Table can support the new post-defeat VII reveal and that any History Hall VII foreshadowing remains optional and non-blocking.
