@@ -44,6 +44,8 @@ Known uses so far include:
 - carved into the Crooked Stag tavern wall
 - recurring as an unexplained clue connected to the Hollow mystery
 
+**DM-only Chapter 2 plan:** in Veyrholt, one old House Veyr history painting may quietly show VII carved into estate stone as optional foreshadowing. The guaranteed second-location reveal happens only after the Dealer is defeated, when VII is exposed in the original stone beneath the Final Table. That carving visibly predates the Dealer and confirms that the mark is not merely a Greymere phenomenon. Do not explain who made it or what it means.
+
 Its full meaning is not established for the players and should not be casually revealed.
 
 ### Memory / confusion
@@ -312,7 +314,7 @@ Lasting canon introduced there:
 - The enormous Pot attracts unusual challengers. Most optional objects and local stories are unrelated to Hollows.
 - Defeating the Dealer ends the local connection; his survival is a player-dependent outcome, not predetermined death.
 - Progression: Greymere Level 2 → East Road rescue → Level 3 Veyrholt → Dealer → Level 4 → Lornwatch Abbey.
-- VII, Hollow origins and the campaign-scale truth remain unresolved.
+- VII, Hollow origins and the campaign-scale truth remain unresolved. Veyrholt's planned recurrence should prove only that VII predates the Dealer and appears beyond Greymere: optional foreshadowing in an old History Hall painting, then an automatic post-Dealer reveal beneath the Final Table.
 
 Veyrholt NPCs should use clear modern conversational language when delivering important lore or mechanic explanations. Old-fashioned wording is appropriate for ancient inscriptions, preserved oaths, and deliberate atmosphere, not for ordinary exposition the players need to understand.
 
