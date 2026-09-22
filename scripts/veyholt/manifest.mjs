@@ -17,7 +17,7 @@ export const scenes = [
 ].map(([key,title,width,height,tactical],i)=>({key,name:`Veyrholt ${String(i+1).padStart(2,'0')} — ${title}`,width,height,grid_type:tactical?'SQUARE':'GRIDLESS',grid_size:63,lighting:'DAY'}));
 
 export const assets = {
-  redClue:'discoverables/pawned-card-case-red.png', nineClue:'discoverables/jester-token-nine.png', heartsClue:'discoverables/house-veyr-portraits-hearts.png', jester:'monsters/jester-cultist.png',
+  redClue:'discoverables/pawned-card-case-red.png', nineClue:'discoverables/jester-token-nine.png', heartsClue:'discoverables/house-veyr-portraits-hearts.png', historyVII:'discoverables/history-vii.png', finalVII:'discoverables/final-table-vii.png', jester:'monsters/jester-cultist.png',
   town:'maps/veyrholt-city.png', road:'maps/east-road.png',inn:'maps/gilded-lamb.png',civic:'maps/civic-hall.png',arcana:'maps/morrows-arcana.png',graveyard:'maps/lucky-graveyard.png',market:'maps/strangers-market.png',grand:'maps/grand-floor.png',gallery:'maps/gallery-of-wagers.png',private:'maps/private-house.png',foundations:'maps/original-foundations.png',final:'maps/final-table.png',
   dealer:'portraits/dealer.png',ysabet:'portraits/ysabet-morrow.png',ilyra:'portraits/ilyra-veyr.png',nera:'portraits/nera-vale.png',rusk:'portraits/rusk-fen.png',sable:'portraits/sable-quill.png',scout:'monsters/road-scout.png',bandit:'monsters/road-bandit.png',graveyardDog:'monsters/graveyard-dog.png',usher:'monsters/claim-usher.png',hound:'monsters/wager-hound.png',
 };
@@ -73,7 +73,7 @@ export const encounters=[
  {key:'graveyard',name:'Veyrholt — Jester Graveyard Ambush',members:[['Veyrholt — Jester',3]],notes:'Trigger: a few minutes investigating or open questions about Dealer. Independent cultists think party will ruin his game; no orders from Dealer. Stones give half cover. Surround conscious threats; flee when two fall; no execution/pursuit. Easy 2, hard 4. Automatically reveal Jester ritual token — 9 after fight, even if cultists flee. No check. 12 gp.'},
  {key:'grand',name:'Veyrholt — Jesters at the Circus',members:[['Veyrholt — Jester',3]],notes:'Trigger: enter first room after spoken favorite-card answer. Independent fanatics attack because they think party will ruin Dealer’s game; not his servants. Tables give half cover; surround conscious threats, flee when two fall. No execution/pursuit. Easy 2, hard 4. 10 gp and direct passage to Final Table. No further password.'},
  {key:'foundations',name:'Veyrholt — Collection Engine',members:[['Veyrholt — Claim Usher',2],['Veyrholt — Wager Hound',1]],notes:'Valid writ/receipt bypasses. Two actions turn claim wheel to end all summons. Hound telegraphs 10-ft straight run; block with crates. Columns half cover, no pursuit upstairs. Easy 1 usher, hard hound 30 HP. 30 gp, potion, Burn a Card stamp regardless of combat route.'},
- {key:'final',name:'Veyrholt — The Final Table',members:[['The Dealer',1]],notes:'Four Level 3 PCs. Use canonical Final Table campaign note: every combatant draws each round; at <=42 HP announce phase two, next round draw two and Dealer selects for everyone including himself. Research interventions + fallback Objection. Dealer obeys cards. Defeat at 0 HP breaks connection; survival remains possible. Level 4 after safe rest.'},
+ {key:'final',name:'Veyrholt — The Final Table',members:[['The Dealer',1]],notes:'Four Level 3 PCs. Use canonical Final Table campaign note: every combatant draws each round; at <=42 HP announce phase two, next round draw two and Dealer selects for everyone including himself. Research interventions + fallback Objection. Dealer obeys cards. At 0 HP the connection breaks; then automatically reveal the old VII carving beneath the shifted table. Survival remains possible. Level 4 after safe rest.'},
 ];
 export const placements=encounters.flatMap(e=>e.members.flatMap(([monster,count],j)=>Array.from({length:count},(_,i)=>({scene:e.key,monster,name:`[Veyrholt] ${e.key} — ${monster.replace('Veyrholt — ','')} ${i+1}`,x:450+j*220+i*90,y:450+i*100}))));
 export const links=[
@@ -91,6 +91,8 @@ export const discoverables=[
  {scene:'arcana',asset:'redClue',name:'Pawned card case — RED is engraved inside its damaged lid.',x:960,y:480,hidden:false},
  {scene:'graveyard',asset:'nineClue',name:'Jester ritual token — 9 is carved above a grinning mask.',x:540,y:480,hidden:true},
  {scene:'civic',asset:'heartsClue',name:'House Veyr portraits — the Dealer’s theatrical portrait displays HEARTS.',x:1060,y:240,hidden:false},
+ {scene:'civic',asset:'historyVII',name:'Old House Veyr painting — VII is carved into estate stone in the background.',x:820,y:230,hidden:true},
+ {scene:'final',asset:'finalVII',name:'Beneath the shifted Final Table — an old VII carving in the original estate stone, the same mark seen in Greymere.',x:627,y:627,hidden:true},
 ];
 export const messengerPages=[
  "I have come from Veyrholt. A supply wagon is stranded on the east road, and the city will pay forty gold to bring its travelers safely home.",

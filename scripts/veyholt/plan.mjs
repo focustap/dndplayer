@@ -114,8 +114,9 @@ export function buildPlan(snapshot,campaignId,registry,chapter) {
  for(const d of discoverables){
   const scene=sceneRows.get(d.scene),path=assetPath(d.asset);
   const existing=get('scene_discoverables',r=>r.scene_id===scene.id&&r.name===d.name);
-  if(existing){if(path)update('scene_discoverables',existing,{storage_path:path});}
-  else if(path)insert('scene_discoverables',{campaign_id:campaignId,scene_id:scene.id,name:d.name,storage_path:path,x:d.x,y:d.y,hidden:d.hidden,created_by:campaign.owner_id});
+  const values={name:d.name,x:d.x,y:d.y,hidden:d.hidden,storage_path:path};
+  if(existing){if(path)update('scene_discoverables',existing,{storage_path:path,hidden:d.hidden});}
+  else if(path)insert('scene_discoverables',{campaign_id:campaignId,scene_id:scene.id,...values,created_by:campaign.owner_id});
   // No fake image path: missing bytes remain an explicit requirement.
  }
  for(const [from,to,label,x,y]of links){const a=from==='Greymere'?greymere:sceneRows.get(from),b=to==='Greymere'?greymere:sceneRows.get(to);let row=get('scene_links',l=>l.scene_id===a.id&&l.label===label);

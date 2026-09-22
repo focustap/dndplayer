@@ -30,15 +30,23 @@ test('unverified assets fail; missing assets never create fake references',()=>{
 test('transaction is atomic, uses RLS, checks protected rows and scene flags',()=>{const db=fixture();const sql=transactionSql(buildPlan(db,campaignId,{},chapter),db);assert.match(sql,/^begin;/);assert.match(sql,/set local role authenticated/);assert.match(sql,/Stale row/);assert.match(sql,/Protected row changed/);assert.match(sql,/Scene active\/reveal state changed/);assert.ok(sql.trimEnd().endsWith('commit;'));assert.doesNotMatch(sql,/disable row level security|truncate|service_role/i);});
 
 // Synthetic storage keys are confined to fixtures; production requires a verified upload registry.
-const clueRegistry=Object.fromEntries(['redClue','nineClue','heartsClue','jester'].map(key=>[key,{path:`${campaignId}/discoverables/fixture-${key}.png`,verified:true}]));
+const clueRegistry=Object.fromEntries(['redClue','nineClue','heartsClue','historyVII','finalVII','jester'].map(key=>[key,{path:`${campaignId}/discoverables/fixture-${key}.png`,verified:true}]));
 test('focused favorite-card upgrade preserves maps, players, Dealer and scene flags; rerun is a no-op',()=>{
  const before=buildPlan(fixture(),campaignId,{},chapter).after;
  const plan=buildFavoriteCardPlan(before,campaignId,clueRegistry,chapter);
  for(const table of ['characters','maps','scenes'])assert.deepEqual(plan.after[table],before[table]);
  const dealer=before.monster_templates.find(m=>m.name.includes('Dealer'));
  assert.deepEqual(plan.after.monster_templates.find(m=>m.id===dealer.id),dealer);
- assert.equal(plan.after.scene_discoverables.length,3);
+ assert.equal(plan.after.scene_discoverables.length,5);
+ assert.equal(plan.after.scene_discoverables.find(d=>d.name.includes('RED')).hidden,false);
+ assert.ok(plan.after.scene_discoverables.some(d=>d.name.includes('old VII carving')&&d.hidden));
+ assert.ok(plan.after.token_interactions.some(i=>i.dialogue_pages?.some(page=>page.includes('written objection'))));
  assert.deepEqual(buildFavoriteCardPlan(plan.after,campaignId,clueRegistry,chapter).ops,[]);
+});
+test('VII canon retires Foundations and guarantees the Final Table reveal',()=>{
+ assert.doesNotMatch(chapter,/Foundations Perception 12 \| VII|DC 12 Perception finds VII/);
+ assert.match(chapter,/\*\*Automatic VII reveal:\*\*/i);
+ assert.match(chapter,/old(?:est)? House Veyr painting/i);
 });
 test('focused upgrade blocks missing clue assets and unexpected circus bypasses',()=>{
  const before=buildPlan(fixture(),campaignId,{},chapter).after;

@@ -23,7 +23,7 @@ export function buildFavoriteCardPlan(snapshot,campaignId,registry,chapter) {
  const update=(table,row,patch)=>{const after=Object.fromEntries(Object.entries(patch).filter(([k,v])=>!equal(row[k],v)));if(!Object.keys(after).length)return;ops.push({kind:'update',table,key:table==='token_interactions'?'token_id':'id',before:structuredClone(row),after});Object.assign(row,after);};
  const remove=(table,row)=>{ops.push({kind:'delete',table,key:'id',before:structuredClone(row)});db[table]=db[table].filter(r=>r.id!==row.id);};
  const asset=key=>{const a=registry[key];if(!a)return null;if(!assets[key]||!a.verified||!a.path?.startsWith(`${campaignId}/`)||a.path.includes('..')||a.path.includes('?'))throw new Error(`Unverified R2 asset ${key}`);return a.path;};
- for(const n of npcs.filter(n=>['Cira Vale','Ysabet Morrow','Kest Rane','Yara Flint','Deacon Olyss','Reeve Elian Morrow','Lady Ilyra Veyr','Sister Avra Seln','The Dealer'].includes(n.name))){
+ for(const n of npcs.filter(n=>['Cira Vale','Pell Aster','Ysabet Morrow','Kest Rane','Yara Flint','Deacon Olyss','Reeve Elian Morrow','Lady Ilyra Veyr','Sister Avra Seln','The Dealer'].includes(n.name))){
   const allowedScenes=n.name==='The Dealer'?[sceneRows.grand.id,sceneRows.final.id]:[sceneRows[n.scene].id];
   const token=unique(db.tokens.filter(t=>allowedScenes.includes(t.scene_id)&&t.type==='NPC'&&t.display_name===n.name),n.name);
   const interaction=unique(db.token_interactions.filter(i=>i.token_id===token.id),`${n.name} dialogue`);
@@ -33,9 +33,13 @@ export function buildFavoriteCardPlan(snapshot,campaignId,registry,chapter) {
   const path=asset(d.asset);if(!path)throw new Error(`Required clue image missing: ${d.asset}`);
   const scene=sceneRows[d.scene];const found=db.scene_discoverables.filter(r=>r.scene_id===scene.id&&r.name===d.name);
   if(found.length>1)throw new Error('Duplicate clue');
-  if(found[0])update('scene_discoverables',found[0],{storage_path:path});
-  else insert('scene_discoverables',{campaign_id:campaignId,scene_id:scene.id,name:d.name,storage_path:path,x:d.x,y:d.y,hidden:d.hidden,created_by:campaign.owner_id});
+  const values={name:d.name,x:d.x,y:d.y,hidden:d.hidden,storage_path:path};
+  if(found[0])update('scene_discoverables',found[0],{hidden:d.hidden,storage_path:path});
+  else insert('scene_discoverables',{campaign_id:campaignId,scene_id:scene.id,...values,created_by:campaign.owner_id});
  }
+ const finalDefinition=encounters.find(e=>e.key==='final');
+ const finalEncounter=unique(db.encounters.filter(r=>r.name===finalDefinition.name),'Final Table encounter');
+ update('encounters',finalEncounter,{notes:finalDefinition.notes});
  const jester=monsters.find(m=>m.name==='Veyrholt — Jester');const {asset:assetKey,...definition}=jester;
  let template=db.monster_templates.find(m=>m.name===jester.name);
  if(template&&Object.entries(definition).some(([k,v])=>!equal(template[k],v)))throw new Error('Existing shared Jester template differs; review first');

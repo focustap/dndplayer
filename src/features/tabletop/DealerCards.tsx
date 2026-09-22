@@ -115,8 +115,8 @@ export function DealerCardBuilderPreview() {
       </div>
     </div>}
 
-    {showGallery && <div className="dealer-gallery-backdrop" role="presentation" onClick={() => setShowGallery(false)}>
-      <section className="dealer-gallery" role="dialog" aria-modal="true" aria-label="Dealer card artwork preview" onClick={event => event.stopPropagation()}>
+    {showGallery && <div className="dealer-gallery-backdrop">
+      <section className="dealer-gallery" role="dialog" aria-modal="true" aria-label="Dealer card artwork preview">
         <header><div><strong>Dealer deck artwork</strong><small>{loaded}/12 uploaded</small></div><button onClick={() => setShowGallery(false)}>Close</button></header>
         <div className="dealer-gallery-grid">
           {DEALER_CARDS.map(card => <button key={card.id} className={selected === card.id ? "selected" : ""} onClick={() => setSelected(card.id)}>
@@ -194,7 +194,7 @@ export function DealerCards() {
             <details><summary>Participants · initiative order</summary>{holders.map(h => <label key={h.id}><input type="checkbox" checked={!excluded.includes(h.id)} onChange={() => setExcluded(list => list.includes(h.id) ? list.filter(id => id !== h.id) : [...list, h.id])} />{h.name}{deck.stage === 'active' && !deck.active[h.id] && <button onClick={() => run({ type: 'entrant', holder: h })}>Deal entrant</button>}</label>)}<p>Include the Dealer, participating pets, allies and summons. Keep nonparticipating Dog outside.</p></details>
             <details><summary>Research &amp; interventions · {deck.interventions}/2 this round</summary>
               <p>Set only charges the party earned. One intervention per creature’s draw; resolve before turns. Duplicate sources do not add charges.</p>
-              {(Object.keys(deck.charges) as Array<keyof typeof deck.charges>).map(key => <label key={key}>{({ read: 'Read the Back', objection: 'Objection', burn: 'Burn a Card', cut: 'Cut the Deck' })[key]}<input aria-label={`${key} charges`} type="number" min="0" max={key === 'burn' || key === 'cut' ? 1 : 2} value={deck.charges[key]} onChange={e => run({ type: 'charges', charges: { ...deck.charges, [key]: Number(e.target.value) } })} /></label>)}
+              {(['read', 'objection', 'burn', 'cut'] as const).map(key => <label key={key}>{({ read: 'Read the Back', objection: 'Objection', burn: 'Burn a Card', cut: 'Cut the Deck' })[key]}<input aria-label={`${key} charges`} type="number" min="0" max={key === 'burn' || key === 'cut' ? 1 : 2} value={deck.charges[key]} onChange={e => run({ type: 'charges', charges: { ...deck.charges, [key]: Number(e.target.value) } })} /></label>)}
               <button disabled={deck.stage !== 'between' || !deck.charges.read || !!deck.preview || deck.interventions >= 2} onClick={() => run({ type: 'read' })}>Read the Back</button>
               {deck.preview && <div className="dealer-preview"><p>Next cards: {deck.preview.map(c => cardDefinition(c).name).join(' → ') || 'Neutral blanks'}</p><button onClick={() => run({ type: 'reverse' })}>Reverse next two</button><button onClick={() => run({ type: 'finish-read' })}>Keep this order</button></div>}
               <label>Burn a Card<select value={burn} onChange={e => setBurn(e.target.value as CardId)}>{DEALER_CARDS.map(c => <option key={c.id} value={c.id}>{c.name}{deck.burned.includes(c.id) ? ' · burned' : ''}</option>)}</select></label>
