@@ -80,6 +80,8 @@ Petition queues, flood maps, an old council chamber and a long portrait hall rec
 
 Reeve Elian, Sister Avra or Lady Ilyra can direct the party to the portrait hall without a roll. Examining the Dealer's portrait automatically reveals the third password fragment: **HEARTS**. The artwork should communicate this through an unmistakable heart-suit motif or visible card detail while the discoverable text records the exact word **HEARTS**. The portrait can also establish that the Dealer supplied the image himself when the deed changed hands.
 
+One of the oldest House Veyr paintings quietly contains **VII** in the background, carved into old estate stone. This is optional foreshadowing, not the chapter's VII reveal: do not point it out while presenting **HEARTS**, do not make it a required clue, and do not explain it. If a player deliberately studies the older paintings or notices the mark in the artwork, confirm that it matches the Greymere symbol. The painting predates the Dealer's ownership of House Veyr.
+
 The hall's ordinary records explain Veyrholt and House Veyr history, including that Ilyra lawfully owned and wagered the estate. They do not explain Hollow cosmology. No default combat. Exit: overview.
 
 ## NPC reference — DM only
@@ -130,7 +132,7 @@ Training deck explains challengeable card selection: ten minutes earns **Cut the
 
 ### Original Foundations
 
-Ancient masonry cut by fresh table supports; ward scratches unrelated to card suits. Mara compares facts: sealed space existed first, deck existed first, amplification followed their meeting. Do not explain origins. DC 12 Perception finds VII under plaster, or an Usher tears plaster during combat. Do not translate it. Observer's travel note points to a missing visitor from Lornwatch Abbey; Mara has a backup receipt.
+Ancient masonry cut by fresh table supports; ward scratches unrelated to card suits. Mara compares facts: sealed space existed first, deck existed first, amplification followed their meeting. Do not explain origins. **Do not place or reveal VII in the Foundations.** Preserve the recurring symbol for the History Hall foreshadowing and the guaranteed post-Dealer Final Table reveal. Observer's travel note points to a missing visitor from Lornwatch Abbey; Mara has a backup receipt.
 
 **Collection engine:** Two Claim Ushers and one Wager Hound (AC 13, HP 22, speed 40, bite +4, 1d8+2 force). Trigger: cross marked claim line or open receipt cage without writ. Valid writ or returning displaced receipt bypasses combat. Hound must move 10 ft in a straight line before attacking; telegraph its route, block with crates. Ushers protect cabinet, never pursue upstairs. Columns give cover. Two actions turning the visible claim wheel unravel all summons, alternative to killing them. Easier: one Usher; harder: Hound 30 HP. Reward: 30 gp unclaimed maintenance pay, healing potion, **Burn a Card** release stamp. No check/combat required to earn the stamp. Demonstrate on a practice card. Short rest allowed after engine disabled. Exits: Private House, Final Table.
 
@@ -193,7 +195,9 @@ Retreat permits recovery. Dealer recovers after long rest. Spent research resour
 
 At 0 HP his defeat breaks the Catalyst connection and collapses the local Hollow inward, not the city. Cards still, collection constructs unravel, claimed doors open. Dealer is not automatically dead: stabilize with DC 10 Medicine/healing or use ordinary dying rules. If spared he may recur under supervision; original sorcery is exhausted/unreliable, not a money exploit.
 
-Evidence supports one revelation: deck predates estate, dormant site predates Dealer, amplification followed contact, defeating him ended the effects. Mara can summarize this if asked, never reveal full cosmology.
+**Automatic VII reveal:** after the Dealer is defeated and the room's supernatural effects settle, the central table shifts or the stone directly beneath it fractures enough to expose an old carving in the original estate masonry: **VII**. This is automatic, requires no check and must not be missable. Explicitly tell the players they recognize the same mark from Greymere. The carving is visibly older than the Dealer's occupation and is not card-themed or in his handwriting. Do not translate it or explain who made it. If the party noticed VII in the old History Hall painting, they can now connect that the symbol was present at House Veyr before the Dealer arrived.
+
+Evidence supports one revelation: deck predates estate, dormant site predates Dealer, amplification followed contact, defeating him ended the effects. Mara can summarize this if asked, never reveal full cosmology. The VII recurrence adds a new question rather than answering the symbol's meaning.
 
 Pot has living claimants, not automatic party ownership. Return property, negotiate a publicly agreed salvage fee, or steal with visible civic consequences. Restitution rewards: 120 gp civic payment, 75 gp grateful claimants, two healing potions, Wayfarer's Writ (free modest lodging/mundane resupply), and an unclaimed uncommon Cloak of the Manta Ray gifted by claimants. Road 40 gp separate. Ilyra may contest the estate transfer; no automatic reversal of every wager. Level 4 after safe rest. Record survival, restitution and recovered objects AFTER play.
 
@@ -219,7 +223,6 @@ DM-note checks, not image popups. Careful ten-minute search once/location; use p
 | Gallery History 14 | Crown is stage brass, 2 gp; absurd wager |
 | Gallery Investigation 13 | Pre-estate playbill; actual plot clue, automatic backup |
 | Private House Perception 14 | Mundane rapier; identifiable claimant |
-| Foundations Perception 12 | VII under plaster; unresolved recurring clue |
 | Gallery Investigation 15 | Foreign square-holed coin; souvenir, no promised future role |
 
 ## Implementation and assets
@@ -232,6 +235,6 @@ Secrets and runnable mechanics go in OWNER/DM-only campaign_notes. All dialogue/
 
 The existing ordinary inn and civic-hall interiors have been visually reviewed and reused for the Gilded Lamb and Civic Hall. Their real R2 storage keys need not be renamed; they carry no discarded supernatural mechanic. Ordinary NPC portraits are retained. Other historical binary assets stay untouched but unused.
 
-Required missing maps remain as inventoried until the Veyrholt cleanup pass decides which optional House Veyr scenes are retained. New required puzzle art: one Arcana-shop clue discoverable for **RED**, one graveyard/Jester clue discoverable for **9**, and the Dealer portrait / Civic Hall discoverable for **HEARTS**. Also prepare Jester token/portrait art for the graveyard and first circus-room fights if no suitable existing art is available. Required core portraits still include Dealer, Ysabet and Ilyra. Use the existing R2 asset pipeline and do not commit generated heavy binary assets directly to Git.
+Required missing maps remain as inventoried until the Veyrholt cleanup pass decides which optional House Veyr scenes are retained. New required puzzle art: one Arcana-shop clue discoverable for **RED**, one graveyard/Jester clue discoverable for **9**, and the Dealer portrait / Civic Hall discoverable for **HEARTS**. One older History Hall painting should quietly contain the same **VII** mark from Greymere as optional background foreshadowing. The Final Table must also have a hidden DM-controlled **VII** reveal at the original stone beneath the central table, shown automatically only after the Dealer is defeated; it must not depend on a Perception check or optional Foundations content. Also prepare Jester token/portrait art for the graveyard and first circus-room fights if no suitable existing art is available. Required core portraits still include Dealer, Ysabet and Ilyra. Use the existing R2 asset pipeline and do not commit generated heavy binary assets directly to Git.
 
 Verification checklist: entry-to-exit reachability; valid IDs; deck timing/counterplay; mostly non-story optional finds; no player-secret leakage; no-op repeat import; protected-state equality including Hobb; real asset registry; lint/typecheck/build. Distinguish setup status from events actually played.
