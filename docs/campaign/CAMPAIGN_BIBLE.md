@@ -289,6 +289,8 @@ Jess's father and Zach's Dog are intended to be found in the first Hollow sequen
 
 A jail-cell area is part of the intended visual/story setup for these prisoners.
 
+The jail-cell prisoners include **Edrin Vale**, found alive after the trail from his abandoned camp leads into the Hollow. He replaces one generic captive in the existing Catalyst Room layout.
+
 The first Hollow culminates in the destruction/defeat of **The Warden**, after which the party can understand that Harlan Voss's strange boundary magic existed before he became the Catalyst and was amplified/corrupted by the Hollow.
 
 This does not establish that every Catalyst is created in the same way.
