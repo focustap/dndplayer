@@ -1,4 +1,4 @@
-import { ChevronRight, Eye, EyeOff, Plus, RotateCcw, Trash2, X } from "lucide-react";
+import { ChevronRight, Eye, EyeOff, ListPlus, Plus, RotateCcw, Trash2, X } from "lucide-react";
 import { useRef, useState, type CSSProperties } from "react";
 import { CONDITION_OPTIONS, isDmRole, type AbilityScores, type AttackPreset, type Character, type MonsterAction, type MonsterInstance, type MonsterTemplate } from "../../domain/types";
 import { useTabletop } from "../../contexts/TabletopContext";
@@ -83,6 +83,7 @@ function InspectorContent({ tokenId }: { tokenId: string }) {
       <button className="attack-start" onClick={() => void actions.startAttack(token.id, attackPreset, attackPreset==="WIZARD"?attackColor:null)}>{state.attackSelection?.attackerTokenId === token.id ? "Choose a target on the map" : attackPreset==="SNEAK_ATTACK"||attackPreset==="SMITE"||attackPreset==="DRUID"||attackPreset==="WIZARD"?"Animate ability":"Animate attack"}</button>
     </section>}
     <div className="stat-trio"><Stat label="ARMOR" value={String(ac)} /><Stat label="SPEED" value={`${speed} ft`} /><Stat label="SIZE" value={monster?.template?.creatureSize ? `${monster.template.creatureSize} · ${token.size}×` : `${token.size}×`} /></div>
+    {dm && monster && <button className="direct-edit-toggle" onClick={() => void actions.addToInitiative(token.id)}><ListPlus />Roll initiative for {token.displayName}</button>}
     {dm && <label className="form-field token-size-control">
       <span>TOKEN SIZE ON MAP</span>
       <select value={String(token.size)} onChange={(event) => void actions.patchToken(token.id, { size: Number(event.target.value) })}>
