@@ -2096,7 +2096,15 @@ export function TabletopProvider({
             entries: [],
           };
         }
-        const score = initiative ?? Math.floor(Math.random() * 20) + 1;
+        const monster = token.type === "MONSTER"
+          ? s.monsterInstances.find((instance) => instance.id === token.referenceId)
+          : undefined;
+        const dexterity = monster?.template?.abilities.dex ?? 10;
+        const initiativeModifier = monster
+          ? (monster.template?.initiative.modifier ?? Math.floor((dexterity - 10) / 2))
+          : 0;
+        const score =
+          initiative ?? Math.floor(Math.random() * 20) + 1 + initiativeModifier;
         const existing = combat.entries.find((entry) => entry.tokenId === token.id);
         const entry = existing
           ? { ...existing, initiative: score }
