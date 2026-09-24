@@ -1564,27 +1564,87 @@ export function TabletopProvider({
       async deleteToken(id) {
         const s = stateRef.current;
         if (!s || !isDmRole(s.role)) return;
+
+        const activeEntryId =
+          s.combat.entries[s.combat.currentIndex]?.id ?? null;
+        const remainingEntries = s.combat.entries
+          .filter((entry) => entry.tokenId !== id)
+          .map((entry, index) => ({ ...entry, sortOrder: index }));
+        const preservedCurrentIndex = activeEntryId
+          ? remainingEntries.findIndex((entry) => entry.id === activeEntryId)
+          : -1;
+        const nextCurrentIndex =
+          preservedCurrentIndex >= 0
+            ? preservedCurrentIndex
+            : Math.min(
+                s.combat.currentIndex,
+                Math.max(0, remainingEntries.length - 1),
+              );
+
         if (isSupabaseConfigured && campaignId !== "demo") {
+          const { error: initiativeError } = await supabase
+            .from("initiative_entries")
+            .delete()
+            .eq("token_id", id);
+          if (initiativeError) throw initiativeError;
+
+          await Promise.all(
+            remainingEntries.map((entry) =>
+              supabase
+                .from("initiative_entries")
+                .update({ sort_order: entry.sortOrder })
+                .eq("id", entry.id)
+                .then(({ error }) => {
+                  if (error) throw error;
+                }),
+            ),
+          );
+
+          if (s.combat.active && nextCurrentIndex !== s.combat.currentIndex) {
+            const { error: combatError } = await supabase
+              .from("combat_sessions")
+              .update({ current_index: nextCurrentIndex })
+              .eq("id", s.combat.id);
+            if (combatError) throw combatError;
+          }
+
           const { error } = await supabase.from("tokens").delete().eq("id", id);
           if (error) throw error;
         }
-        setState((current) =>
-          current
-            ? {
-                ...current,
-                selectedTokenIds: current.selectedTokenIds.filter(
-                  (tokenId) => tokenId !== id,
-                ),
-                selectedTokenId:
-                  current.selectedTokenId === id
-                    ? current.selectedTokenIds.filter(
-                        (tokenId) => tokenId !== id,
-                      ).at(-1) ?? null
-                    : current.selectedTokenId,
-                tokens: current.tokens.filter((t) => t.id !== id),
-              }
-            : current,
-        );
+
+        setState((current) => {
+          if (!current) return current;
+          const currentActiveEntryId =
+            current.combat.entries[current.combat.currentIndex]?.id ?? null;
+          const entries = current.combat.entries
+            .filter((entry) => entry.tokenId !== id)
+            .map((entry, index) => ({ ...entry, sortOrder: index }));
+          const preservedIndex = currentActiveEntryId
+            ? entries.findIndex((entry) => entry.id === currentActiveEntryId)
+            : -1;
+          const currentIndex =
+            preservedIndex >= 0
+              ? preservedIndex
+              : Math.min(
+                  current.combat.currentIndex,
+                  Math.max(0, entries.length - 1),
+                );
+
+          return {
+            ...current,
+            selectedTokenIds: current.selectedTokenIds.filter(
+              (tokenId) => tokenId !== id,
+            ),
+            selectedTokenId:
+              current.selectedTokenId === id
+                ? current.selectedTokenIds
+                    .filter((tokenId) => tokenId !== id)
+                    .at(-1) ?? null
+                : current.selectedTokenId,
+            tokens: current.tokens.filter((t) => t.id !== id),
+            combat: { ...current.combat, currentIndex, entries },
+          };
+        });
       },
       async patchToken(id, patch) {
         const s = stateRef.current;
