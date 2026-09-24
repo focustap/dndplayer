@@ -210,6 +210,12 @@ After or during the rescue, prisoners can establish the truth in pieces.
 
 He explains that the Warden repeatedly said the prisoners were safe and created new circles whenever someone tried to escape.
 
+### Edrin Vale
+
+Edrin is found alive in the jail-cell area. This is the direct payoff to the guards asking the party to find him and to the trail from Edrin's Camp.
+
+He can confirm that he found what looked like a fresh Warden circle near his traps. After investigating it, he became confused and remembers being dragged toward the Hollow. If the party mentions his knife, he recognizes it immediately.
+
 ### Rescued guard
 
 The guard recognizes the ruined face as Harlan Voss from old stories and images.
