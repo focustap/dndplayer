@@ -3,15 +3,15 @@ export const DEALER_CARDS = [
   { id: 'blade', name: 'Blade', symbol: '⚔', rule: 'First melee hit on your turn adds 1d6 original-type damage. Cannot make ranged attacks; save spells and utility still work.' },
   { id: 'glass', name: 'Glass', symbol: '◇', rule: 'Once on your turn, add 1d6 to one damage roll. First damage you take this round adds 1d6 of that damage type. No bonus from reflected damage.' },
   { id: 'saint', name: 'Saint', symbol: '✦', rule: 'Cannot deal damage, including ongoing effects you control. Healing dice maximized. May use action to touch a creature (including self) restoring 8 HP, once per holder/round. Help, Dodge and nondamaging control allowed.' },
-  { id: 'dead-man', name: 'Dead Man', symbol: '☾', rule: 'Optional: disappear until START of your turn this round, then return to same/nearest safe free space and take full turn. While absent cannot act, affect play or be targeted; concentration persists, controlled ongoing effects pause. May decline.' },
+  { id: 'dead-man', name: 'Dead Man', symbol: '☾', rule: 'Immediately disappear when this card is dealt. Return at the START of your next turn in the same/nearest safe free space and take your full turn. While absent you cannot act, affect play or be targeted; concentration persists and controlled ongoing effects pause.' },
   { id: 'crown', name: 'Crown', symbol: '♛', rule: 'Advantage on your attacks; attacks against you have advantage. Normal cancellation applies.' },
   { id: 'chains', name: 'Chains', symbol: '∞', rule: 'Speed 0; immune to forced movement and being knocked prone. Teleportation allowed. If already prone, cannot stand until expiration. Actions remain available.' },
   { id: 'mirror', name: 'Mirror', symbol: '◈', rule: 'First OTHER creature damaging you takes 1d6 force afterward, no reaction. Cannot trigger Mirror, Glass, Debt or any other card; self-cost does not trigger it.' },
-  { id: 'miser', name: 'Miser', symbol: '♦', rule: 'Cannot regain HP. First time on your turn you damage another creature, gain 4 temporary HP; do not stack, leftovers expire next round.' },
+  { id: 'miser', name: 'Miser', symbol: '♦', rule: 'Whenever you deal damage to another creature, after that damage resolves you take damage equal to the amount actually dealt.' },
   { id: 'fool', name: 'Fool', symbol: '☆', rule: 'First natural 1 on an attack becomes 20; first natural 20 becomes 1, each once, only the die used after advantage/disadvantage. Never convert the result again. No saves or death saves affected.' },
-  { id: 'duelist', name: 'Duelist', symbol: '⚜', rule: 'Exactly one enemy within 5 ft at attack time: first hit on your turn adds 1d6. Two or more: attacks have disadvantage. None: no effect.' },
-  { id: 'hound', name: 'Hound', symbol: '♞', rule: 'Move in straight segments of at least 10 ft before turning; may stop early. After 10 ft voluntary movement on your turn, next hit that turn adds 1d6. No forced movement/teleport credit.' },
-  { id: 'debt', name: 'Debt', symbol: '♠', rule: 'First damage to another creature on your turn adds 1d6 to one roll, then lose 2 HP directly, minimum 1 HP. Not damage, ignores temp HP, cannot be reduced or trigger effects.' },
+  { id: 'duelist', name: 'Duelist', symbol: '⚜', rule: 'At the start of your turn, choose one enemy. Your attacks against that enemy have advantage; you cannot attack other creatures this turn.' },
+  { id: 'hound', name: 'Hound', symbol: '♞', rule: 'You may deal damage only with melee attacks. Non-damaging actions and spells are allowed.' },
+  { id: 'debt', name: 'Debt', symbol: '♠', rule: 'When you hit, you may add any amount up to your current HP as bonus damage to that hit. After the hit resolves, you take the same amount of damage you added. This self-damage cannot be reduced or redirected and can reduce you to 0 HP.' },
 ] as const;
 export type CardId = typeof DEALER_CARDS[number]['id'];
 export type HeldCard = CardId | 'blank';
