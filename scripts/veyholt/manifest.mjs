@@ -52,8 +52,16 @@ export const npcs=[
    {name:'The Last Door Key',description:'Once per week, turn this key in a closed door to make it open onto another doorway you have personally walked through before.',price_gp:5000,quantity:1},
    {name:'Bottled Minute',description:'Break the sealed silver hourglass to immediately take one additional turn. The item is destroyed when used.',price_gp:8000,quantity:1},
  ]}),
- npc('Kest Rane','market',480,500,["I know the delivery routes, but they won't get you inside. Every entrance asks the same question.","State his favorite card. Money won't open it, and neither will shifting my crates."]),
- npc('Nera Vale','market',700,350,["Speak into this coin. When I flip it, you'll hear yourself again. One sound, one coin, one performance.","I came for an audience. You can keep the enormous wagers."],{asset:'nera'}),
+ npc('Kest Rane','market',480,500,["I know the delivery routes, but they won't get you inside. Every entrance asks the same question.","State his favorite card. Money won't open it, and neither will shifting my crates."],{shop:[
+   {name:'Chalk bundle',description:'Ten sticks of plain white chalk for marking routes, doors, or dungeon walls.',price_gp:1,quantity:6},
+   {name:'Ball bearings',description:'A pouch of metal ball bearings suitable for scattering across a 10-foot square.',price_gp:1,quantity:3},
+   {name:'Caltrops',description:'A bag of iron caltrops for covering a 5-foot square.',price_gp:1,quantity:3},
+   {name:'Grappling hook',description:'A sturdy iron grappling hook sized for ordinary rope.',price_gp:2,quantity:2},
+   {name:'Tinderbox',description:'Flint, steel, and tinder for starting a small fire.',price_gp:1,quantity:3},
+ ]}),
+ npc('Nera Vale','market',700,350,["Speak into this coin. When I flip it, you'll hear yourself again. One sound, one coin, one performance.","I came for an audience. You can keep the enormous wagers."],{asset:'nera',shop:[
+   {name:'Echo Coin recording',description:'Nera charges a copper coin with up to six seconds of sound you provide. Flip it once to replay the sound, then the coin becomes mundane. It cannot listen remotely or create silence.',price_gp:2,quantity:null},
+ ]}),
  npc('Rusk Fen','market',900,550,["Keep my palm on it and it weighs twice as much. Take my hand away and it's ordinary again.","My employer wagered the cart. I'm still deciding whether to earn another or try to win it back."],{asset:'rusk'}),
  npc('Sable Quill','gallery',600,350,["I borrow sharpness. The knife goes blunt; my quill cuts cord. A brief trick with inconvenient limits.","I'm watching how he handles exceptions. Anyone can announce a rule. The exceptions tell you what it means."],{asset:'sable'}),
  npc('Deacon Olyss','graveyard',480,600,["Leave offerings if you wish. Leave the mourners in peace whether you do or not.","A few painted fools have been creeping through here after dark. Masks, bells, cards tucked into the graves. They call themselves Jesters. I call them vandals.","The Veyrs are buried along the old wall. If you're looking into the Dealer, start there — but don't mistake superstition for history. The Civic Hall keeps the real records."]),
@@ -65,13 +73,26 @@ export const npcs=[
  // Existing ordinary residents keep their identities and genuine portraits.
  npc('Dorrin Pike','inn',380,610,["I sell wool. The gamblers still need blankets, even when they cannot afford a room."]),
  npc('Yara Flint','inn',1000,650,["My contract is to escort a scholar home. It says nothing about paying her gambling debts.","The delivery door is sealed too. Kest can't get you around that favorite-card question."]),
- npc('Nessa Calder','market',350,700,["A bent hinge, a cracked pan, a wagon fitting: I can mend useful things. Luck charms are someone else's trade.","Civic writs carry blue wax. The Dealer's runners wave red paper and hope nobody reads it."]),
+ npc('Nessa Calder','market',350,700,["A bent hinge, a cracked pan, a wagon fitting: I can mend useful things. Luck charms are someone else's trade.","Civic writs carry blue wax. The Dealer's runners wave red paper and hope nobody reads it."],{shop:[
+   {name:'Hempen rope — 50 ft',description:'Fifty feet of sturdy hempen rope.',price_gp:1,quantity:4},
+   {name:'Crowbar',description:'A stout iron crowbar.',price_gp:2,quantity:2},
+   {name:'Hooded lantern',description:'A metal hooded lantern; fuel sold separately.',price_gp:5,quantity:2},
+   {name:'Flask of oil',description:'One flask of lamp oil.',price_gp:1,quantity:8},
+   {name:"Thieves' tools",description:'A basic set of picks, files, pliers, a small mirror, and narrow-bladed scissors.',price_gp:25,quantity:1},
+ ]}),
  npc('Sister Avra Seln','civic',950,330,["The flood records are older than the gaming halls. This city had centuries of history before anyone called it a gambling town.","The west hall follows House Veyr owner by owner. Same pose, same careful style — right up until the Dealer's portrait. You will know which one I mean.","House Veyr's lower stonework predates the estate. The archive map marks a sealed maintenance route beneath it."]),
  npc('Maela Thorn','graveyard',350,850,["My husband disliked cards. I leave him flowers, whatever the challengers do.","The Veyr names run along the old wall. Lady Ilyra still visits when she can bear it."]),
  npc('Edda Pike','graveyard',650,950,["This little coin was my mother's. I'm leaving it for her, not for the Dealer."]),
  npc('Corven Marr','graveyard',600,1120,["I came along the Glass Road. The graves here tell more honest stories than the bookmakers.","Road talk says the House lights burn beneath the ground after midnight. I keep to inns after dark."]),
- npc('Sela Ward','market',320,820,["Fresh eggs, no wagers. If you want breakfast, pay for breakfast."]),
- npc('Oren Moss','market',550,900,["Keep the gate latched while the cart goes through. Crowds frighten the animals."]),
+ npc('Sela Ward','market',320,820,["Fresh eggs, no wagers. If you want breakfast, pay for breakfast."],{shop:[
+   {name:'Trail ration',description:'One day of bread, dried meat, nuts, and hard cheese packed for travel.',price_gp:1,quantity:12},
+   {name:'Waterskin',description:'A simple filled leather waterskin.',price_gp:1,quantity:6},
+   {name:'Fresh market bundle',description:'Bread, fruit, cheese, and a half-dozen eggs; enough for a simple party meal.',price_gp:1,quantity:null},
+ ]}),
+ npc('Oren Moss','market',550,900,["Keep the gate latched while the cart goes through. Crowds frighten the animals."],{shop:[
+   {name:'Animal feed — one day',description:'A sack of feed sufficient for one Medium pack animal for a day.',price_gp:1,quantity:8},
+   {name:'Tack and harness',description:'Basic tack and harness for a riding or pack animal.',price_gp:2,quantity:2},
+ ]}),
  ...['Ashbell — Sheep','Bracken — Goat','Patch — Farm Dog','Copper — Hen'].map((name,i)=>npc(name,'market',750+i*70,850,[],{interactive:false})),
 ];
 const action=(name,description,bonus=null,dice=null,type='Force',ranged=false)=>({name,description,kind:'ACTION',usage:null,attackType:bonus===null?'OTHER':ranged?'RANGED':'MELEE',attackBonus:bonus,reach:ranged?null:5,range:ranged?{normal:60,long:60,unit:'ft'}:null,damage:dice?[{average:null,dice,flatBonus:Number(dice.match(/\+(\d+)/)?.[1]??0),damageType:type}]:[],save:null,conditions:[],effects:[],variants:[]});
