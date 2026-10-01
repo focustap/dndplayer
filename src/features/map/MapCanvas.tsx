@@ -93,7 +93,7 @@ export function MapCanvas() {
         !state.placement &&
         !state.attackSelection &&
         !token.locked &&
-        (canDm || (token.type === "PLAYER" && token.ownerUserId === user?.id)),
+        (canDm || (["PLAYER", "NPC", "MONSTER"].includes(token.type) && token.ownerUserId === user?.id)),
     };
   }, [state, playerView, builder, user?.id]);
 
