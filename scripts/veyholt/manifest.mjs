@@ -42,7 +42,6 @@ export const npcs=[
    {name:'Antitoxin',description:'Advantage on saves against poison for 1 hour; no benefit to undead or constructs.',price_gp:50,quantity:2},
    {name:'Luminous bead',description:'A harmless bead that sheds dim light in a 5-foot radius.',price_gp:5,quantity:2},
    {name:'Bag of Holding',description:'A scuffed but fully functional extradimensional bag. Holds far more than its outside dimensions suggest.',price_gp:275,quantity:1},
-   {name:'Immovable Rod',description:'Press the button to magically fix the rod in place. It can support up to 8,000 pounds before the magic gives way.',price_gp:300,quantity:1},
    {name:'Sending Stones',description:'A mismatched pair of stones that can cast Sending to each other once per day.',price_gp:250,quantity:1},
    {name:'Hat of Disguise',description:'While wearing this hat, you can cast Disguise Self at will. The disguise ends if the hat is removed.',price_gp:325,quantity:1},
    {name:'Gloves of Thievery',description:'These nearly weightless gloves grant a +5 bonus to Dexterity (Sleight of Hand) checks and checks made to pick locks.',price_gp:300,quantity:1},
