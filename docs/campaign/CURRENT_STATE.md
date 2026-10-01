@@ -4,20 +4,18 @@ Use this file to understand where the campaign is **right now**. It should be up
 
 ## Current chapter status
 
-The party is completing / has just completed the **Greymere Hollow** storyline.
+**Live state after the most recent session (2026-10-01):** the party has reached **Veyrholt**, completed the transition from Greymere, and is a four-character **Level 3** party: druid, paladin, wizard and rogue.
 
-The intended immediate state is:
+The session ended inside **The Gilded Lamb**. The party has learned the Dealer used to talk about a **favorite card** and that anyone who knew it was welcome at his table. They do **not** yet know the complete card.
 
-- the party has investigated the disappearances north of Greymere
-- they have followed the trail through Edrin's Camp and into the Hollow
-- they have encountered the recurring `VII` mark
-- they have fought through the first Hollow dungeon
-- Jess's father is found in the first Hollow
-- Zach's Dog is found in the first Hollow
-- villagers/prisoners are also present in the jail-cell area
-- the local Catalyst is defeated or is about to be defeated
+Immediate next play is the open Veyrholt investigation. The city locations may be visited in any order:
+- **Morrow's Arcana** automatically supplies **RED**
+- **The Lucky Graveyard** introduces the independent Jesters and automatically supplies **9** after the ambush
+- **Civic Hall** automatically supplies **HEARTS**
+- **The Stranger's Market** is optional city exploration with real vendors and mundane utility stock
+- once the party assembles **Red Nine of Hearts**, the circus entrance opens to the prepared Jester fight and then the Final Table / Dealer
 
-Do not start the next chapter as though none of this happened.
+Greymere is completed context, not the current scene. Do not replay its transition hook or treat the party as still deciding whether to travel to Veyrholt.
 
 ## What the players should understand by the end of Greymere
 
