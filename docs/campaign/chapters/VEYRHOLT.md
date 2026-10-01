@@ -179,15 +179,15 @@ Shuffle one set of twelve openly. Deal in initiative order without replacement. 
 | Blade | First melee hit on your turn adds 1d6 original-type damage. Cannot make ranged attacks; save spells and utility still work. |
 | Glass | Once on your turn, add 1d6 to one damage roll. First damage you take this round adds 1d6 of that damage type. No bonus from reflected damage. |
 | Saint | Cannot deal damage, including ongoing effects you control. Healing dice maximized. May use action to touch a creature (including self) restoring 8 HP, once per holder/round. Help, Dodge and nondamaging control allowed. |
-| Dead Man | Optional: disappear until START of your turn this round, then return to same/nearest safe free space and take full turn. While absent cannot act, affect play or be targeted; concentration persists, controlled ongoing effects pause. May decline. |
+| Dead Man | Immediately disappear when this card is dealt. Return at the START of your next turn in the same/nearest safe free space and take your full turn. While absent you cannot act, affect play or be targeted; concentration persists and controlled ongoing effects pause. |
 | Crown | Advantage on your attacks; attacks against you have advantage. Normal cancellation applies. |
 | Chains | Speed 0; immune to forced movement and being knocked prone. Teleportation allowed. If already prone, cannot stand until expiration. Actions remain available. |
 | Mirror | First OTHER creature damaging you takes 1d6 force afterward, no reaction. Cannot trigger Mirror, Glass, Debt or any other card; self-cost does not trigger it. |
-| Miser | Cannot regain HP. First time on your turn you damage another creature, gain 4 temporary HP; do not stack, leftovers expire next round. |
+| Miser | Whenever you deal damage to another creature, after that damage resolves you take damage equal to the amount actually dealt. |
 | Fool | First natural 1 on an attack becomes 20; first natural 20 becomes 1, each once, only the die used after advantage/disadvantage. Never convert the result again. No saves or death saves affected. |
-| Duelist | Exactly one enemy within 5 ft at attack time: first hit on your turn adds 1d6. Two or more: attacks have disadvantage. None: no effect. |
-| Hound | Move in straight segments of at least 10 ft before turning; may stop early. After 10 ft voluntary movement on your turn, next hit that turn adds 1d6. No forced movement/teleport credit. |
-| Debt | First damage to another creature on your turn adds 1d6 to one roll, then lose 2 HP directly, minimum 1 HP. Not damage, ignores temp HP, cannot be reduced or trigger effects. |
+| Duelist | At the start of your turn, choose one enemy. Your attacks against that enemy have advantage; you cannot attack other creatures this turn. |
+| Hound | You may deal damage only with melee attacks. Non-damaging actions and spells are allowed. |
+| Debt | When you hit, you may add any amount up to your current HP as bonus damage to that hit. After the hit resolves, you take the same amount of damage you added. This self-damage cannot be reduced or redirected and can reduce you to 0 HP. |
 
 Chapter rule: bonus card dice are not doubled by criticals. Only one held card, no stacking. No card removes a full player's turn. Normal spell/resource costs remain. Saint can suppress Mirror because its holder cannot deal damage. Rules apply equally to everyone.
 
