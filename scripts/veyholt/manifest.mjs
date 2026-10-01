@@ -130,7 +130,7 @@ export const discoverables=[
  {scene:'arcana',asset:'redClue',name:'Pawned card case — RED is engraved inside its damaged lid.',x:960,y:480,hidden:false},
  {scene:'graveyard',asset:'nineClue',name:'Jester ritual token — 9 is carved above a grinning mask.',x:540,y:480,hidden:true},
  {scene:'civic',asset:'heartsClue',name:'House Veyr portraits — the Dealer’s theatrical portrait displays HEARTS.',x:1060,y:240,hidden:false},
- {scene:'civic',asset:'historyVII',name:'Old House Veyr painting — VII is carved into estate stone in the background.',x:820,y:230,hidden:true},
+ {scene:'civic',asset:'historyVII',name:'Old House Veyr painting',x:820,y:230,hidden:true},
  {scene:'final',asset:'finalVII',name:'Beneath the shifted Final Table — an old VII carving in the original estate stone, the same mark seen in Greymere.',x:627,y:627,hidden:true},
 ];
 export const messengerPages=[
