@@ -64,6 +64,14 @@ Stock: four healing potions (50 gp, 2d4+2 HP); one Feather Fall scroll (25 gp); 
 
 Food, gear, wagons, performances, counterfeit charms and pawned tools. Kest Rane may still know delivery routes around House Veyr, but no service route bypasses the circus password. Nera demonstrates stored sounds; Rusk works as a porter (see NPCs). Both have lives beyond the plot.
 
+The market must feel like an actual marketplace, not only a dialogue stop. Prepared sellers:
+- **Kest Rane:** chalk bundles, ball bearings, caltrops, grappling hooks and tinderboxes.
+- **Nera Vale:** one-use Echo Coin recordings containing up to six seconds of a customer-provided sound; the recording plays once when flipped, then the coin becomes mundane. This does not allow remote listening or magical silence.
+- **Nessa Calder:** hempen rope, crowbars, hooded lanterns, lamp oil and one set of thieves' tools.
+- **Sela Ward:** trail rations, filled waterskins and simple fresh-food bundles.
+- **Oren Moss:** animal feed and basic tack/harness.
+Use the prepared finite quantities in Wayfinder; ordinary food/services may be effectively repeatable. These vendors sell mundane utility first and should not compete with Morrow's Arcana as the magic-item shop.
+
 Optional pickpocket chase: three contributions using DC 12 Perception/Athletics/Acrobatics or a clever barrier without a roll; two successes catch the thief. Failure leads to the food bargain above, not a dead end. Exit: overview. No service link or directions bypass the favorite-card entrance.
 
 ### The Lucky Graveyard
