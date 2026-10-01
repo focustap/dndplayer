@@ -99,7 +99,7 @@ const creature=(name,hp,ac,actions,extra={})=>({name,max_hp:hp,ac,speed:30,creat
 export const monsters=[
  creature('Veyrholt — Road Scout',18,13,[{...action('Shortbow','One attack, +4, range 80/320 ft, 1d6+2 piercing.',4,'1d6+2','Piercing',true),range:{normal:80,long:320,unit:'ft'}}],{asset:'scout'}),
  creature('Veyrholt — Road Bandit',11,12,[action('Blade','One melee attack, +3, 1d6+1 slashing.',3,'1d6+1','Slashing')],{asset:'bandit'}),
- creature('Veyrholt — Jester',14,12,[action('Carnival Knife','One melee attack, +3, 1d6+1 slashing.',3,'1d6+1','Slashing')],{asset:'jester',traits:[{name:'Self-appointed idolaters',description:'Independent mortal cultists. The Dealer did not create, recruit, command or affiliate with them.'}]}),
+ creature('Veyrholt — Jester',20,13,[action('Carnival Knife','One melee attack, +4, 1d6+2 slashing.',4,'1d6+2','Slashing')],{asset:'jester',traits:[{name:'Self-appointed idolaters',description:'Independent mortal cultists. The Dealer did not create, recruit, command or affiliate with them.'}]}),
  creature('Veyrholt — Claim Usher',18,13,[{...action('Paper Lash','Reach 10 ft; +4, 1d6+2 force.',4,'1d6+2'),reach:10}],{creature_type:'construct',asset:'usher'}),
  creature('Veyrholt — Wager Hound',22,13,[action('Bite','Must first move at least 10 feet straight this turn; +4, 1d8+2 force.',4,'1d8+2')],{speed:40,creature_type:'construct',asset:'hound'}),
  creature('The Dealer',85,14,[
