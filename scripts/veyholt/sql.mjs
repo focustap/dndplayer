@@ -4,10 +4,12 @@ const literal=value=>"'"+String(value).replaceAll("'","''")+"'";
 export function snapshotSql(campaignId) {
  const c=uuid(campaignId),scene=`scene_id in (select id from public.scenes where campaign_id=${c})`;
  const scopes={campaigns:`id=${c}`,campaign_members:`campaign_id=${c}`,scenes:`campaign_id=${c}`,maps:`campaign_id=${c}`,characters:`campaign_id=${c}`,campaign_notes:`campaign_id=${c}`,encounters:`campaign_id=${c}`,monster_instances:`campaign_id=${c}`,scene_discoverables:`campaign_id=${c}`,scene_zone_markers:`campaign_id=${c}`,token_interactions:`campaign_id=${c}`,combat_sessions:`campaign_id=${c}`,tokens:scene,scene_links:scene,scene_overlays:scene,fog_regions:scene,token_patrols:scene,token_motion_segments:scene,encounter_members:`encounter_id in (select id from public.encounters where campaign_id=${c})`,npc_shop_items:`interaction_id in (select token_id from public.token_interactions where campaign_id=${c})`,initiative_entries:`combat_session_id in (select id from public.combat_sessions where campaign_id=${c})`,monster_templates:'true',npc_templates:'true'};
- return `select jsonb_build_object(${Object.entries(scopes).map(([t,w])=>`${literal(t)},(select coalesce(jsonb_agg(to_jsonb(r)),'[]'::jsonb) from public.${t} r where ${w})`).join(',')}) as snapshot;`;
+ // Return text so database clients cannot round PostgreSQL NUMERIC values while
+ // decoding the query response. Save the snapshot_json string verbatim.
+ return `select jsonb_build_object(${Object.entries(scopes).map(([t,w])=>`${literal(t)},(select coalesce(jsonb_agg(to_jsonb(r)),'[]'::jsonb) from public.${t} r where ${w})`).join(',')})::text as snapshot_json;`;
 }
 
-export function transactionSql(plan,snapshot) {
+export function transactionSql(plan,snapshot,rawSnapshot=null) {
  const tables=['maps','scenes','npc_templates','monster_templates','tokens','token_interactions','npc_shop_items','monster_instances','encounters','encounter_members','scene_links','scene_discoverables','scene_zone_markers','campaign_notes'];
  for(const op of plan.ops)if(!tables.includes(op.table))throw new Error('Unexpected table');
  const touched=new Set(plan.ops.filter(o=>o.before).map(o=>`${o.table}:${o.before[o.key]}`));
@@ -15,6 +17,13 @@ export function transactionSql(plan,snapshot) {
  // behind counts. Campaign members use their composite primary key.
  const checks=[];
  for(const [table,rows]of Object.entries(snapshot))for(const row of rows){const key=table==='token_interactions'||table==='token_motion_segments'?'token_id':table==='campaign_members'?'user_id':'id';if(!touched.has(`${table}:${row[key]}`))checks.push({table,key,row});}
+ // PostgreSQL numeric coordinates can exceed IEEE-754 precision. Preserve the
+ // original JSON bytes when supplied by the CLI; never round protected data via
+ // JSON.parse/stringify before comparing it to the database.
+ if(rawSnapshot!==null&&JSON.stringify(JSON.parse(rawSnapshot))!==JSON.stringify(snapshot))throw new Error('Raw snapshot does not match parsed snapshot');
+ const keySql="case when s.key in ('token_interactions','token_motion_segments') then 'token_id' when s.key='campaign_members' then 'user_id' else 'id' end";
+ const checkSource=rawSnapshot===null?`select value from jsonb_array_elements(${literal(JSON.stringify(checks))}::jsonb)`:
+  `select jsonb_build_object('table',s.key,'key',${keySql},'row',r.value) from jsonb_each(${literal(rawSnapshot)}::jsonb) s cross join lateral jsonb_array_elements(s.value) r where (s.key||':'||(r.value->>(${keySql}))) not in (select jsonb_array_elements_text(${literal(JSON.stringify([...touched]))}::jsonb))`;
  const flags=snapshot.scenes.map(({id,active,revealed})=>({id,active,revealed}));
  const payload=literal(JSON.stringify(plan.ops));
  return `begin;
@@ -50,7 +59,7 @@ begin
   get diagnostics affected = row_count;
   if affected<>1 then raise exception 'Expected one affected row in %, got %',op->>'table',affected; end if;
  end loop;
- for checkrow in select value from jsonb_array_elements(${literal(JSON.stringify(checks))}::jsonb) loop
+ for checkrow in ${checkSource} loop
   if checkrow->>'table'='campaign_members' then
    select to_jsonb(t) into actual from public.campaign_members t where campaign_id=${uuid(plan.campaignId)} and user_id=(checkrow->'row'->>'user_id')::uuid;
   else

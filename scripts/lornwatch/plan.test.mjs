@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { buildPlan, validateManifest, chapterId, updatePrivateTravelHook } from './plan.mjs';
 import { previewCampaignId as campaignId, emptySnapshot } from './preview.mjs';
 import { scenes, documents, assets, npcs } from './manifest.mjs';
-import { transactionSql } from '../veyholt/sql.mjs';
+import { snapshotSql, transactionSql } from '../veyholt/sql.mjs';
 const chapter=readFileSync(new URL('../../docs/campaign/chapters/LORNWATCH.md',import.meta.url),'utf8');
 const sheet=readFileSync(new URL('../../docs/campaign/chapters/LORNWATCH_RUN_SHEET.md',import.meta.url),'utf8');
 const expansion=readFileSync(new URL('../../docs/campaign/chapters/LORNWATCH_EXPANSION.md',import.meta.url),'utf8');
@@ -12,6 +12,15 @@ const plan=(db=emptySnapshot(),registry={})=>buildPlan(db,campaignId,registry,ch
 // Test-only asset keys; never exported as an install registry.
 const registry=Object.fromEntries(Object.keys(assets).map(key=>[key,{path:`${campaignId}/fixtures/${key}.png`,verified:true,width:1536,height:1024}]));
 test('ten native scenes are connected in both directions; all encounters and documents validate',()=>assert.deepEqual(validateManifest(),{scenes:10,npcs:46,links:22,encounters:4,documents:13}));
+
+test('SQL preservation checks retain exact PostgreSQL numeric coordinates from the original snapshot bytes',()=>{
+  const raw=JSON.stringify(emptySnapshot()).replace('"tokens":[]','"tokens":[{"id":"old-token","x":531.081427069591949546797705831078056}]');
+  const snapshot=JSON.parse(raw),p=plan(snapshot),sql=transactionSql(p,snapshot,raw);
+  assert.ok(sql.includes('531.081427069591949546797705831078056'));
+  assert.ok(sql.includes('jsonb_each('));
+  assert.ok(snapshotSql(campaignId).endsWith('::text as snapshot_json;'));
+  assert.throws(()=>transactionSql(p,snapshot,'{}'),/Raw snapshot does not match/);
+});
 test('installation only inserts; preserves all existing chapters, characters and runtime data byte for byte',()=>{
   const db=emptySnapshot();
   db.scenes.push({id:'earlier-scene',campaign_id:campaignId,name:'Greymere',active:true,revealed:true,map_url:'existing-art'});
@@ -31,6 +40,18 @@ test('repeat does not reset HP, stock, discovery/reveal or DM-authored edits',()
   db.scenes[0].map_url='user-edited';db.campaign_notes[0].body='DM revised';
   assert.deepEqual(plan(db,registry).ops,[]);
 });
+
+test('browser-authored maps and evidence are recognized without creating duplicates on a registry rerun',()=>{
+  const db=plan(emptySnapshot(),registry).after;
+  for(const [i,map]of db.maps.entries()){
+    const old=map.id;map.id=`native-map-${i}`;db.scenes.find(s=>s.map_id===old).map_id=map.id;
+  }
+  for(const [i,d]of db.scene_discoverables.entries())d.id=`native-evidence-${i}`;
+  assert.deepEqual(plan(db,registry).ops,[]);
+  assert.deepEqual(plan(db).missingAssets,[]);
+  const conflict=structuredClone(db);conflict.scene_discoverables[0].storage_path=`${campaignId}/different.png`;
+  assert.throws(()=>plan(conflict,registry),/Existing discoverable differs/);
+});
 test('no dialogue rows for ordinary NPCs; shop interactions have zero spoken text',()=>{
   const p=plan();assert.equal(p.after.token_interactions.length,7);
   for(const i of p.after.token_interactions){assert.equal(i.type,'SHOP');assert.equal(i.dialogue_text,'');assert.deepEqual(i.dialogue_pages,[]);}
@@ -46,11 +67,27 @@ test('four square vendors have real, stocked SHOP rows and no ordinary resident 
     const stock=db.npc_shop_items.filter(i=>i.interaction_id===token.id);
     assert.ok(stock.length>=4);assert.ok(stock.every(i=>i.price_gp>0&&i.quantity>0));
   }
-  assert.equal(db.npc_shop_items.length,36);
+  assert.equal(db.npc_shop_items.length,41);
   for(const n of npcs.filter(n=>!n.shop)){
     const i=npcs.indexOf(n),id=chapterId(campaignId,`tokens:npc:${i}`);
     assert.ok(!db.token_interactions.some(t=>t.token_id===id));
   }
+});
+
+test('clean scene names retain stable IDs and useful navigation labels',()=>{
+  const db=plan().after;
+  assert.deepEqual(db.scenes.map(s=>s.name),['Lornwatch - Sunpetal Square','Lornwatch - The Golden Finch Inn','Lornwatch - Honeycrust Bakery','Lornwatch - Bramble & Brass',"Lornwatch - Ada Rook's Cottage",'Lornwatch - Courthouse','Lornwatch - Holding Cells','Lornwatch - Lower Chamber','Lornwatch - Mossjaw Cavern','Glass Road - The Broken Crossing']);
+  for(const s of scenes)assert.equal(db.scenes.find(r=>r.name===s.name).id,chapterId(campaignId,`scenes:${s.key}`));
+  assert.ok(db.scene_links.every(l=>typeof l.label==='string'&&l.label.length>0));
+});
+
+test('Mira sells overnight stays, food, drinks and a DM-managed five-gold Hearthstone',()=>{
+  const db=plan().after,token=db.tokens.find(t=>t.display_name==='Mira Fen');
+  assert.equal(db.token_interactions.find(i=>i.token_id===token.id).type,'SHOP');
+  const stock=db.npc_shop_items.filter(i=>i.interaction_id===token.id);
+  for(const name of ['Bed','Private room','Supper','Tea','Ale (mug)','Hearthstone'])assert.ok(stock.some(i=>i.name===name&&i.quantity>0));
+  const stone=stock.find(i=>i.name==='Hearthstone');assert.equal(stone.price_gp,5);
+  assert.match(stone.description,/DM records the destination inn/);assert.match(stone.description,/purchasing does not teleport/);
 });
 
 test('Broken Crossing has four mundane robbers, three visible starting threats, travelers and a horse',()=>{
@@ -125,6 +162,8 @@ test('boss has independent targets with no damage immunity trap, cub absent from
   const sphere=p.after.monster_templates.find(t=>t.name.endsWith('Dark sphere'));assert.equal(sphere.ac,13);assert.equal(sphere.max_hp,60);assert.deepEqual(sphere.damage_immunities,['Poison','Psychic']);
   const cub=p.after.monster_templates.find(t=>t.name.endsWith('cub'));assert.ok(!p.after.encounter_members.some(e=>e.monster_template_id===cub.id));
   assert.ok(documents.filter(d=>d.text).every(d=>!d.text.includes('VII')||d.key==='vii'));
+  const finales=documents.filter(d=>['finale','vii'].includes(d.key));
+  for(const d of finales)for(const t of p.after.tokens.filter(t=>t.scene_id===chapterId(campaignId,'scenes:basement')))assert.ok(Math.hypot(d.x-t.x,d.y-t.y)>64*.36*t.size+15,'Finale markers must not be blocked by boss token hit areas');
 });
 test('optional hook update touches only two exact private notes and leaves Dealer content intact',()=>{
   const db=emptySnapshot();db.campaign_notes.push({id:'hook',campaign_id:campaignId,title:'[Veyrholt] 07 — Final Table — runnable boss rules',body:'KEEP DEALER RULES. A missing observer at **Lornwatch Abbey**. A surveyor left there for Veyrholt and never arrived. KEEP RESULTS.'});

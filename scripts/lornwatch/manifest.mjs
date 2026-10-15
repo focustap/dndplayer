@@ -3,14 +3,14 @@
 export const scenes = [
   ['square', 'Sunpetal Square'], ['inn', 'The Golden Finch Inn'],
   ['bakery', 'Honeycrust Bakery'], ['store', 'Bramble & Brass'],
-  ['cottage', "Ada Rook's Cottage"], ['court', 'Lornwatch Courthouse'],
+  ['cottage', "Ada Rook's Cottage"], ['court', 'Courthouse'],
   ['cells', 'Holding Cells'], ['basement', 'Lower Chamber'], ['cave', 'Mossjaw Cavern'],
-].map(([key,title],i)=>({key,name:`Lornwatch ${String(i+1).padStart(2,'0')} — ${title}`,width:1536,height:1024,
+].map(([key,title])=>({key,name:`Lornwatch - ${title}`,width:1536,height:1024,
   grid_type:['basement','cave','cells'].includes(key)?'SQUARE':'GRIDLESS',grid_size:64,feet_per_cell:5,lighting:'DAY'}));
 // Append only: older index-derived placement/link IDs must never be reassigned.
-scenes.push({key:'crossing',name:'Lornwatch 00 — Glass Road: The Broken Crossing',width:1536,height:1024,grid_type:'SQUARE',grid_size:64,feet_per_cell:5,lighting:'DAY'});
+scenes.push({key:'crossing',name:'Glass Road - The Broken Crossing',width:1536,height:1024,grid_type:'SQUARE',grid_size:64,feet_per_cell:5,lighting:'DAY'});
 export const links = [
-  ...[['inn',525,760],['bakery',280,395],['store',1210,760],['cottage',1260,300],['court',785,185],['cave',1420,900]].map(([key,x,y])=>['square',key,scenes.find(s=>s.key===key).name.split(' — ')[1],x,y]),
+  ...[['inn',525,760],['bakery',280,395],['store',1210,760],['cottage',1260,300],['court',785,185],['cave',1420,900]].map(([key,x,y])=>['square',key,scenes.find(s=>s.key===key).name.replace(/^Lornwatch - /,''),x,y]),
   ...['inn','bakery','store','cottage','court','cave'].map(key=>[key,'square','Sunpetal Square',768,935]),
   ['store','cave','Livestock trail',1300,650],['cave','store','Return to Bramble & Brass',200,850],
   ['court','cells','Holding corridor',1250,190],['cells','court','Public registry',700,900],
@@ -23,7 +23,7 @@ export const links = [
 ];
 const item=(name,price_gp,quantity=20,description='')=>({name,price_gp,quantity,description});
 export const npcs=[
-  {key:'mira',name:'Mira Fen',scene:'inn',x:1150,y:430,shop:[item('Supper',0.5),item('Bed',0.5),item('Private room',2,6),item('Tea',0.1),item('Rations',0.5)]},
+  {key:'mira',name:'Mira Fen',scene:'inn',x:1150,y:430,shop:[item('Supper',0.5),item('Bed',0.5,20,'One overnight stay in the common room; the DM assigns a bed.'),item('Private room',2,6,'One private room for one night; the DM manages occupancy.'),item('Tea',0.1),item('Rations',0.5),item('Hearthstone',5,4,'Campaign item: returns the party to an inn. The DM records the destination inn and resolves its use manually; purchasing does not teleport anyone or move tokens.'),item('Ale (mug)',0.04,30)]},
   {key:'pippa',name:'Pippa Bell',scene:'bakery',x:590,y:210,shop:[item('Berry bun',0.1),item('Bread',0.2),item('Pie',1,6),item('Livestock lure scraps',0.2,3)]},
   {key:'oren',name:'Oren Bramble',scene:'store',x:1050,y:400,shop:[item('Rope (50 ft)',1),item('Torch',0.01),item('Rations',0.5),item('Waterskin',0.2),item('Crowbar',2),item('Shovel',2),item('Hunting trap',5,3),item("Healer's kit",5,2),item('Ball bearings',1),item('Sack',0.01)]},
   {key:'ada',name:'Ada Rook',scene:'cottage',x:800,y:450},
@@ -43,7 +43,7 @@ export const npcs=[
   {key:'lina',name:'Lina Sedge',scene:'square',x:350,y:430,shop:[item('Vegetable hand pie',0.2,12),item('Cup of hot broth',0.05,20),item('Grilled onion skewer',0.05,16),item('Cup of cider',0.04,20)]},
   {key:'bram',name:'Bram Nettles',scene:'square',x:1130,y:420,shop:[item('Bag of apples',0.1,12),item('Carrots (bunch)',0.05,15),item('Potatoes (sack)',0.2,8),item('Fresh herbs (bundle)',0.05,10)]},
   {key:'tessa',name:'Tessa Bloom',scene:'square',x:660,y:300,shop:[item('Single cultivated flower',0.02,30,'Purchased flower grown for sale; not taken from public beds.'),item('Small bouquet',0.1,10),item('Potted marigold',0.2,6),item('Herb seedlings',0.1,8)]},
-  {key:'daro',name:'Daro Flint',scene:'square',x:1160,y:800,shop:[item('Soap',0.02,16),item('Candle',0.01,30),item('Twine (50 ft)',0.1,10),item('Needle and thread',0.05,12),item('Wooden cup',0.02,15)]},
+  {key:'daro',name:'Daro Flint',scene:'square',x:1160,y:800,shop:[item('Soap',0.02,16),item('Candle',0.01,30),item('Twine (50 ft)',0.1,10),item('Needle and thread',0.05,12),item('Wooden cup',0.02,15),item('Carved wooden charm',0.1,10,'A small ordinary keepsake; no magical effects.'),item('Chalk (piece)',0.01,20),item('Belt pouch',0.5,6)]},
   ...[
     ['residentWorker','Town resident — worker','Market shopper',400,460],
     ['residentWeaver','Town resident — weaver','Flower shopper',710,285],
@@ -115,8 +115,8 @@ export const documents=[
   {key:'case',scene:'court',name:'Tomas Rook case record',x:1050,y:500,text:'ARCHIVED CASE — TOMAS ROOK\nVictim killed near a tavern.\nDefendant acquitted: evidence chain of custody failed after handling errors.\nIlan Rook appears as next of kin, not presiding judge.\nFamily copy available to Ada Rook.'},
   {key:'survey',scene:'court',name:'Civic survey report',x:1000,y:400,text:'FOUNDATION SURVEY — SERA PELL\nA cavity was found beneath the courthouse. Compass deflection recorded at the service landing.\nAfter-hours inspections signed I.R.\nAccess: east registry door, holding corridor, stairs downward.\nDuplicate measurements dispatched along Glass Road to the regional survey archive; delivery receipt requests originals.'},
   {key:'arrests',scene:'cells',name:'Detention register',x:550,y:500,text:'CURRENT DETENTION REGISTER\nJory Reed: public flower removal.\nMartha Bell: overcooked market goods.\nSera Pell: retained as records witness; assigned registry duties.\nRelease petitions received at public hearing desk.'},
-  {key:'finale',scene:'basement',name:'Silent implosion',x:780,y:250,hidden:true},
-  {key:'vii',scene:'basement',name:'Old foundation stone',x:800,y:280,hidden:true,text:'VII'},
+  {key:'finale',scene:'basement',name:'Silent implosion',x:1000,y:650,hidden:true},
+  {key:'vii',scene:'basement',name:'Old foundation stone',x:1150,y:650,hidden:true,text:'VII'},
   {key:'wagonWaybill',scene:'crossing',name:'Merchant wagon waybill',x:650,y:390,imprint:'GLASS ROAD',footer:'Merchant copy — ordinary road cargo',text:'MARR — WAGON WAYBILL\nDestination: Lornwatch market.\nCargo: flour, dried apples, soap and wool.\nEquipment: spare planks, wheel lever, two ropes, canvas cover.\nStorm damage reported at the crossing. Keep people and horse on sound decking before shifting the load.'},
   {key:'bridgeNotice',scene:'crossing',name:'Bridge maintenance notice',x:400,y:420,imprint:'GLASS ROAD',footer:'Road maintenance copy',text:'CROSSING — STORM DAMAGE\nNorthern bridge edge unsafe for loaded wheels.\nSouth bank stepping-stone ford remains passable on foot. Follow the brook downstream; allow ten minutes.\nKeep the central road clear for repairs. East road continues to Lornwatch.'},
 ];

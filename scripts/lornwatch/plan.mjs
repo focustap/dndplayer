@@ -46,7 +46,13 @@ export function buildPlan(snapshot,campaignId,registry={},chapter='',runSheet=''
   const sceneRows=new Map();
   for(const s of scenes){
     const path=asset(s.key);let map=null;
-    if(path){const a=registry[s.key];if(a.width!==s.width||a.height!==s.height)throw new Error(`Wrong map dimensions: ${s.key}`);map=add('maps',s.key,{campaign_id:campaignId,name:`[Lornwatch] ${s.name}`,storage_path:path,width:s.width,height:s.height,created_by:ownerId},['campaign_id','storage_path']);}
+    if(path){
+      const a=registry[s.key];if(a.width!==s.width||a.height!==s.height)throw new Error(`Wrong map dimensions: ${s.key}`);
+      const installed=db.scenes.find(r=>r.id===chapterId(campaignId,`scenes:${s.key}`));
+      const nativeMap=installed?.map_id?db.maps.find(r=>r.id===installed.map_id):null;
+      if(nativeMap){if(nativeMap.campaign_id!==campaignId||nativeMap.storage_path!==path)throw new Error(`Existing map differs: ${s.key}`);map=nativeMap;}
+      else map=add('maps',s.key,{campaign_id:campaignId,name:`[Lornwatch] ${s.name}`,storage_path:path,width:s.width,height:s.height,created_by:ownerId},['campaign_id','storage_path']);
+    }
     const {key,...data}=s;
     const row=add('scenes',key,{campaign_id:campaignId,...data,map_id:map?.id??null,map_url:null,active:false,revealed:false,grid_opacity:s.grid_type==='SQUARE'?0.15:0,grid_color:'#ffffff'},['campaign_id']);
     if(row.active&&ops.length)throw new Error('Chapter scene active; resnapshot after play');
@@ -77,13 +83,25 @@ export function buildPlan(snapshot,campaignId,registry={},chapter='',runSheet=''
     add('scene_links','glass-road:departure',{scene_id:departure.id,destination_scene_id:crossing.id,label:'Glass Road — after the Dealer',x:(departure.width??1536)*.5,y:(departure.height??1024)*.93,created_by:ownerId},['scene_id','destination_scene_id']);
     add('scene_links','glass-road:return',{scene_id:crossing.id,destination_scene_id:departure.id,label:'West road — Veyrholt',x:90,y:340,created_by:ownerId},['scene_id','destination_scene_id']);
   }
-  for(const d of documents){const path=asset(d.key);if(path)add('scene_discoverables',d.key,{campaign_id:campaignId,scene_id:sceneRows.get(d.scene).id,name:d.name,storage_path:path,x:d.x,y:d.y,hidden:d.hidden??false,created_by:ownerId},['campaign_id','scene_id']);}
+  for(const d of documents){
+    const path=asset(d.key);if(!path)continue;
+    const authored=db.scene_discoverables.filter(r=>r.scene_id===sceneRows.get(d.scene).id&&r.name===d.name);
+    if(authored.length>1)throw new Error(`Ambiguous discoverable: ${d.key}`);
+    if(authored.length){if(authored[0].campaign_id!==campaignId||authored[0].storage_path!==path)throw new Error(`Existing discoverable differs: ${d.key}`);continue;}
+    add('scene_discoverables',d.key,{campaign_id:campaignId,scene_id:sceneRows.get(d.scene).id,name:d.name,storage_path:path,x:d.x,y:d.y,hidden:d.hidden??false,created_by:ownerId},['campaign_id','scene_id']);
+  }
   for(const [i,section]of chapter.split(/^## /m).slice(1).entries()){
     const newline=section.indexOf('\n');add('campaign_notes',`chapter:${i}`,{campaign_id:campaignId,title:`[Lornwatch] ${section.slice(0,newline).trim()}`,body:`DM ONLY\n\n${section.slice(newline+1).trim()}`,created_by:ownerId},['campaign_id']);
   }
   if(runSheet)add('campaign_notes','run-sheet',{campaign_id:campaignId,title:'[Lornwatch] START HERE — session run sheet',body:`DM ONLY\n\n${runSheet}`,created_by:ownerId},['campaign_id']);
   if(expansion)add('campaign_notes','expansion-v1',{campaign_id:campaignId,title:'[Lornwatch] Glass Road, populated town and service stairs — DM reference',body:`DM ONLY\n\n${expansion}`,created_by:ownerId},['campaign_id']);
-  return {campaignId,ownerId,ops,after:db,travelConnection:departures.length?'ATTACHED_TO_EXISTING_FINAL_TABLE':'VEYRHOLT_SCENE_NOT_PRESENT',missingAssets:Object.keys(assets).filter(k=>!registry[k]).map(k=>({key:k,file:assets[k]})),managedSceneIds:[...sceneRows.values()].map(s=>s.id)};
+  const installedPath=key=>{
+    if(sceneRows.has(key))return db.maps.find(m=>m.id===sceneRows.get(key).map_id)?.storage_path;
+    if(npcs.some(n=>n.key===key))return db.npc_templates.find(n=>n.id===chapterId(campaignId,`npc_templates:${key}`))?.image_path;
+    if(monsters.some(m=>m.key===key))return db.monster_templates.find(m=>m.id===chapterId(campaignId,`monster_templates:${key}`))?.image_path;
+    const d=documents.find(d=>d.key===key);return d?db.scene_discoverables.find(r=>r.scene_id===sceneRows.get(d.scene).id&&r.name===d.name)?.storage_path:null;
+  };
+  return {campaignId,ownerId,ops,after:db,travelConnection:departures.length?'ATTACHED_TO_EXISTING_FINAL_TABLE':'VEYRHOLT_SCENE_NOT_PRESENT',missingAssets:Object.keys(assets).filter(k=>!registry[k]&&!installedPath(k)?.startsWith(`${campaignId}/`)).map(k=>({key:k,file:assets[k]})),managedSceneIds:[...sceneRows.values()].map(s=>s.id)};
 }
 
 // Explicit optional exception for the retired destination, private notes only.
