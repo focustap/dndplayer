@@ -130,3 +130,5 @@ The live Warden revision is preserved in [Greymere](chapters/GREYMERE.md). Hobb,
 Live inspection on 2026-09-16 found **The Threshhold** active and revealed. Several prepared Veyrholt scenes were already revealed; older claims that all were unrevealed were inaccurate. Preserve actual flags, not the older documentation. Preparation does not establish that the party has played or completed these scenes.
 
 Implementation status and verification are recorded in scripts/veyholt/README.md. Missing artwork uses explicit blank scenes/text tokens until genuine R2 assets are supplied.
+
+The DM's 2026-10-15 instruction makes the existing live application and The Hollow campaign the default target for future Wayfinder requests. Fixtures are validation only. The authorized Mossjaw revision replaces the unplayed mother/cub encounter with two independent Ankhegs, new R2 art and a40gp infestation quest. Preparation does not imply combat completion or reward payment. Preserve all current positions, scene flags, character and combat state. See [Ankheg reference](chapters/MOSSJAW_ANKHEG.md) and the live verification report.

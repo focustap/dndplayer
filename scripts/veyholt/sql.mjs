@@ -21,9 +21,18 @@ export function transactionSql(plan,snapshot,rawSnapshot=null) {
  // original JSON bytes when supplied by the CLI; never round protected data via
  // JSON.parse/stringify before comparing it to the database.
  if(rawSnapshot!==null&&JSON.stringify(JSON.parse(rawSnapshot))!==JSON.stringify(snapshot))throw new Error('Raw snapshot does not match parsed snapshot');
+ if(rawSnapshot!==null)for(const op of plan.ops.filter(o=>o.before)){
+  const original=snapshot[op.table]?.find(r=>r[op.key]===op.before[op.key]);
+  if(JSON.stringify(original)!==JSON.stringify(op.before))throw new Error('Operation before row does not match raw snapshot');
+ }
+ const exactBefore=rawSnapshot===null?'':`if op ? 'before' then
+   select r.value into actual from jsonb_array_elements(original_snapshot->(op->>'table')) r where r.value->>(op->>'key')=op->'before'->>(op->>'key');
+   if actual is null then raise exception 'Missing original row'; end if;
+   op := jsonb_set(op,'{before}',actual);
+  end if;`;
  const keySql="case when s.key in ('token_interactions','token_motion_segments') then 'token_id' when s.key='campaign_members' then 'user_id' else 'id' end";
  const checkSource=rawSnapshot===null?`select value from jsonb_array_elements(${literal(JSON.stringify(checks))}::jsonb)`:
-  `select jsonb_build_object('table',s.key,'key',${keySql},'row',r.value) from jsonb_each(${literal(rawSnapshot)}::jsonb) s cross join lateral jsonb_array_elements(s.value) r where (s.key||':'||(r.value->>(${keySql}))) not in (select jsonb_array_elements_text(${literal(JSON.stringify([...touched]))}::jsonb))`;
+  `select jsonb_build_object('table',s.key,'key',${keySql},'row',r.value) from jsonb_each(original_snapshot) s cross join lateral jsonb_array_elements(s.value) r where (s.key||':'||(r.value->>(${keySql}))) not in (select jsonb_array_elements_text(${literal(JSON.stringify([...touched]))}::jsonb))`;
  const flags=snapshot.scenes.map(({id,active,revealed})=>({id,active,revealed}));
  const payload=literal(JSON.stringify(plan.ops));
  return `begin;
@@ -35,12 +44,14 @@ select set_config('request.jwt.claim.role', 'authenticated', true);
 set local role authenticated;
 do $veyholt$
 declare op jsonb; actual jsonb; cols text; setters text; affected integer; checkrow jsonb;
+ original_snapshot jsonb := ${rawSnapshot===null?'null':literal(rawSnapshot)+'::jsonb'};
 begin
  if not exists (select 1 from public.campaign_members where campaign_id=${uuid(plan.campaignId)} and user_id=auth.uid() and role in ('OWNER','DM')) then raise exception 'DM membership required'; end if;
  if exists (select 1 from public.combat_sessions where campaign_id=${uuid(plan.campaignId)} and active) then raise exception 'Combat is active'; end if;
  -- Serialize importers for this campaign. Concurrent edited rows are rejected below.
  perform pg_advisory_xact_lock(hashtext(${uuid(plan.campaignId)}));
  for op in select value from jsonb_array_elements(${payload}::jsonb) loop
+  ${exactBefore}
   if op->>'table' not in (${tables.map(literal).join(',')}) or op->>'key' not in ('id','token_id') then raise exception 'Unexpected operation'; end if;
   if op->>'kind' <> 'insert' then
    execute format('select to_jsonb(t) from public.%I t where %I=$1::uuid for update',op->>'table',op->>'key') into actual using op->'before'->>(op->>'key');

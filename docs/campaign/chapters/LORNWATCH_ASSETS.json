@@ -76,12 +76,12 @@
     },
     {
       "key": "cave",
-      "file": "maps/cave.png",
+      "file": "maps/cave-ankheg.png",
       "status": "LOCAL_READY_R2_PENDING",
       "width": 1536,
       "height": 1024,
-      "bytes": 4146897,
-      "sha256": "39b1751d67ddc164dc41b1bcce7665694d42513f263eb152cf4ff5b07ff0eddb"
+      "bytes": 3989161,
+      "sha256": "58c3e32eb1325acadf7f3b0a6167521ea04c858a4acc06b9da200cd917b22492"
     },
     {
       "key": "crossing",
@@ -291,22 +291,13 @@
       "sha256": "36a9355440bd66115e972b5958929ce7821a705832dbd923d9a1750b98464b45"
     },
     {
-      "key": "owlbear",
-      "file": "tokens/owlbear.png",
+      "key": "ankheg",
+      "file": "tokens/ankheg.png",
       "status": "LOCAL_READY_R2_PENDING",
       "width": 1254,
       "height": 1254,
-      "bytes": 2758117,
-      "sha256": "01431b3a9b7b0f81c5924762423c6a920fa5509f467d69e8f0e3cb5540c9fbce"
-    },
-    {
-      "key": "cub",
-      "file": "tokens/cub.png",
-      "status": "LOCAL_READY_R2_PENDING",
-      "width": 1254,
-      "height": 1254,
-      "bytes": 2424740,
-      "sha256": "175675a561808793c99d0941dc414dc091931b9fbb4a2f3320fc2de909321369"
+      "bytes": 1790896,
+      "sha256": "3bca789b0eb2405dbfd5a7e9584b89fbbef8f25e6018386fa7bb85b9eb4892e8"
     },
     {
       "key": "highwayman",
@@ -364,12 +355,12 @@
     },
     {
       "key": "livestock",
-      "file": "discoverables/livestock.png",
+      "file": "discoverables/livestock-ankheg.png",
       "status": "LOCAL_READY_R2_PENDING",
       "width": 1200,
       "height": 1400,
-      "bytes": 71039,
-      "sha256": "0b35ebb1ec56a0ca4b264f4b8bb206d7f4755338a0da567b046ece324f989916"
+      "bytes": 81943,
+      "sha256": "d2c40034e503d301f54ed4615196e6f2afb8bee187c9c8f9e69c2a6b30974ceb"
     },
     {
       "key": "comparison",

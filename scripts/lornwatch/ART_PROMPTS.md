@@ -14,7 +14,7 @@ Shared request: overhead orthographic playable VTT map, detailed painterly groun
 - court: cream stone courthouse, tall sunny windows, green benches, polished judge dais north center, registry desks east, holding door northeast, service door southeast, welcoming civic hall.
 - cells: cream/grey stone corridor, three simple barred cells east, straw mattresses, registry desk west, stairs northeast, southwest entrance, daylight through high windows, humane practical space.
 - basement: circular ancient stone chamber inside rectangular footprint, broad south stairs, four thick pillars, low rubble cover, empty circular dais north center. Cool/violet subtle light and warm stair lanterns. Sphere is separate token; no VII, symbols or future landscape in map.
-- cave: Mossjaw mossy limestone ravine, roof removed cave, green forest and southwest entrance, shallow stream southwest to center, boulders/clear passages, upper nesting shelf northeast with empty nest, lush moss, natural warm daylight, no creatures.
+- cave: edit the existing mossy limestone ravine, preserving footprint, stream, clear paths, bottom-center exit and northeast shelf. Replace the old nest with a northeast burrow and broad central burrow; disturbed earth, livestock bones, drag furrows and acid-pitted remains. No creatures, nests, eggs, supernatural marks, grid or text. Final asset maps/cave-ankheg.png,1536×1024.
 
 ## Portraits / tokens
 
@@ -32,8 +32,7 @@ Shared request: single centered subject; head and upper torso, animals centered;
 - martha: elderly baker, broad face, silver braid, flour yellow apron, proud outspoken.
 - ilan: exhausted disheveled dark-haired man45, gray temples, ruined judicial robes, frightened fanatic expression, no visible magic symbols.
 - sphere: perfect featureless matte black floating sphere, subtle violet gravitational edge, no face/runes/interior view.
-- owlbear: powerful natural brown feathered mother, owl face/beak, bear body, protective alert fantasy wildlife.
-- cub: small fluffy brown feather/fur owlbear cub, round eyes, timid tucked pose.
+- ankheg: transparent overhead rust-orange chitinous burrowing insect, powerful mandibles and six digging legs, green acid droplet, hand-painted miniature style; full body centered with margins, no scene, border or text. Final asset tokens/ankheg.png.
 
 ## Finale assets — private until triggered
 

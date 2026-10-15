@@ -20,6 +20,10 @@ test('SQL preservation checks retain exact PostgreSQL numeric coordinates from t
   assert.ok(sql.includes('jsonb_each('));
   assert.ok(snapshotSql(campaignId).endsWith('::text as snapshot_json;'));
   assert.throws(()=>transactionSql(p,snapshot,'{}'),/Raw snapshot does not match/);
+  const row=snapshot.tokens[0],update={campaignId,ownerId:snapshot.campaigns[0].owner_id,ops:[{kind:'update',table:'tokens',key:'id',before:row,after:{display_name:'New label'}}]};
+  const updated=transactionSql(update,snapshot,raw);assert.match(updated,/jsonb_set\(op,'\{before\}',actual\)/);
+  assert.ok(updated.includes('531.081427069591949546797705831078056'));
+  update.ops[0].before={...row,x:5};assert.throws(()=>transactionSql(update,snapshot,raw),/Operation before row/);
 });
 test('installation only inserts; preserves all existing chapters, characters and runtime data byte for byte',()=>{
   const db=emptySnapshot();
@@ -132,7 +136,7 @@ test('expansion appends placements without reassigning original chapter token id
   const db=plan().after;
   const original=[['Mira Fen','inn'],['Pippa Bell','bakery'],['Oren Bramble','store'],['Ada Rook','cottage'],['Judge Ilan Rook','court'],['Sera Pell','court'],['Jory Reed','square'],['Nell Reed','square'],['Lornwatch Guard','square'],['Lornwatch Guard','square'],['Martha Bell','cells'],['Jory Reed','cells'],['Nell Reed','inn'],['Ada Rook','square']];
   original.forEach(([name,scene],i)=>{const token=db.tokens.find(t=>t.id===chapterId(campaignId,`tokens:npc:${i}`));assert.equal(token.display_name,name);assert.equal(token.scene_id,chapterId(campaignId,`scenes:${scene}`));});
-  ['Ilan Rook','Dark sphere','Owlbear','Owlbear cub','Court guard','Court guard'].forEach((name,i)=>assert.equal(db.tokens.find(t=>t.id===chapterId(campaignId,`tokens:monster:${i}`)).display_name,name));
+  ['Ilan Rook','Dark sphere','Ankheg 1','Ankheg 2','Court guard','Court guard'].forEach((name,i)=>assert.equal(db.tokens.find(t=>t.id===chapterId(campaignId,`tokens:monster:${i}`)).display_name,name));
   const oldLink=db.scene_links.find(l=>l.id===chapterId(campaignId,'scene_links:16'));
   assert.equal(oldLink.scene_id,chapterId(campaignId,'scenes:court'));assert.equal(oldLink.destination_scene_id,chapterId(campaignId,'scenes:basement'));
   assert.deepEqual([oldLink.x,oldLink.y],[1260,625]);
@@ -164,11 +168,11 @@ test('SQL retains native RLS, stale-row protection, protected state checks and o
   assert.doesNotMatch(sql,/disable row level|truncate|service_role/i);
   assert.ok(sql.startsWith('begin;')&&sql.trimEnd().endsWith('commit;'));
 });
-test('boss has independent targets with no damage immunity trap, cub absent from combat roster',()=>{
+test('boss has independent targets with no damage immunity trap',()=>{
   const p=plan(),boss=p.after.encounters.find(e=>e.name.includes('basement'));
   assert.equal(p.after.encounter_members.filter(m=>m.encounter_id===boss.id).length,2);
   const sphere=p.after.monster_templates.find(t=>t.name.endsWith('Dark sphere'));assert.equal(sphere.ac,13);assert.equal(sphere.max_hp,60);assert.deepEqual(sphere.damage_immunities,['Poison','Psychic']);
-  const cub=p.after.monster_templates.find(t=>t.name.endsWith('cub'));assert.ok(!p.after.encounter_members.some(e=>e.monster_template_id===cub.id));
+  assert.ok(!p.after.monster_templates.some(t=>/owlbear|cub/i.test(t.name)));
   assert.ok(documents.filter(d=>d.text).every(d=>!d.text.includes('VII')||d.key==='vii'));
   const finales=documents.filter(d=>['finale','vii'].includes(d.key));
   for(const d of finales)for(const t of p.after.tokens.filter(t=>t.scene_id===chapterId(campaignId,'scenes:basement')))assert.ok(Math.hypot(d.x-t.x,d.y-t.y)>64*.36*t.size+15,'Finale markers must not be blocked by boss token hit areas');

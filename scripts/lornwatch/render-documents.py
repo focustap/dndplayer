@@ -31,5 +31,6 @@ for doc in rows:
     if y > 1280:
         raise RuntimeError(f"Document overflow: {doc['key']}")
     draw.text((110, 1265), doc.get("footer", "Civic copy • retained for public inspection"), font=small, fill="#69664f")
-    im.save(out / f"{doc['key']}.png")
+    filename = "livestock-ankheg" if doc["key"] == "livestock" else doc["key"]
+    im.save(out / f"{filename}.png")
 print(f"Rendered {sum(bool(d.get('text')) for d in rows)} evidence images")

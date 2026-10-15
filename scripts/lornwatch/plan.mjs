@@ -68,11 +68,11 @@ export function buildPlan(snapshot,campaignId,registry={},chapter='',runSheet=''
   }
   const templates=new Map();
   for(const m of monsters){const {key,...data}=m;templates.set(key,add('monster_templates',key,{...data,image_path:asset(key)},['name']));}
-  for(const e of encounters){const row=add('encounters',e.key,{campaign_id:campaignId,name:e.name,notes:e.notes},['campaign_id','name']);for(const [key,quantity]of e.members)add('encounter_members',`${e.key}:${key}`,{encounter_id:row.id,monster_template_id:templates.get(key).id,quantity},['encounter_id','monster_template_id']);}
+  for(const e of encounters){const row=add('encounters',e.key,{campaign_id:campaignId,name:e.name,notes:e.notes},['campaign_id','name']);for(const [key,quantity]of e.members)add('encounter_members',`${e.key}:${e.memberKeys?.[key]??key}`,{encounter_id:row.id,monster_template_id:templates.get(key).id,quantity},['encounter_id','monster_template_id']);}
   for(const [i,p]of placements.entries()){
     const t=templates.get(p.monster);
-    const instance=add('monster_instances',String(i),{campaign_id:campaignId,template_id:t.id,custom_name:t.name,current_hp:t.max_hp,max_hp:t.max_hp,ac:t.ac,visible:p.visible??false,dead:false,notes:''},['campaign_id','template_id']);
-    add('tokens',`monster:${i}`,{scene_id:sceneRows.get(p.scene).id,type:'MONSTER',reference_id:instance.id,display_name:t.name.replace('Lornwatch — ',''),image_path:asset(p.monster),x:p.x,y:p.y,size:p.size,visible:p.visible??false,locked:false},['scene_id','type','reference_id']);
+    const instance=add('monster_instances',p.instanceKey??String(i),{campaign_id:campaignId,template_id:t.id,custom_name:p.label?`Lornwatch — ${p.label}`:t.name,current_hp:t.max_hp,max_hp:t.max_hp,ac:t.ac,visible:p.visible??false,dead:false,notes:''},['campaign_id','template_id']);
+    add('tokens',`monster:${i}`,{scene_id:sceneRows.get(p.scene).id,type:'MONSTER',reference_id:instance.id,display_name:p.label??t.name.replace('Lornwatch — ',''),image_path:asset(p.monster),x:p.x,y:p.y,size:p.size,visible:p.visible??false,locked:false},['scene_id','type','reference_id']);
   }
   for(const [i,[from,to,label,x,y]]of links.entries())add('scene_links',String(i),{scene_id:sceneRows.get(from).id,destination_scene_id:sceneRows.get(to).id,label,x,y,created_by:ownerId},['scene_id','destination_scene_id']);
   // Only attach to an exact known earlier scene; never create a substitute

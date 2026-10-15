@@ -1,5 +1,7 @@
 # Lornwatch live installation — 2026-10-15
 
+Later targeted revision: [Mossjaw Ankheg live verification](MOSSJAW_LIVE_VERIFICATION.md) supersedes the original cave encounter described below. Two Ankhegs replace the placed owlbear/cub; original preparation history is retained. Other content and progress remain intact.
+
 Installed with the DM's explicit approval into **The Hollow**, campaign `d8f5c76f-56ff-4724-ab43-f2709dfc225f`, in the existing dndplayer Supabase project. No new campaign was created. This records preparation, not played progress.
 
 ## Installed content
