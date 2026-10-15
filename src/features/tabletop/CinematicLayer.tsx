@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from
 import type { CinematicEvent, CinematicStep } from "../../domain/types";
 import { cinematicAppliesToScene, cinematicElapsed, mapTiltFrame } from "../../domain/cinematicTilt";
 import { serverNowMs } from "../../services/tabletopService";
+import { prefersReducedCinematicMotion } from '../../domain/cinematicMotion';
 import "./cinematic.css";
 
 interface CinematicLayerProps {
@@ -75,7 +76,7 @@ export function CinematicLayer({ event, dreadActive, onFinished, cardPresentatio
       uiOpacity = uiStep.type === "UI_FADE_OUT" ? 1 - progress : progress;
     }
     const tilt = steps.find(step => step.type === 'MAP_TILT');
-    const tiltFrame = tilt?.type === 'MAP_TILT' ? mapTiltFrame(tilt, elapsed, 1, 1, window.matchMedia('(prefers-reduced-motion: reduce)').matches) : null;
+    const tiltFrame = tilt?.type === 'MAP_TILT' ? mapTiltFrame(tilt, elapsed, 1, 1, prefersReducedCinematicMotion()) : null;
     return { shake, flash, darkness, vignetteIntensity, letterbox, letterboxExiting, colorWash, blur, title, titleOpacity, uiOpacity, interactionLocked, tiltFrame };
   }, [event, frame, dreadActive, sceneId]);
 

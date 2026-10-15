@@ -3,6 +3,7 @@ import type { AttackAnimationEvent, AttackSelection, CinematicEvent, Placement, 
 import { createSceneStructureKey, stableAssetIdentity, type SceneStructureSnapshot } from "./sceneStructureKey";
 import { PATROL_PRESENTATION_DELAY_MS, refreshSignedAssetUrl, serverNowMs } from "../../services/tabletopService";
 import { cinematicAppliesToScene, cinematicElapsed, mapTiltFrame, tiltOnly } from "../../domain/cinematicTilt";
+import { prefersReducedCinematicMotion } from '../../domain/cinematicMotion';
 
 export interface EngineSnapshot extends SceneStructureSnapshot { builder: boolean; shiftIntel: boolean; placement: Placement | null; patrolEdit: TokenPatrol | null; motionSegments: TokenMotionSegment[]; attackSelection: AttackSelection | null; attackEvent: AttackAnimationEvent | null; cinematicEvent: CinematicEvent | null; selectedTokenId: string | null; selectedTokenIds: string[]; transientTokenIds: string[]; monsterIntel: Record<string, { hp: number; maxHp: number; ac: number }>; canMove(token: Token): boolean; canInteract(token:Token):boolean; }
 interface EngineCallbacks { onSelect(id: string | null, additive?: boolean): void; onSelectMany(ids: string[], additive?: boolean): void; onMoveCommit(id: string, x: number, y: number): void; onTokenMove(id:string,x:number,y:number,final:boolean):void; onInteract(id:string):void; onOverlayCommit(id: string, x: number, y: number): void; onSceneLinkCommit(id: string, x: number, y: number): void; onDiscoverableCommit(id:string,x:number,y:number):void; onPatrolWaypointAdd(x:number,y:number):void; onPatrolWaypointMove(id:string,x:number,y:number):void; onPatrolWaypointDelete(id:string):void; onSceneLinkActivate(id: string): void; onDiscover(id:string):void; onDiscoverablePreview(id:string):void; onPlace(x: number, y: number): void; onAttackTarget(id: string | null): void; onContext(id: string, x: number, y: number): void; }
@@ -254,7 +255,7 @@ export class SceneEngine {
     this.resetMapTilt();
     const step = event.steps.filter(s => s.type === 'MAP_TILT' && elapsed >= s.at && elapsed < s.at + (s.duration ?? 8000)).at(-1);
     if (!step || step.type !== 'MAP_TILT') return;
-    const { rotation, scale } = mapTiltFrame(step, elapsed, this.host.clientWidth, this.host.clientHeight, window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    const { rotation, scale } = mapTiltFrame(step, elapsed, this.host.clientWidth, this.host.clientHeight, prefersReducedCinematicMotion());
     const cx = this.host.clientWidth / 2, cy = this.host.clientHeight / 2;
     this.cinematicWorld.pivot.set(cx, cy);
     this.cinematicWorld.position.set(cx, cy);
@@ -624,7 +625,7 @@ export class SceneEngine {
     this.root.addChild(layer);
   }
   private async renderToken(token: Token, snapshot: EngineSnapshot) {
-    const cell=snapshot.scene.gridSize; const radius=cell*.32*token.size; const c=new Container(); c.position.set(token.x,token.y); c.rotation=token.rotation; c.zIndex=300; c.eventMode="static"; c.cursor=snapshot.canMove(token)?"grab":"pointer";
+    const cell=snapshot.scene.gridSize; const radius=cell*.32*token.size; const c=new Container(); c.position.set(token.x,token.y); c.rotation=Number.isFinite(token.rotation)?token.rotation:0; c.zIndex=300; c.eventMode="static"; c.cursor=snapshot.canMove(token)?"grab":"pointer";
     const ringColor=token.type==="MONSTER"?0x718460:token.type==="NPC"?0x9b794e:0x9a86b1;
     const ring=new Graphics().circle(0,0,radius+5).fill(ringColor); c.addChild(ring);
     const texture=token.imageUrl?await this.loadTokenTexture(token.imageUrl):null;

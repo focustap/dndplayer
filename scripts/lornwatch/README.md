@@ -8,7 +8,7 @@ Prepared native Wayfinder content for issue #27. **Not installed in The Hollow.*
 - Twenty-five built-in ImageGen images (nine maps, fourteen portrait/creature images, two finale images) and nine deterministic evidence documents: **34 local PNG assets**. Source files are in ignored `outputs/lornwatch/`; file dimensions and SHA256 hashes are recorded in `docs/campaign/chapters/LORNWATCH_ASSETS.json`. Heavy binaries are intentionally absent from Git.
 - Ada's full story, memorial/case triggers, opening arrest read-aloud, NPC knowledge/reactions, boss restrictions/scaling and finale are in `LORNWATCH.md` / `LORNWATCH_RUN_SHEET.md`. No NPC speech or dialogue trees are installed. Only shopkeepers have token_interactions, type SHOP and empty dialogue fields.
 - Existing RLS and native scene/discoverable/encounter systems are reused. No schema changes. Ilan90HP/AC15 and sphere60HP/AC13 are separate damage targets. Cub is not an encounter member.
-- Turn is available in Cinematics: toward/away a reference token or eight compass directions, smooth visual-only MAP_TILT, automatic return, synchronized Restore, reduced-motion fallback, and no automatic saves/token moves. See [Turn verification](TURN_VERIFICATION.md); live multi-client verification remains pending.
+- Turn is available in Cinematics: toward/away a reference token or eight compass directions, smooth visual-only MAP_TILT, automatic return, synchronized Restore, and no automatic saves/token moves. Cinematic motion defaults to following the browser's Reduced Motion preference; select **Full rotation — opt in** to test the actual rotating map. The choice persists for this browser only. See [Turn verification](TURN_VERIFICATION.md); live multi-client verification remains pending.
 
 ## Isolated browser preview
 
@@ -24,6 +24,8 @@ Open `http://127.0.0.1:5174/campaign/demo/scene/6dfd6387-e4c3-53bb-abf5-c2e68a49
 Use EDIT SCENE to inspect each map. Upload/change map uses the normal native control. Discoverables use Upload & place and map-position fields; finale/VII remain hidden. `node scripts/lornwatch/preview.mjs --browser-authoring` starts with no evidence so all eleven can be uploaded through browser controls for a clean authoring pass; default preview-data restores the complete fixture. Local preview seed excludes campaign notes; read the private source docs separately.
 
 Browser verification performed in the **in-Codex browser only**, never the Windows desktop: uploaded all nine maps; uploaded/positioned all eleven discoverables; checked Oren's SHOP-only player preview and prices; verified sphere damage changes independently from Ilan. No NPC dialogue was selected or created. Scene graph reachability is additionally tested in both directions. Combat balance is a design estimate, not a four-player playtest.
+
+Token serialization now supplies finite defaults when older or fixture payloads omit rotation and other token fields. New records include explicit defaults. All twenty NPC/monster tokens were checked on the actual canvases across all nine scenes; intentionally hidden actors remain DM-only ghosts. Full rotation, default reduced motion, cancellation, expiration and preference persistence were rechecked through the real motion selector, without source overrides.
 
 ## Reviewable setup / live approval required
 
@@ -55,7 +57,7 @@ If base blank scenes already exist, the planner intentionally preserves them and
 
 ## Checks and remaining work
 
-- Pass: `node --test scripts/cinematic-tilt.test.mjs scripts/lornwatch/plan.test.mjs scripts/veyholt/plan.test.mjs scripts/dealer-cards.test.mjs` (37 tests).
+- Pass: `node --test scripts/cinematic-motion.test.mjs scripts/token-serialization.test.mjs scripts/cinematic-tilt.test.mjs scripts/lornwatch/plan.test.mjs scripts/veyholt/plan.test.mjs scripts/dealer-cards.test.mjs` (42 tests).
 - Pass: `npm run typecheck`, `npm run build` with bundled Node24. Existing chunk-size warning remains.
 - `npm run lint`: 16 errors and 1 warning. Matched against a clean archive of origin/main f349be4: identical files/rules/severities/messages (ignoring shifted source locations). No new findings. Existing errors are in TabletopContext, CreatureInspector, LiveAudio, NpcInteractionModal and SceneBuilderPage.
 - Production bundle checked: no private chapter source lore, fixture endpoint, or Ada backstory. Turn's generic DM controls are production code.

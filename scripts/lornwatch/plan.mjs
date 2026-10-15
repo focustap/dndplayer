@@ -35,7 +35,7 @@ export function buildPlan(snapshot,campaignId,registry={},chapter='',runSheet=''
     if(matches.length>1)throw new Error(`Duplicate ${table} ID`);
     if(matches[0]){for(const field of identity)if(matches[0][field]!==data[field])throw new Error(`Identity conflict ${table}:${key}`);return matches[0];}
     if(['scenes','encounters','npc_templates','monster_templates'].includes(table)&&db[table].some(r=>r.name===data.name))throw new Error(`Unmanaged name collision: ${data.name}`);
-    const row={[pk]:id,...data};db[table].push(row);ops.push({kind:'insert',table,key:pk,after:row});return row;
+    const row={[pk]:id,...(table==='tokens'?{rotation:0,conditions:[],owner_user_id:null,image_url:null}:{}),...data};db[table].push(row);ops.push({kind:'insert',table,key:pk,after:row});return row;
   };
   const asset=key=>{
     const row=registry[key];if(!row)return null;
