@@ -1,8 +1,12 @@
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import type { CinematicEvent, CinematicStep } from "../../domain/types";
+import { cinematicAppliesToScene, cinematicElapsed, mapTiltFrame } from "../../domain/cinematicTilt";
+import { serverNowMs } from "../../services/tabletopService";
+import { prefersReducedCinematicMotion } from '../../domain/cinematicMotion';
 import "./cinematic.css";
 
 interface CinematicLayerProps {
+  sceneId: string;
   cardPresentation?: ReactNode;
   event: CinematicEvent | null;
   dreadActive: boolean;
@@ -20,16 +24,16 @@ const durationFor = (step: CinematicStep) => step.duration ?? 600;
 const progressFor = (step: CinematicStep, elapsed: number) => Math.min(1, Math.max(0, (elapsed - step.at) / durationFor(step)));
 const isActive = (step: CinematicStep, elapsed: number) => elapsed >= step.at && elapsed <= step.at + durationFor(step);
 
-export function CinematicLayer({ event, dreadActive, onFinished, cardPresentation }: CinematicLayerProps) {
+export function CinematicLayer({ event, dreadActive, onFinished, cardPresentation, sceneId }: CinematicLayerProps) {
   const [frame, setFrame] = useState<CinematicFrame>({ elapsed: 0, event: null });
 
   useEffect(() => {
-    if (!event || event.completed) return;
+    if (!event || event.completed || !cinematicAppliesToScene(event, sceneId)) return;
     const startedAt = performance.now();
     let animationFrame = 0;
     let exitTimer = 0;
     const tick = () => {
-      const elapsed = performance.now() - startedAt;
+      const elapsed = cinematicElapsed(event, performance.now() - startedAt, serverNowMs());
       if (elapsed >= event.duration) {
         const hasLetterbox = event.steps.some((step) => step.type === "LETTERBOX");
         setFrame({ elapsed: event.duration, event, exiting: hasLetterbox });
@@ -42,10 +46,10 @@ export function CinematicLayer({ event, dreadActive, onFinished, cardPresentatio
     };
     animationFrame = requestAnimationFrame(tick);
     return () => { cancelAnimationFrame(animationFrame); window.clearTimeout(exitTimer); };
-  }, [event, onFinished]);
+  }, [event, onFinished, sceneId]);
 
   const view = useMemo(() => {
-    const activeFrame = event && !event.completed && frame.event?.id === event.id ? frame : null;
+    const activeFrame = event && !event.completed && cinematicAppliesToScene(event, sceneId) && frame.event?.id === event.id ? frame : null;
     if (!activeFrame?.event && !dreadActive) return null;
     const elapsed = activeFrame?.elapsed ?? 0;
     const eventSteps = activeFrame?.event?.steps ?? [];
@@ -71,8 +75,10 @@ export function CinematicLayer({ event, dreadActive, onFinished, cardPresentatio
       const progress = progressFor(uiStep, elapsed);
       uiOpacity = uiStep.type === "UI_FADE_OUT" ? 1 - progress : progress;
     }
-    return { shake, flash, darkness, vignetteIntensity, letterbox, letterboxExiting, colorWash, blur, title, titleOpacity, uiOpacity, interactionLocked };
-  }, [event, frame, dreadActive]);
+    const tilt = steps.find(step => step.type === 'MAP_TILT');
+    const tiltFrame = tilt?.type === 'MAP_TILT' ? mapTiltFrame(tilt, elapsed, 1, 1, prefersReducedCinematicMotion()) : null;
+    return { shake, flash, darkness, vignetteIntensity, letterbox, letterboxExiting, colorWash, blur, title, titleOpacity, uiOpacity, interactionLocked, tiltFrame };
+  }, [event, frame, dreadActive, sceneId]);
 
   useEffect(() => {
     const shell = document.querySelector<HTMLElement>(".tabletop-shell, .scene-builder");
@@ -111,6 +117,7 @@ export function CinematicLayer({ event, dreadActive, onFinished, cardPresentatio
     <div className="cinematic-color-wash" />
     <div className="cinematic-flash" />
     <div className="cinematic-letterbox" />
+    {view.tiltFrame && <div className="cinematic-slope-cue" aria-label="Slope direction"><span style={{transform:`rotate(${view.tiltFrame.arrowRotation}rad)`}}>↓</span>Sloping floor</div>}
     {view.title?.text && <div className="cinematic-title" style={titleStyle}><span>{view.title.text}</span></div>}
   </div>{cardPresentation}</>;
 }

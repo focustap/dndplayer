@@ -1,0 +1,438 @@
+{
+  "root": "outputs/lornwatch",
+  "note": "Local generated artwork; these are file paths, not R2 keys. No live campaign installation is implied.",
+  "assets": [
+    {
+      "key": "square",
+      "file": "maps/square.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 4133553,
+      "sha256": "5c929bb69ae6491c067786ed1d9652f98fa2834fac5a24c1d98366687fcc8341"
+    },
+    {
+      "key": "inn",
+      "file": "maps/inn.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 3222259,
+      "sha256": "78d96b4e52e546a2a36a7a8855057904cb684a78ede9290c1085f0ae5d471cb1"
+    },
+    {
+      "key": "bakery",
+      "file": "maps/bakery.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 3218419,
+      "sha256": "625bbc1d541ed1a5d2be4eabb33bc4feeb1428d4c5aa6ed32b40ee50a277a5ca"
+    },
+    {
+      "key": "store",
+      "file": "maps/store.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 3313382,
+      "sha256": "69f650ae600df4c9af927f6d852a5d04a34be553597f0914ed621564f3a80961"
+    },
+    {
+      "key": "cottage",
+      "file": "maps/cottage.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 4117853,
+      "sha256": "71eeefc3ecc8baf5f7907cfc29aa0cefeede0405cb32a74dbf39c59d327171c1"
+    },
+    {
+      "key": "court",
+      "file": "maps/court-accessible.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 2860481,
+      "sha256": "f6e4389e7c5e0b6347e7955ead0efe2a32f8f0d8e46659a0df4c4b62db94e09d"
+    },
+    {
+      "key": "cells",
+      "file": "maps/cells.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 3083461,
+      "sha256": "30ae6e0334bdd19f45b3ce759c9e1763a119ace00780b3004ff3a73492c64bf1"
+    },
+    {
+      "key": "basement",
+      "file": "maps/basement.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 3258927,
+      "sha256": "2236cadbe90342f7eb76f62391b1a61138cb52e42f8eb28cdb4e406ad2f76189"
+    },
+    {
+      "key": "cave",
+      "file": "maps/cave-ankheg.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 3989161,
+      "sha256": "58c3e32eb1325acadf7f3b0a6167521ea04c858a4acc06b9da200cd917b22492"
+    },
+    {
+      "key": "crossing",
+      "file": "maps/crossing.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 4250735,
+      "sha256": "ae9fcfb7d2e87bf931905d3028361f1773e0f088f5ad03ae405ed988aa630a19"
+    },
+    {
+      "key": "mira",
+      "file": "portraits/mira.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2350130,
+      "sha256": "6fa4b19c6a780a4e4eab9ddbe91fb36dff90880e165baf061b8d69d03a60fd01"
+    },
+    {
+      "key": "pippa",
+      "file": "portraits/pippa.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2488135,
+      "sha256": "3d008ec4f7953b77e4cf4774cdea01aebb17d16a480cbb95180b18a8a56aa342"
+    },
+    {
+      "key": "oren",
+      "file": "portraits/oren.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2657736,
+      "sha256": "e51710d5969383b8765b085357cbd81261f6e5937c7d3d36055677e5818cfdf1"
+    },
+    {
+      "key": "ada",
+      "file": "portraits/ada.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2581892,
+      "sha256": "69e8f0df1841c9619ba684f84379c5c64bef28a123c1f5b2bb1d92bc608a358c"
+    },
+    {
+      "key": "ilanPortrait",
+      "file": "portraits/ilanPortrait.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2305102,
+      "sha256": "8dffb9d846d8546fc5835c1bf8e783d480eeb56a3e1ea5421537d526bef011d6"
+    },
+    {
+      "key": "sera",
+      "file": "portraits/sera.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2326686,
+      "sha256": "a22d695f1abf160cf6c14be3f479661b617cc8e559c4a7c8db46d468a08ceccd"
+    },
+    {
+      "key": "jory",
+      "file": "portraits/jory.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2484221,
+      "sha256": "2218e1786a0310955a5e0612d89ee60db32b78101b08e146796472c844487e56"
+    },
+    {
+      "key": "nell",
+      "file": "portraits/nell.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2349658,
+      "sha256": "1e839c72efa2508eef63441f85a83ea34226e64b5cfc1f5281d394db3d911fc0"
+    },
+    {
+      "key": "guard",
+      "file": "portraits/guard.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2437273,
+      "sha256": "d91a3ba714d25402e82e7765afa71b2e8940a8c9999c5bcc54ae1280ad59a864"
+    },
+    {
+      "key": "martha",
+      "file": "portraits/martha.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2631377,
+      "sha256": "ba07a4242ee12479acb8c126ea22a2b344ba2cb689b712c707d0d4452f5e261f"
+    },
+    {
+      "key": "elsi",
+      "file": "portraits/elsi.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2518922,
+      "sha256": "0ebe6258e3fea3ba8ed3a6a7e62601b5b6407667da9da7c973f8ff467348a668"
+    },
+    {
+      "key": "tavin",
+      "file": "portraits/tavin.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2162824,
+      "sha256": "9a58bbfbc1f7c2156c877f18dd3dfc94b5b367a9b5d9b63368b4bff5516cf19f"
+    },
+    {
+      "key": "horse",
+      "file": "portraits/horse.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2161069,
+      "sha256": "c389f5faee6e3ee0677ba55307ea0b60a436912c89bd846af9881eedf6bf931f"
+    },
+    {
+      "key": "lina",
+      "file": "portraits/lina.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2339764,
+      "sha256": "836ae8675ddea55cde950fcfea9806807dac4c5627b9d7eae220a14575c955f6"
+    },
+    {
+      "key": "bram",
+      "file": "portraits/bram.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2721786,
+      "sha256": "883f25e70e2f53a8690080b0658e011e857a9b112f9756709f02c5cae85da5ed"
+    },
+    {
+      "key": "tessa",
+      "file": "portraits/tessa.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2334417,
+      "sha256": "9c8bd67c6589bd80cdfcc8788ba3f64f2905a9c07cbc6d5022a2ac2bc410f292"
+    },
+    {
+      "key": "daro",
+      "file": "portraits/daro.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2501651,
+      "sha256": "ecd50bc9466cd017dd132ed6903ff6bf6f2ef441f83cf12dc779c63735fe8e5e"
+    },
+    {
+      "key": "residentWorker",
+      "file": "portraits/residentWorker.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2263456,
+      "sha256": "35b8c960665a4dc5185a503d21a9515a378e32e33e3edd9778cace72adc11f98"
+    },
+    {
+      "key": "residentWeaver",
+      "file": "portraits/residentWeaver.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2599778,
+      "sha256": "5080bcda7b005dd96d98ca8baba96e17b41079d27398b5e7760bf34d2858b1ef"
+    },
+    {
+      "key": "residentElder",
+      "file": "portraits/residentElder.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2557433,
+      "sha256": "eda3e7de32acbd8c6f188fe8d8dab50ddd66e9382e084d0a71136368a0d35de7"
+    },
+    {
+      "key": "ilan",
+      "file": "tokens/ilan.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2441400,
+      "sha256": "0211405722559736d81dc3f0040be7ad07beb44e11e8308efcc3f3437e419645"
+    },
+    {
+      "key": "sphere",
+      "file": "tokens/sphere.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1901069,
+      "sha256": "36a9355440bd66115e972b5958929ce7821a705832dbd923d9a1750b98464b45"
+    },
+    {
+      "key": "ankheg",
+      "file": "tokens/ankheg.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1790896,
+      "sha256": "3bca789b0eb2405dbfd5a7e9584b89fbbef8f25e6018386fa7bb85b9eb4892e8"
+    },
+    {
+      "key": "highwayman",
+      "file": "tokens/highwayman.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2285013,
+      "sha256": "f4b7d3f27cfea8f64e9ab2ea54f84d483c7d250849d095150dc2efa872bc4adb"
+    },
+    {
+      "key": "highwaymanCaptain",
+      "file": "tokens/highwayman.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2285013,
+      "sha256": "f4b7d3f27cfea8f64e9ab2ea54f84d483c7d250849d095150dc2efa872bc4adb"
+    },
+    {
+      "key": "ordinances",
+      "file": "discoverables/ordinances.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1200,
+      "height": 1400,
+      "bytes": 80957,
+      "sha256": "01066c70cd615b213a8ff899118ab70bbc8cc11a8402e52d23897d5c3e2f6c31"
+    },
+    {
+      "key": "memorial",
+      "file": "discoverables/memorial.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1200,
+      "height": 1400,
+      "bytes": 42626,
+      "sha256": "9de757c3e78429f8de473d9500d061b7a708bf57eb53dd77f02acc8cf6af3acd"
+    },
+    {
+      "key": "ledger",
+      "file": "discoverables/ledger.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1200,
+      "height": 1400,
+      "bytes": 61124,
+      "sha256": "386069c8476089bcdf58c343e2e262da8f59b0291347bf81eafd4adef339d4d5"
+    },
+    {
+      "key": "sentence",
+      "file": "discoverables/sentence.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1200,
+      "height": 1400,
+      "bytes": 63956,
+      "sha256": "b54abb9c2559bb9ecf065c81607955b632c04ff12bcda10a1f6446f1cb07b775"
+    },
+    {
+      "key": "livestock",
+      "file": "discoverables/livestock-ankheg.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1200,
+      "height": 1400,
+      "bytes": 81943,
+      "sha256": "d2c40034e503d301f54ed4615196e6f2afb8bee187c9c8f9e69c2a6b30974ceb"
+    },
+    {
+      "key": "comparison",
+      "file": "discoverables/comparison.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1200,
+      "height": 1400,
+      "bytes": 76214,
+      "sha256": "32ff5f4a88cada59a7672b5aacd4bd4dd4727eda10a6a98a4908c44dcdec69c0"
+    },
+    {
+      "key": "case",
+      "file": "discoverables/case.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1200,
+      "height": 1400,
+      "bytes": 67261,
+      "sha256": "76b006c4408894edb8f817833d716c1fefe929f6d3d2578de780e8a3f7cb3e98"
+    },
+    {
+      "key": "survey",
+      "file": "discoverables/survey.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1200,
+      "height": 1400,
+      "bytes": 89316,
+      "sha256": "1f721b6015bc31aa80952046d21a743f8364a350f9141ef3bcbc6e5ef15ff74d"
+    },
+    {
+      "key": "arrests",
+      "file": "discoverables/arrests.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1200,
+      "height": 1400,
+      "bytes": 67100,
+      "sha256": "c71d6223d7fba52e443db45b3e03953c0d2813c001cbecaa75c0dfc5fa3f35b4"
+    },
+    {
+      "key": "finale",
+      "file": "discoverables/finale.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 2397927,
+      "sha256": "dc90b95f8ede6d6387a9e32f3336c2078713e0d6dbf75972aed53bb077cfe3f7"
+    },
+    {
+      "key": "vii",
+      "file": "discoverables/vii.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 3989037,
+      "sha256": "91dae1e0eb3ea7ee45084d0e1fce373a6de75ed1ab0d6ea4bcc7d0a7bbc6f69f"
+    },
+    {
+      "key": "wagonWaybill",
+      "file": "discoverables/wagonWaybill.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1200,
+      "height": 1400,
+      "bytes": 75178,
+      "sha256": "574c09b811e11f81f1e9291ee9ee2c5841cfa8313fd97fb57724728653bf5e8f"
+    },
+    {
+      "key": "bridgeNotice",
+      "file": "discoverables/bridgeNotice.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1200,
+      "height": 1400,
+      "bytes": 67001,
+      "sha256": "277cf7c620d26cb2f14f842c8aeaeb6eca20c58c50cbe3cd00a2386f14ebec8f"
+    }
+  ]
+}

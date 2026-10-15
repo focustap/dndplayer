@@ -2,6 +2,10 @@
 
 These instructions apply to the entire repository.
 
+## Live campaign is the default
+
+Unless the user explicitly requests a demo, fixture, isolated preview or prototype, Wayfinder changes target the deployed application and the existing **The Hollow** campaign. Local tests are validation, not the final deliverable. Inspect and snapshot current live data before targeted writes; preserve played state, characters, positions, shops, earlier chapters and unrelated combat. Never replace the campaign with fixtures or replay an old snapshot. Apply authorized content through existing Supabase and R2 systems. Deploy necessary runtime changes through the production workflow without including unrelated unfinished features. Stop a blocked or unsafe part and report it accurately. Distinguish source changes, production deployment, live data updates and actual live verification.
+
 ## What this repository is
 
 Wayfinder is a browser-based virtual tabletop. It is also the tool used to run the D&D campaign **The Hollow**.

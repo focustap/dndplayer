@@ -144,6 +144,7 @@ function TabletopSurface({ playerView }: { playerView: boolean }) {
         </>
       )}
       <CinematicLayer
+        sceneId={state.scene.id}
         cardPresentation={<DealerCardReveal />}
         event={state.cinematicEvent}
         dreadActive={state.dreadActive}
