@@ -13,6 +13,7 @@ export function validateManifest() {
   for(const [from,to,,x,y] of links)if(!keys.has(from)||!keys.has(to)||from===to||x<0||x>1536||y<0||y>1024)throw new Error('Invalid link');
   for(const start of keys){const reached=new Set([start]);for(let i=0;i<keys.size;i++)for(const [a,b] of links)if(reached.has(a))reached.add(b);if(reached.size!==keys.size)throw new Error(`Unreachable scene from ${start}`);}
   for(const n of npcs)if(!keys.has(n.scene)||'pages'in n||'dialogue'in n||'dialogue_text'in n)throw new Error('NPC dialogue forbidden');
+  for(const n of npcs)for(const item of n.shop??[])if(!Number.isInteger(item.price_gp)||item.price_gp<1)throw new Error('Lornwatch prices must be whole gold amounts of at least 1 gp');
   for(const e of encounters)for(const [key,count]of e.members)if(!monsters.some(m=>m.key===key)||count<1)throw new Error('Invalid encounter');
   for(const d of documents)if(d.name.length>160||!keys.has(d.scene))throw new Error('Invalid document');
   if(/Catalyst|The Witness|cosmology|world inside|mother misses|Mother, I finally/i.test(JSON.stringify({npcs,documents,monsters})))throw new Error('Secret in shared payload');

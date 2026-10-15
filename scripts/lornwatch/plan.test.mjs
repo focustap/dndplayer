@@ -57,6 +57,14 @@ test('no dialogue rows for ordinary NPCs; shop interactions have zero spoken tex
   for(const i of p.after.token_interactions){assert.equal(i.type,'SHOP');assert.equal(i.dialogue_text,'');assert.deepEqual(i.dialogue_pages,[]);}
 });
 
+test('every Lornwatch shop uses whole gold prices with a minimum of 1 gp',()=>{
+  const stock=plan().after.npc_shop_items;
+  assert.equal(stock.length,41);
+  assert.ok(stock.every(item=>Number.isInteger(item.price_gp)&&item.price_gp>=1));
+  assert.equal(stock.find(item=>item.name==='Private room').price_gp,2);
+  assert.equal(stock.find(item=>item.name==='Hearthstone').price_gp,5);
+});
+
 test('four square vendors have real, stocked SHOP rows and no ordinary resident can open a dialogue',()=>{
   const db=plan().after;
   for(const name of ['Lina Sedge','Bram Nettles','Tessa Bloom','Daro Flint']){

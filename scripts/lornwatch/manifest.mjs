@@ -23,9 +23,9 @@ export const links = [
 ];
 const item=(name,price_gp,quantity=20,description='')=>({name,price_gp,quantity,description});
 export const npcs=[
-  {key:'mira',name:'Mira Fen',scene:'inn',x:1150,y:430,shop:[item('Supper',0.5),item('Bed',0.5,20,'One overnight stay in the common room; the DM assigns a bed.'),item('Private room',2,6,'One private room for one night; the DM manages occupancy.'),item('Tea',0.1),item('Rations',0.5),item('Hearthstone',5,4,'Campaign item: returns the party to an inn. The DM records the destination inn and resolves its use manually; purchasing does not teleport anyone or move tokens.'),item('Ale (mug)',0.04,30)]},
-  {key:'pippa',name:'Pippa Bell',scene:'bakery',x:590,y:210,shop:[item('Berry bun',0.1),item('Bread',0.2),item('Pie',1,6),item('Livestock lure scraps',0.2,3)]},
-  {key:'oren',name:'Oren Bramble',scene:'store',x:1050,y:400,shop:[item('Rope (50 ft)',1),item('Torch',0.01),item('Rations',0.5),item('Waterskin',0.2),item('Crowbar',2),item('Shovel',2),item('Hunting trap',5,3),item("Healer's kit",5,2),item('Ball bearings',1),item('Sack',0.01)]},
+  {key:'mira',name:'Mira Fen',scene:'inn',x:1150,y:430,shop:[item('Supper',1),item('Bed',1,20,'One overnight stay in the common room; the DM assigns a bed.'),item('Private room',2,6,'One private room for one night; the DM manages occupancy.'),item('Tea',1),item('Rations',1),item('Hearthstone',5,4,'Campaign item: returns the party to an inn. The DM records the destination inn and resolves its use manually; purchasing does not teleport anyone or move tokens.'),item('Ale (mug)',1,30)]},
+  {key:'pippa',name:'Pippa Bell',scene:'bakery',x:590,y:210,shop:[item('Berry bun',1),item('Bread',1),item('Pie',1,6),item('Livestock lure scraps',1,3)]},
+  {key:'oren',name:'Oren Bramble',scene:'store',x:1050,y:400,shop:[item('Rope (50 ft)',1),item('Torch',1),item('Rations',1),item('Waterskin',1),item('Crowbar',2),item('Shovel',2),item('Hunting trap',5,3),item("Healer's kit",5,2),item('Ball bearings',1),item('Sack',1)]},
   {key:'ada',name:'Ada Rook',scene:'cottage',x:800,y:450},
   {key:'ilanPortrait',name:'Judge Ilan Rook',scene:'court',x:768,y:260},
   {key:'sera',name:'Sera Pell',scene:'court',x:1100,y:550},
@@ -40,10 +40,10 @@ export const npcs=[
   {key:'elsi',name:'Elsi Marr',scene:'crossing',x:475,y:460},
   {key:'tavin',name:'Tavin Holt',scene:'crossing',x:760,y:390},
   {key:'horse',name:'Bracken',scene:'crossing',x:780,y:470,size:2},
-  {key:'lina',name:'Lina Sedge',scene:'square',x:350,y:430,shop:[item('Vegetable hand pie',0.2,12),item('Cup of hot broth',0.05,20),item('Grilled onion skewer',0.05,16),item('Cup of cider',0.04,20)]},
-  {key:'bram',name:'Bram Nettles',scene:'square',x:1130,y:420,shop:[item('Bag of apples',0.1,12),item('Carrots (bunch)',0.05,15),item('Potatoes (sack)',0.2,8),item('Fresh herbs (bundle)',0.05,10)]},
-  {key:'tessa',name:'Tessa Bloom',scene:'square',x:660,y:300,shop:[item('Single cultivated flower',0.02,30,'Purchased flower grown for sale; not taken from public beds.'),item('Small bouquet',0.1,10),item('Potted marigold',0.2,6),item('Herb seedlings',0.1,8)]},
-  {key:'daro',name:'Daro Flint',scene:'square',x:1160,y:800,shop:[item('Soap',0.02,16),item('Candle',0.01,30),item('Twine (50 ft)',0.1,10),item('Needle and thread',0.05,12),item('Wooden cup',0.02,15),item('Carved wooden charm',0.1,10,'A small ordinary keepsake; no magical effects.'),item('Chalk (piece)',0.01,20),item('Belt pouch',0.5,6)]},
+  {key:'lina',name:'Lina Sedge',scene:'square',x:350,y:430,shop:[item('Vegetable hand pie',1,12),item('Cup of hot broth',1,20),item('Grilled onion skewer',1,16),item('Cup of cider',1,20)]},
+  {key:'bram',name:'Bram Nettles',scene:'square',x:1130,y:420,shop:[item('Bag of apples',1,12),item('Carrots (bunch)',1,15),item('Potatoes (sack)',1,8),item('Fresh herbs (bundle)',1,10)]},
+  {key:'tessa',name:'Tessa Bloom',scene:'square',x:660,y:300,shop:[item('Single cultivated flower',1,30,'Purchased flower grown for sale; not taken from public beds.'),item('Small bouquet',1,10),item('Potted marigold',1,6),item('Herb seedlings',1,8)]},
+  {key:'daro',name:'Daro Flint',scene:'square',x:1160,y:800,shop:[item('Soap',1,16),item('Candle',1,30),item('Twine (50 ft)',1,10),item('Needle and thread',1,12),item('Wooden cup',1,15),item('Carved wooden charm',1,10,'A small ordinary keepsake; no magical effects.'),item('Chalk (piece)',1,20),item('Belt pouch',1,6)]},
   ...[
     ['residentWorker','Town resident — worker','Market shopper',400,460],
     ['residentWeaver','Town resident — weaver','Flower shopper',710,285],
