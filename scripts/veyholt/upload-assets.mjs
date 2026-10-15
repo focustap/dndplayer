@@ -3,11 +3,13 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { basename, resolve } from 'node:path';
-import { assets, scenes } from './manifest.mjs';
 
 const args=process.argv.slice(2);
 const flag=name=>{const i=args.indexOf(name);return i<0?null:args[i+1];};
 async function main(){
+ const chapter=flag('--chapter')??'veyholt';
+ if(!['veyholt','lornwatch'].includes(chapter))throw new Error('Supported chapters: veyholt, lornwatch');
+ const {assets,scenes}=chapter==='lornwatch'?await import('../lornwatch/manifest.mjs'):await import('./manifest.mjs');
  const campaignId=flag('--campaign-id'),key=flag('--key'),file=flag('--file'),out=flag('--registry');
  if(!/^[0-9a-f-]{36}$/i.test(campaignId)||!assets[key]||!file||!out)throw new Error('Use --campaign-id UUID --key town --file path.png --registry private-registry.json');
  const token=process.env.WAYFINDER_ACCESS_TOKEN;
@@ -22,7 +24,7 @@ async function main(){
  let registry={};try{registry=JSON.parse(await readFile(resolve(out),'utf8'));}catch(error){if(error.code!=='ENOENT')throw error;}
  const headers={authorization:`Bearer ${token}`};
  if(registry[key]?.sha256===sha256){const response=await fetch(`${worker}/v1/sign`,{method:'POST',headers:{...headers,'content-type':'application/json'},body:JSON.stringify({campaignId,path:registry[key].path})});if(response.ok){console.log(`${key}: existing R2 asset verified; no upload.`);return;}if(response.status!==404)throw new Error(`Asset verification failed (${response.status}).`);}
- const category=scene?'maps':assets[key].startsWith('discoverables/')?'discoverables':['scout','bandit','graveyardDog','usher','hound','jester'].includes(key)?'monster-templates':'npc-templates';
+ const category=scene?'maps':assets[key].startsWith('discoverables/')?'discoverables':assets[key].startsWith('tokens/')||['scout','bandit','graveyardDog','usher','hound','jester'].includes(key)?'monster-templates':'npc-templates';
  const response=await fetch(`${worker}/v1/upload?${new URLSearchParams({campaignId,category})}`,{method:'POST',headers:{...headers,'content-type':'image/png','x-file-name':basename(assets[key])},body:bytes});
  if(!response.ok)throw new Error(`Worker upload failed (${response.status}).`);
  const result=await response.json();

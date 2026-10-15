@@ -8,12 +8,12 @@ export const scenes = [
 ].map(([key,title],i)=>({key,name:`Lornwatch ${String(i+1).padStart(2,'0')} — ${title}`,width:1536,height:1024,
   grid_type:['basement','cave','cells'].includes(key)?'SQUARE':'GRIDLESS',grid_size:64,feet_per_cell:5,lighting:'DAY'}));
 export const links = [
-  ...['inn','bakery','store','cottage','court','cave'].map((key,i)=>['square',key,scenes.find(s=>s.key===key).name.split(' — ')[1],220+i*210,200+(i%2)*550]),
+  ...[['inn',525,760],['bakery',280,395],['store',1210,760],['cottage',1260,300],['court',785,185],['cave',1420,900]].map(([key,x,y])=>['square',key,scenes.find(s=>s.key===key).name.split(' — ')[1],x,y]),
   ...['inn','bakery','store','cottage','court','cave'].map(key=>[key,'square','Sunpetal Square',768,935]),
   ['store','cave','Livestock trail',1300,650],['cave','store','Return to Bramble & Brass',200,850],
-  ['court','cells','Holding corridor',1250,350],['cells','court','Public registry',200,850],
+  ['court','cells','Holding corridor',1250,190],['cells','court','Public registry',700,900],
   ['court','basement','Service stairs — DM controls access',1250,700],
-  ['cells','basement','Service stair landing — DM controls access',1300,300],
+  ['cells','basement','Service stair landing — DM controls access',900,150],
   ['basement','court','Courthouse stairs',768,940],
 ];
 const item=(name,price_gp,quantity=20,description='Mundane goods or service; DM resolves use.')=>({name,price_gp,quantity,description});
@@ -30,6 +30,8 @@ export const npcs=[
   {key:'guard',name:'Lornwatch Guard',scene:'square',x:560,y:780},
   {key:'martha',name:'Martha Bell',scene:'cells',x:1050,y:450,hidden:true},
   {key:'jory',name:'Jory Reed',scene:'cells',x:1050,y:650,hidden:true},
+  {key:'nell',name:'Nell Reed',scene:'inn',x:1020,y:340,hidden:true},
+  {key:'ada',name:'Ada Rook',scene:'square',x:415,y:165,hidden:true},
 ];
 const action=(name,description,attackBonus=null,dice=null,damageType='Force',ranged=false)=>({name,description,kind:'ACTION',usage:null,attackType:attackBonus===null?'OTHER':ranged?'SPELL':'MELEE',attackBonus,reach:ranged?null:5,range:ranged?{normal:60,long:60,unit:'ft'}:null,damage:dice?[{average:null,dice,flatBonus:Number(dice.match(/\+(\d+)/)?.[1]??0),damageType}]:[],save:null,conditions:[],effects:[],variants:[]});
 const creature=(key,name,hp,ac,actions,extra={})=>({key,name,max_hp:hp,ac,speed:30,creature_size:'Medium',creature_type:'humanoid',abilities:{str:10,dex:12,con:14,int:10,wis:12,cha:10},actions,traits:[],bonus_actions:[],reactions:[],notes:'',...extra});
@@ -53,7 +55,7 @@ export const placements=[
 // Images are physical evidence only; NPC story text never appears in these.
 export const documents=[
   {key:'ordinances',scene:'square',name:'Municipal notices',x:1100,y:720,text:'LORNWATCH — MUNICIPAL NOTICES\nOrdinance 14: Unauthorized removal of public property, including public flowers, is punishable by seven days imprisonment.\nAppeals and requests for a hearing: public registry, Lornwatch Courthouse.\nKeep fountain paths clear. Market closes at sunset.'},
-  {key:'memorial',scene:'square',name:'Memorial inscription',x:780,y:180,text:'IN MEMORY OF TOMAS ROOK\nBeloved son, brother and neighbor.\nMay kindness outlast our grief.'},
+  {key:'memorial',scene:'square',name:'Memorial inscription',x:365,y:100,text:'IN MEMORY OF TOMAS ROOK\nBeloved son, brother and neighbor.\nMay kindness outlast our grief.'},
   {key:'ledger',scene:'inn',name:'Guest ledger',x:1150,y:500,text:'GOLDEN FINCH — GUEST ACCOUNTS\nThree bookings ended after municipal detention. Belongings held for families.\nPetitions for release: public registry.\nNo charge for the child staying in the kitchen room.'},
   {key:'sentence',scene:'bakery',name:'Martha Bell sentencing order',x:980,y:300,text:'PUBLIC SENTENCING COPY\nMartha Bell — sale of overcooked public-market goods.\nSentence: fourteen days detention.\nPrior sanction for same offense: written warning.\nAppeal may be filed at the public registry.'},
   {key:'livestock',scene:'store',name:'Livestock notice',x:600,y:350,text:'FARMS NEED HELP\nGoats and sheep taken near Mossjaw Ravine. Large clawed tracks on the stream trail.\n40 gold for ending the losses. A safe relocation or secure pens is welcome.\nAsk at Bramble & Brass for the trail. Follow stream northeast to limestone cave.'},

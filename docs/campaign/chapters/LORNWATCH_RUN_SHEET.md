@@ -26,4 +26,6 @@ Writs: Haste prohibited (>15ft first time/turn DC12STR stops movement); One blow
 
 Before session: confirm maps load; documents readable; every interior has return link; shops show no dialogue tab; prepare healing/rest; read Ada section05 and boss07. Precheck finale images only privately. Existing live campaign must not be reset. Installation importer is additive and rollback-only by default; never replay an old snapshot over current play.
 
+Token continuity is manual: after Jory's arrest hide his square token, reveal the cell copy only on visiting. If Nell goes to Finch, hide square Nell and reveal the prepared inn copy. For the memorial beat hide cottage Ada and reveal square Ada; reverse when she returns. Ilan's court and basement representations likewise appear only where he currently is. No movement or story state is automated.
+
 Private tracking (paper or DM notes): arrest intervention; Jory released; Nell location; Martha released; Ada initial visit; memorial witnessed OR Tomas case discussed; story shared; owlbear resolution/cub safety; evidence copied; chosen Ilan outcome; sphere destroyed; finale shown; VII shown; rewards paid. These are DM reminders, not automatic gates.

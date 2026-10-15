@@ -14,8 +14,8 @@ export default defineConfig(({ command, mode }) => ({
   plugins: [react(), ...(command === "serve" && mode === "chapter-preview" ? [chapterPreviewPlugin()] : [])],
   define: command === "serve" && mode === "chapter-preview" ? {
     "import.meta.env.VITE_CHAPTER_PREVIEW": JSON.stringify("lornwatch"),
-    "import.meta.env.VITE_SUPABASE_URL": JSON.stringify(""),
-    "import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY": JSON.stringify(""),
+    "import.meta.env.VITE_SUPABASE_URL": "undefined",
+    "import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY": "undefined",
   } : {},
   server: { host: "127.0.0.1" },
   build: { target: "es2022" },

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { buildPlan, validateManifest, chapterId } from './plan.mjs';
+import { buildPlan, validateManifest, chapterId, updatePrivateTravelHook } from './plan.mjs';
 import { previewCampaignId as campaignId, emptySnapshot } from './preview.mjs';
 import { scenes, documents, assets } from './manifest.mjs';
 import { transactionSql } from '../veyholt/sql.mjs';
@@ -10,7 +10,7 @@ const sheet=readFileSync(new URL('../../docs/campaign/chapters/LORNWATCH_RUN_SHE
 const plan=(db=emptySnapshot(),registry={})=>buildPlan(db,campaignId,registry,chapter,sheet);
 // Test-only asset keys; never exported as an install registry.
 const registry=Object.fromEntries(Object.keys(assets).map(key=>[key,{path:`${campaignId}/fixtures/${key}.png`,verified:true,width:1536,height:1024}]));
-test('nine native scenes are connected in both directions; all encounters and documents validate',()=>assert.deepEqual(validateManifest(),{scenes:9,npcs:12,links:19,encounters:3,documents:11}));
+test('nine native scenes are connected in both directions; all encounters and documents validate',()=>assert.deepEqual(validateManifest(),{scenes:9,npcs:14,links:19,encounters:3,documents:11}));
 test('installation only inserts; preserves all existing chapters, characters and runtime data byte for byte',()=>{
   const db=emptySnapshot();
   db.scenes.push({id:'earlier-scene',campaign_id:campaignId,name:'Greymere',active:true,revealed:true,map_url:'existing-art'});
@@ -66,4 +66,10 @@ test('boss has independent targets with no damage immunity trap, cub absent from
   const sphere=p.after.monster_templates.find(t=>t.name.endsWith('Dark sphere'));assert.equal(sphere.ac,13);assert.equal(sphere.max_hp,60);assert.deepEqual(sphere.damage_immunities,['Poison','Psychic']);
   const cub=p.after.monster_templates.find(t=>t.name.endsWith('cub'));assert.ok(!p.after.encounter_members.some(e=>e.monster_template_id===cub.id));
   assert.ok(documents.filter(d=>d.text).every(d=>!d.text.includes('VII')||d.key==='vii'));
+});
+test('optional hook update touches only two exact private notes and leaves Dealer content intact',()=>{
+  const db=emptySnapshot();db.campaign_notes.push({id:'hook',campaign_id:campaignId,title:'[Veyrholt] 07 — Final Table — runnable boss rules',body:'KEEP DEALER RULES. A missing observer at **Lornwatch Abbey**. A surveyor left there for Veyrholt and never arrived. KEEP RESULTS.'});
+  db.campaign_notes.push({id:'other',campaign_id:campaignId,title:'User notes',body:'Lornwatch Abbey — historical idea'});
+  const p=updatePrivateTravelHook(plan(db));const changes=p.ops.filter(o=>o.kind==='update');assert.equal(changes.length,1);assert.equal(changes[0].before.id,'hook');assert.match(changes[0].after.body,/KEEP DEALER RULES/);assert.match(changes[0].after.body,/KEEP RESULTS/);assert.doesNotMatch(changes[0].after.body,/Abbey/);assert.equal(p.after.campaign_notes.find(n=>n.id==='other').body,db.campaign_notes[1].body);
+  assert.deepEqual(updatePrivateTravelHook(buildPlan(p.after,campaignId,{},chapter,sheet)).ops,[]);
 });

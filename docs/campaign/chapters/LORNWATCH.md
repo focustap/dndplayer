@@ -24,6 +24,8 @@ Father: Jory Reed; daughter: Nell. Intervene: guards first explain the posted la
 
 Ignore arrest: Nell goes to Mira at the Golden Finch; registry records Jory's detention. Follow guards, read notices, help daughter, request hearing or inspect records: all lead onward. A spouse stifles a protest (Insight/Persuasion DC 15 earns the family's trust); uncomfortable guard (DC 13, earns late-night stair information); whispered sympathy (DC 10, points to inn). Failed checks get public directions and visible discomfort, never remove routes.
 
+Jory is an embarrassed, protective working father, wants Nell safe, and knows only the posted charge; he conceals no plot secret. Calm help earns cooperation, threats make him put Nell behind him, an unexpected escape plan gets practical concern for where she will sleep. Nell wants her father back, knows the inn serves warm bread, and has no supernatural insight; reassurance works better than interrogation. Guards are tired local employees, want an orderly hearing, know only ordinances and patrol routes, and fear being charged themselves; they hide misgivings, not knowledge of the sphere. Legal challenges get an escort, kindness can earn stair timing, intimidation draws witnesses, and unexpected solutions go to the clerk rather than triggering automatic violence.
+
 Objects: ordinance board (automatic inspection); Tomas memorial inscription (public, no VII); fountain ribbon with lost brass button (Investigation DC 11, return for a pastry). This last find is ordinary town life. Exits: every town interior and Glass Road; cave trail via general store. Reward for helping Nell: free supper, not compulsory money.
 
 ## 02 — Golden Finch Inn
@@ -93,7 +95,7 @@ In cells, invisible restraint slackens briefly when a deep vibration interrupts 
 
 ## 07 — Basement encounter: Ilan and the sphere
 
-DM_SECRET. Circular old chamber, stairs south, four broad pillars, knee-high broken masonry, floating perfect dark sphere north center. Arena 30×20 squares at 5 ft/square (map 1536×1024, grid51.2). Stair exit always usable. No VII baked into arena artwork; no future landscape in the map. Reveal Ilan/sphere tokens only on arrival. Sphere public label **Dark sphere**, never Catalyst. Use prepared encounter and existing initiative/HP controls; all restrictions adjudicated manually.
+DM_SECRET. Circular old chamber, stairs south, four broad pillars, knee-high broken masonry, floating perfect dark sphere north center. Arena 24×16 squares at 5 ft/square (map 1536×1024, grid64). Stair exit always usable. No VII baked into arena artwork; no future landscape in the map. Reveal Ilan/sphere tokens only on arrival. Sphere public label **Dark sphere**, never Catalyst. Use prepared encounter and existing initiative/HP controls; all restrictions adjudicated manually.
 
 Optional private introductory read-aloud, never automatically displayed:
 

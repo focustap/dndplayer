@@ -75,3 +75,20 @@ export function buildPlan(snapshot,campaignId,registry={},chapter='',runSheet=''
   if(runSheet)add('campaign_notes','run-sheet',{campaign_id:campaignId,title:'[Lornwatch] START HERE — session run sheet',body:`DM ONLY\n\n${runSheet}`,created_by:ownerId},['campaign_id']);
   return {campaignId,ownerId,ops,after:db,missingAssets:Object.keys(assets).filter(k=>!registry[k]).map(k=>({key:k,file:assets[k]})),managedSceneIds:[...sceneRows.values()].map(s=>s.id)};
 }
+
+// Explicit optional exception for the retired destination, private notes only.
+// Keep every surrounding Dealer rule, result, note edit and player record intact.
+export function updatePrivateTravelHook(plan) {
+  const titles=['[Veyrholt] 05 — House Veyr sequence','[Veyrholt] 07 — Final Table — runnable boss rules'];
+  for(const title of titles){
+    const matches=plan.after.campaign_notes.filter(n=>n.title===title);
+    if(matches.length>1)throw new Error(`Ambiguous travel hook: ${title}`);
+    const note=matches[0];if(!note?.body.includes('Lornwatch Abbey'))continue;
+    const body=note.body.replaceAll('missing visitor from Lornwatch Abbey','missing civic surveyor Sera Pell from Lornwatch town')
+      .replaceAll('missing observer at **Lornwatch Abbey**','missing civic surveyor Sera Pell at **Lornwatch town**')
+      .replace('A surveyor left there for Veyrholt and never arrived.','The intended recipient has stopped answering civic reports; rumors of petty arrests also point toward the town.');
+    if(body.includes('Lornwatch Abbey'))throw new Error('Unrecognized private hook wording; review manually.');
+    plan.ops.push({kind:'update',table:'campaign_notes',key:'id',before:structuredClone(note),after:{body}});note.body=body;
+  }
+  return plan;
+}
