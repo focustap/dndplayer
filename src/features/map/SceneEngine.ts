@@ -2,6 +2,7 @@ import { Application, Container, FederatedPointerEvent, Graphics, Sprite, Text, 
 import type { AttackAnimationEvent, AttackSelection, CinematicEvent, Placement, Scene, SceneDiscoverable, SceneLink, SceneOverlay, SceneZoneMarker, Token, TokenMotionSegment, TokenPatrol } from "../../domain/types";
 import { createSceneStructureKey, stableAssetIdentity, type SceneStructureSnapshot } from "./sceneStructureKey";
 import { PATROL_PRESENTATION_DELAY_MS, refreshSignedAssetUrl, serverNowMs } from "../../services/tabletopService";
+import { cinematicAppliesToScene, cinematicElapsed, mapTiltFrame, tiltOnly } from "../../domain/cinematicTilt";
 
 export interface EngineSnapshot extends SceneStructureSnapshot { builder: boolean; shiftIntel: boolean; placement: Placement | null; patrolEdit: TokenPatrol | null; motionSegments: TokenMotionSegment[]; attackSelection: AttackSelection | null; attackEvent: AttackAnimationEvent | null; cinematicEvent: CinematicEvent | null; selectedTokenId: string | null; selectedTokenIds: string[]; transientTokenIds: string[]; monsterIntel: Record<string, { hp: number; maxHp: number; ac: number }>; canMove(token: Token): boolean; canInteract(token:Token):boolean; }
 interface EngineCallbacks { onSelect(id: string | null, additive?: boolean): void; onSelectMany(ids: string[], additive?: boolean): void; onMoveCommit(id: string, x: number, y: number): void; onTokenMove(id:string,x:number,y:number,final:boolean):void; onInteract(id:string):void; onOverlayCommit(id: string, x: number, y: number): void; onSceneLinkCommit(id: string, x: number, y: number): void; onDiscoverableCommit(id:string,x:number,y:number):void; onPatrolWaypointAdd(x:number,y:number):void; onPatrolWaypointMove(id:string,x:number,y:number):void; onPatrolWaypointDelete(id:string):void; onSceneLinkActivate(id: string): void; onDiscover(id:string):void; onDiscoverablePreview(id:string):void; onPlace(x: number, y: number): void; onAttackTarget(id: string | null): void; onContext(id: string, x: number, y: number): void; }
@@ -13,11 +14,14 @@ interface CinematicTokenGlow { tokenId: string; graphic: Graphics; }
 interface CinematicState { event: CinematicEvent; startedAt: number; rootX: number; rootY: number; scale: number; tokenBases: Map<string, { x: number; y: number; alpha: number; scale: number }>; impacts: Set<number>; effects: Set<CinematicImpact>; glows: Map<string, CinematicTokenGlow>; }
 
 export class SceneEngine {
+  // Presentation parent for the entire board; root remains the ordinary camera.
+  // Pixi's inverse world transform keeps token hit testing in map coordinates.
+  private cinematicWorld = new Container();
   private app = new Application(); private root = new Container(); private patrolLayer:Container|null=null; private snapshot: EngineSnapshot | null = null; private initialized = false; private destroyed = false; private renderVersion = 0; private structureKey: string | null = null; private queuedSnapshot:EngineSnapshot|null=null; private renderDrain:Promise<void>|null=null; private tokenTextures = new Map<string, Promise<Texture | null>>(); private tokenDisplays = new Map<string, Container>(); private tokenStructureKeys = new Map<string,string>(); private tokenHiddenLabels = new Map<string,Text>(); private lightingLayer:Graphics|null=null; private lightingKey:string|null=null; private overlayDisplays = new Map<string, Container>(); private sceneLinkDisplays = new Map<string, Container>(); private discoverableDisplays = new Map<string,Container>(); private tokenPositionTargets = new Map<string, { x: number; y: number }>(); private tokenMovementAnimations = new Map<string, TokenMovementAnimation>(); private patrolVisualCatchups = new Map<string, PatrolVisualCatchup>(); private attackEffects = new Map<string, AttackEffect>(); private lastAttackEventId: string | null = null; private cinematic: CinematicState | null = null; private finishedCinematicIds = new Set<string>(); private selectedRings = new Map<string, Graphics>(); private intelDisplays = new Map<string, Container>(); private intelKey: string | null = null; private selectionKey: string | null = null; private placementGhost: Container | null = null; private placementKey: string | null = null; private marquee: { startX:number; startY:number; currentX:number; currentY:number; additive:boolean; graphic:Graphics } | null = null; private pointerCandidate: { kind: "TOKEN"|"OVERLAY"|"SCENE_LINK"|"DISCOVERABLE"|"PATROL_WAYPOINT"; id: string; startX: number; startY: number; originX: number; originY: number; dx: number; dy: number; display: Container; additive:boolean } | null = null; private dragging: { kind: "TOKEN"|"OVERLAY"|"SCENE_LINK"|"DISCOVERABLE"|"PATROL_WAYPOINT"; id: string; dx: number; dy: number; x: number; y: number; originX: number; originY: number; display: Container; group: Map<string,{display:Container;originX:number;originY:number}> | null } | null = null; private lastMoveBroadcast=0; private instrumentation = { structuralRebuilds: 0, moveCommits: 0, overlayCommits: 0, sceneLinkCommits: 0 }; private panning = false; private panStart = { x: 0, y: 0, rootX: 0, rootY: 0 }; private spaceDown = false;
   constructor(private host: HTMLElement, private callbacks: EngineCallbacks) {}
   async init() {
     await this.app.init({ resizeTo: this.host, antialias: true, backgroundColor: 0x151816, resolution: Math.min(window.devicePixelRatio, 2), autoDensity: true }); this.initialized=true;
-    if (this.destroyed) { this.app.destroy(true,{children:true,texture:false}); return; } this.app.canvas.className = "pixi-canvas"; this.host.appendChild(this.app.canvas); this.root.sortableChildren = true; this.app.stage.addChild(this.root); this.app.stage.eventMode = "static"; this.app.stage.hitArea = this.app.screen;
+    if (this.destroyed) { this.app.destroy(true,{children:true,texture:false}); return; } this.app.canvas.className = "pixi-canvas"; this.host.appendChild(this.app.canvas); this.root.sortableChildren = true; this.cinematicWorld.addChild(this.root); this.app.stage.addChild(this.cinematicWorld); this.app.stage.eventMode = "static"; this.app.stage.hitArea = this.app.screen;
     this.app.stage.on("pointerdown", (e) => this.handleStageDown(e)); this.app.stage.on("pointermove", (e) => this.handleMove(e)); this.app.stage.on("pointerup", () => this.handleUp()); this.app.stage.on("pointerupoutside", () => this.handleUp());
     this.app.canvas.addEventListener("wheel", this.handleWheel, { passive: false }); this.app.ticker.add(this.updateTokenAnimations); this.center(); if (this.snapshot) void this.render(this.snapshot);
   }
@@ -42,6 +46,10 @@ export class SceneEngine {
     }
   }
   private async renderSnapshot(snapshot: EngineSnapshot) {
+    if (this.snapshot && this.snapshot.scene.id !== snapshot.scene.id && this.cinematic) {
+      this.finishedCinematicIds.add(this.cinematic.event.id);
+      this.clearCinematic();
+    }
     this.snapshot = snapshot;
     if (!this.app.renderer) return;
     const structureKey=createSceneStructureKey(snapshot);
@@ -166,6 +174,7 @@ export class SceneEngine {
   };
   private updateCinematic(now: number) {
     const event = this.snapshot?.cinematicEvent;
+    if (event && this.snapshot && !cinematicAppliesToScene(event, this.snapshot.scene.id)) { this.clearCinematic(); return; }
     if (!event) { if (this.cinematic) this.clearCinematic(); return; }
     if (event.completed || this.finishedCinematicIds.has(event.id)) {
       if (this.cinematic?.event.id === event.id) this.clearCinematic(false);
@@ -178,13 +187,18 @@ export class SceneEngine {
       this.cinematic = { event, startedAt: now, rootX: this.root.x, rootY: this.root.y, scale: this.root.scale.x, tokenBases, impacts: new Set(), effects: new Set(), glows: new Map() };
     }
     const cinematic = this.cinematic;
-    const elapsed = now - cinematic.startedAt;
+    const elapsed = cinematicElapsed(event, now - cinematic.startedAt, serverNowMs());
     if (elapsed >= event.duration) {
       this.finishedCinematicIds.add(event.id);
       if (this.finishedCinematicIds.size > 24) this.finishedCinematicIds.delete(this.finishedCinematicIds.values().next().value!);
       this.clearCinematic(false);
       return;
     }
+
+    this.updateMapTilt(event, elapsed);
+    // Turn never captures/restores token locations or the ordinary pan/zoom.
+    // DM movement and incoming realtime movement must keep working during it.
+    if (tiltOnly(event)) return;
 
     for (const [id, base] of cinematic.tokenBases) {
       const display = this.tokenDisplays.get(id);
@@ -236,6 +250,23 @@ export class SceneEngine {
     this.root.scale.set(cameraScale);
     this.root.position.set(cameraX, cameraY);
   }
+  private updateMapTilt(event: CinematicEvent, elapsed: number) {
+    this.resetMapTilt();
+    const step = event.steps.filter(s => s.type === 'MAP_TILT' && elapsed >= s.at && elapsed < s.at + (s.duration ?? 8000)).at(-1);
+    if (!step || step.type !== 'MAP_TILT') return;
+    const { rotation, scale } = mapTiltFrame(step, elapsed, this.host.clientWidth, this.host.clientHeight, window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    const cx = this.host.clientWidth / 2, cy = this.host.clientHeight / 2;
+    this.cinematicWorld.pivot.set(cx, cy);
+    this.cinematicWorld.position.set(cx, cy);
+    this.cinematicWorld.rotation = rotation;
+    this.cinematicWorld.scale.set(scale);
+  }
+  private resetMapTilt() {
+    this.cinematicWorld.rotation = 0;
+    this.cinematicWorld.scale.set(1);
+    this.cinematicWorld.pivot.set(0, 0);
+    this.cinematicWorld.position.set(0, 0);
+  }
   private updateTokenGlow(cinematic: CinematicState, tokenId: string, color: string | undefined, intensity: number | undefined, elapsed: number, progress: number) {
     const display = this.tokenDisplays.get(tokenId);
     const token = this.snapshot?.tokens.find((candidate) => candidate.id === tokenId);
@@ -271,14 +302,15 @@ export class SceneEngine {
     cinematic.effects.add(effect); this.app.ticker.add(effect.animate);
   }
   private clearCinematic(restoreCamera = true) {
+    this.resetMapTilt();
     const cinematic = this.cinematic;
     if (!cinematic) return;
     for (const effect of cinematic.effects) { this.app.ticker.remove(effect.animate); effect.ring.destroy(); }
     for (const glow of cinematic.glows.values()) { glow.graphic.removeFromParent(); glow.graphic.destroy(); }
     cinematic.effects.clear(); cinematic.glows.clear();
     const persistCamera = cinematic.event.steps.some((step) => (step.type === "CAMERA_FOCUS_TOKEN" || step.type === "CAMERA_FOCUS_POINT") && step.persistCamera);
-    if (restoreCamera || !persistCamera) { this.root.position.set(cinematic.rootX, cinematic.rootY); this.root.scale.set(cinematic.scale); }
-    for (const [id, base] of cinematic.tokenBases) {
+    if (!tiltOnly(cinematic.event) && (restoreCamera || !persistCamera)) { this.root.position.set(cinematic.rootX, cinematic.rootY); this.root.scale.set(cinematic.scale); }
+    for (const [id, base] of tiltOnly(cinematic.event) ? [] : cinematic.tokenBases) {
       const display = this.tokenDisplays.get(id);
       if (display) { display.position.set(base.x, base.y); display.alpha = base.alpha; display.scale.set(base.scale); }
     }
@@ -608,7 +640,7 @@ export class SceneEngine {
   }
   private renderPlacementGhost(placement: Placement, cell: number) { const ghost=new Container();const zone=placement.kind==="ZONE_MARKER";const radius=zone?Math.max(8,(placement.radiusFt/(this.snapshot?.scene.feetPerCell??5))*cell):placement.kind==="SCENE_LINK"?cell*.22:cell*.32;const color=zone?(Number.parseInt(placement.color.replace("#",""),16)||0x6b5cff):placement.kind==="MONSTER"?0x718460:placement.kind==="SCENE_LINK"?0xe3b978:0x9a86b1;const circle=new Graphics().circle(0,0,radius).fill({color,alpha:zone ? .22 : .45}).stroke({color:zone?color:0xe3b978,width:2});const text=zone?placement.name:placement.kind==="SCENE_LINK"?"↗":placement.name.slice(0,1).toUpperCase();const label=new Text({text,style:{fill:0xf4ead9,fontSize:zone?Math.max(11,Math.min(18,radius*.2)):radius*.8,fontWeight:"700",fontFamily:zone?"Arial":"Georgia",align:"center",stroke:zone?{color:0x080b0a,width:4}:undefined}});label.anchor.set(.5);ghost.addChild(circle,label);ghost.zIndex=310;ghost.eventMode="none";ghost.visible=false;this.placementGhost=ghost;this.root.addChild(ghost); }
   private handleStageDown(e:FederatedPointerEvent){
-    if(this.spaceDown||e.button===1){this.clearMarquee();this.panning=true;this.panStart={x:e.global.x,y:e.global.y,rootX:this.root.x,rootY:this.root.y};return;}
+    if(this.spaceDown||e.button===1){this.clearMarquee();this.panning=true;const p=this.cinematicWorld.toLocal(e.global);this.panStart={x:p.x,y:p.y,rootX:this.root.x,rootY:this.root.y};return;}
     if(this.snapshot?.attackSelection){this.callbacks.onAttackTarget(null);return;}
     if(this.snapshot?.patrolEdit&&this.snapshot.builder&&this.snapshot.canDm){const p=this.root.toLocal(e.global);this.callbacks.onPatrolWaypointAdd(p.x,p.y);return;}
     if(this.snapshot?.placement&&this.snapshot.canDm){const p=this.root.toLocal(e.global);this.callbacks.onPlace(p.x,p.y);return;}
@@ -621,7 +653,7 @@ export class SceneEngine {
     this.callbacks.onSelect(null,false);
   }
   private handleMove(e:FederatedPointerEvent){
-    if(this.panning){this.root.position.set(this.panStart.rootX+e.global.x-this.panStart.x,this.panStart.rootY+e.global.y-this.panStart.y);return;}
+    if(this.panning){const p=this.cinematicWorld.toLocal(e.global);this.root.position.set(this.panStart.rootX+p.x-this.panStart.x,this.panStart.rootY+p.y-this.panStart.y);return;}
     if(this.snapshot?.placement&&this.placementGhost){const p=this.root.toLocal(e.global);this.placementGhost.position.set(p.x,p.y);this.placementGhost.visible=true;return;}
     if(this.marquee){
       const p=this.root.toLocal(e.global);this.marquee.currentX=p.x;this.marquee.currentY=p.y;
@@ -696,6 +728,6 @@ export class SceneEngine {
     this.dragging=null;this.panning=false;
   }
   private clearMarquee(){if(!this.marquee)return;this.marquee.graphic.removeFromParent();this.marquee.graphic.destroy();this.marquee=null;}
-  private handleWheel=(e:WheelEvent)=>{e.preventDefault();const old=this.root.scale.x;const next=Math.max(.25,Math.min(3,old*(e.deltaY<0?1.1:.9)));const rect=this.app.canvas.getBoundingClientRect();const px=e.clientX-rect.left,py=e.clientY-rect.top;const wx=(px-this.root.x)/old,wy=(py-this.root.y)/old;this.root.scale.set(next);this.root.position.set(px-wx*next,py-wy*next);};
+  private handleWheel=(e:WheelEvent)=>{e.preventDefault();const old=this.root.scale.x;const next=Math.max(.25,Math.min(3,old*(e.deltaY<0?1.1:.9)));const rect=this.app.canvas.getBoundingClientRect();const point=this.cinematicWorld.toLocal({x:e.clientX-rect.left,y:e.clientY-rect.top});const px=point.x,py=point.y;const wx=(px-this.root.x)/old,wy=(py-this.root.y)/old;this.root.scale.set(next);this.root.position.set(px-wx*next,py-wy*next);};
   destroy(){this.clearCinematic();this.clearMarquee();this.destroyed=true;this.queuedSnapshot=null;this.clearAttackEffects();this.tokenTextures.clear();this.tokenDisplays.clear();this.tokenStructureKeys.clear();this.tokenHiddenLabels.clear();this.lightingLayer=null;this.lightingKey=null;this.overlayDisplays.clear();this.sceneLinkDisplays.clear();this.discoverableDisplays.clear();this.patrolLayer?.destroy({children:true});this.patrolLayer=null;this.tokenPositionTargets.clear();this.tokenMovementAnimations.clear();this.patrolVisualCatchups.clear();this.selectedRings.clear();this.intelDisplays.clear();if(!this.initialized)return;this.app.canvas.removeEventListener("wheel",this.handleWheel);this.app.ticker.remove(this.updateTokenAnimations);this.app.destroy(true,{children:true,texture:false});}
 }

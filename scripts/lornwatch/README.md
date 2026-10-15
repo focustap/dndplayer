@@ -8,6 +8,7 @@ Prepared native Wayfinder content for issue #27. **Not installed in The Hollow.*
 - Twenty-five built-in ImageGen images (nine maps, fourteen portrait/creature images, two finale images) and nine deterministic evidence documents: **34 local PNG assets**. Source files are in ignored `outputs/lornwatch/`; file dimensions and SHA256 hashes are recorded in `docs/campaign/chapters/LORNWATCH_ASSETS.json`. Heavy binaries are intentionally absent from Git.
 - Ada's full story, memorial/case triggers, opening arrest read-aloud, NPC knowledge/reactions, boss restrictions/scaling and finale are in `LORNWATCH.md` / `LORNWATCH_RUN_SHEET.md`. No NPC speech or dialogue trees are installed. Only shopkeepers have token_interactions, type SHOP and empty dialogue fields.
 - Existing RLS and native scene/discoverable/encounter systems are reused. No schema changes. Ilan90HP/AC15 and sphere60HP/AC13 are separate damage targets. Cub is not an encounter member.
+- Turn is available in Cinematics: toward/away a reference token or eight compass directions, smooth visual-only MAP_TILT, automatic return, synchronized Restore, reduced-motion fallback, and no automatic saves/token moves. See [Turn verification](TURN_VERIFICATION.md); live multi-client verification remains pending.
 
 ## Isolated browser preview
 
@@ -18,7 +19,7 @@ npm run campaign:lornwatch:preview-data
 npm run campaign:lornwatch:preview -- --port 5174
 ```
 
-Open `http://127.0.0.1:5174/campaign/demo/scene/6dfd6387-e4c3-53bb-abf5-c2e68a4957ab/builder`. This is the existing Scene Builder/tabletop, loaded from native record fixtures. The explicit `chapter-preview` serve mode overrides both live Supabase environment values to undefined. It runs locally, has no live credentials, is DM-only, and is excluded from production builds. In-memory edits last until browser reload or dev restart. This is a rehearsal, not an installed multiplayer campaign.
+Open `http://127.0.0.1:5174/campaign/demo/scene/6dfd6387-e4c3-53bb-abf5-c2e68a4957ab/builder`. This is the existing Scene Builder/tabletop, loaded from native record fixtures. The explicit `chapter-preview` serve mode overrides both live Supabase environment values to undefined. It runs locally, has no live credentials, is DM-only, and is excluded from production builds. Its header explicitly says LOCAL FIXTURE PREVIEW / NOT CONNECTED TO YOUR LIVE CAMPAIGN. In-memory edits last until browser reload or dev restart. This is a rehearsal, not an installed multiplayer campaign or another Supabase project. Installation targets the existing The Hollow campaign alongside Greymere/Veyrholt.
 
 Use EDIT SCENE to inspect each map. Upload/change map uses the normal native control. Discoverables use Upload & place and map-position fields; finale/VII remain hidden. `node scripts/lornwatch/preview.mjs --browser-authoring` starts with no evidence so all eleven can be uploaded through browser controls for a clean authoring pass; default preview-data restores the complete fixture. Local preview seed excludes campaign notes; read the private source docs separately.
 
@@ -54,10 +55,10 @@ If base blank scenes already exist, the planner intentionally preserves them and
 
 ## Checks and remaining work
 
-- Pass: `node --test scripts/lornwatch/plan.test.mjs scripts/veyholt/plan.test.mjs scripts/dealer-cards.test.mjs` (30 tests).
+- Pass: `node --test scripts/cinematic-tilt.test.mjs scripts/lornwatch/plan.test.mjs scripts/veyholt/plan.test.mjs scripts/dealer-cards.test.mjs` (37 tests).
 - Pass: `npm run typecheck`, `npm run build` with bundled Node24. Existing chunk-size warning remains.
 - `npm run lint`: 16 errors and 1 warning. Matched against a clean archive of origin/main f349be4: identical files/rules/severities/messages (ignoring shifted source locations). No new findings. Existing errors are in TabletopContext, CreatureInspector, LiveAudio, NpcInteractionModal and SceneBuilderPage.
-- Production bundle checked: no chapter lore, fixture endpoint, or Ada backstory.
+- Production bundle checked: no private chapter source lore, fixture endpoint, or Ada backstory. Turn's generic DM controls are production code.
 - **Pending:** explicit live installation approval, authenticated R2 uploads, actual database rollback rehearsal, post-install snapshot comparison and player-role/multiplayer RLS verification. Docker's local engine was unavailable, so no local Postgres integration test was claimed. No merge/deployment performed.
 
 Read the run sheet before playing. Manual story token continuity, shopping payment/rewards, writ timing, Ilan survival and post-sphere reveals are intentional DM decisions, not automation.

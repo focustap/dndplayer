@@ -24,6 +24,8 @@ No NPC dialogue in the app. Use LORNWATCH.md for knowledge cards and optional re
 
 Writs: Haste prohibited (>15ft first time/turn DC12STR stops movement); One blow only (second damaging attack -2); Keep clear (end within10ft sphere DC12DEX pushed10ft). No damage from writs. No stacking, all-spells ban, forced compliance speeches, or locked exits. One meaningful Ada/Tomas appeal costs Ilan one action once. Retreat never triggers pursuit; offer rest.
 
+Turn (action, Recharge5–6): DM chooses toward/away Rook or compass direction, speaks/narrates freely, clicks Cinematics → Turn. DC14DEX to brace, otherwise slide15ft until blocked; no opportunity attacks/damage. Anchors/fixtures/magic can help; warn at hazards and offer edge save. At sphere half: DC12,10ft; at destruction: ends. Visual tilt never moves tokens or rolls saves; DM resolves and moves them. Automatic return or Cancel/restore resets the presentation.
+
 Before session: confirm maps load; documents readable; every interior has return link; shops show no dialogue tab; prepare healing/rest; read Ada section05 and boss07. Precheck finale images only privately. Existing live campaign must not be reset. Installation importer is additive and rollback-only by default; never replay an old snapshot over current play.
 
 Token continuity is manual: after Jory's arrest hide his square token, reveal the cell copy only on visiting. If Nell goes to Finch, hide square Nell and reveal the prepared inn copy. For the memorial beat hide cottage Ada and reveal square Ada; reverse when she returns. Ilan's court and basement representations likewise appear only where he currently is. No movement or story state is automated.
