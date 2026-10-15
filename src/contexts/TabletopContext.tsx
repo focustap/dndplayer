@@ -174,6 +174,7 @@ export function TabletopProvider({
 }) {
   const { campaignId = "demo" } = useParams();
   const [state, setState] = useState<TabletopState | null>(null);
+  useEffect(() => { tabletopService.rememberChapterPreview(state); }, [state]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const dealerCards = useDealerCards(state?.combat.active ? state.combat.id : undefined, Boolean(state && isDmRole(state.role) && !playerView && !state.previewPlayerView), state?.campaign.id);

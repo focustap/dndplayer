@@ -140,7 +140,7 @@ Training deck explains challengeable card selection: ten minutes earns **Cut the
 
 ### Original Foundations
 
-Ancient masonry cut by fresh table supports; ward scratches unrelated to card suits. Mara compares facts: sealed space existed first, deck existed first, amplification followed their meeting. Do not explain origins. **Do not place or reveal VII in the Foundations.** Preserve the recurring symbol for the History Hall foreshadowing and the guaranteed post-Dealer Final Table reveal. Observer's travel note points to a missing visitor from Lornwatch Abbey; Mara has a backup receipt.
+Ancient masonry cut by fresh table supports; ward scratches unrelated to card suits. Mara compares facts: sealed space existed first, deck existed first, amplification followed their meeting. Do not explain origins. **Do not place or reveal VII in the Foundations.** Preserve the recurring symbol for the History Hall foreshadowing and the guaranteed post-Dealer Final Table reveal. Observer's travel note points to a missing civic surveyor Sera Pell from Lornwatch town; Mara has a backup receipt.
 
 **Collection engine:** Two Claim Ushers and one Wager Hound (AC 13, HP 22, speed 40, bite +4, 1d8+2 force). Trigger: cross marked claim line or open receipt cage without writ. Valid writ or returning displaced receipt bypasses combat. Hound must move 10 ft in a straight line before attacking; telegraph its route, block with crates. Ushers protect cabinet, never pursue upstairs. Columns give cover. Two actions turning the visible claim wheel unravel all summons, alternative to killing them. Easier: one Usher; harder: Hound 30 HP. Reward: 30 gp unclaimed maintenance pay, healing potion, **Burn a Card** release stamp. No check/combat required to earn the stamp. Demonstrate on a practice card. Short rest allowed after engine disabled. Exits: Private House, Final Table.
 
@@ -209,7 +209,7 @@ Evidence supports one revelation: deck predates estate, dormant site predates De
 
 Pot has living claimants, not automatic party ownership. Return property, negotiate a publicly agreed salvage fee, or steal with visible civic consequences. Restitution rewards: 120 gp civic payment, 75 gp grateful claimants, two healing potions, Wayfarer's Writ (free modest lodging/mundane resupply), and an unclaimed uncommon Cloak of the Manta Ray gifted by claimants. Road 40 gp separate. Ilyra may contest the estate transfer; no automatic reversal of every wager. Level 4 after safe rest. Record survival, restitution and recovered objects AFTER play.
 
-An unopened field report in the registered stakes is addressed to a missing observer at **Lornwatch Abbey**, Glass Road. A surveyor left there for Veyrholt and never arrived. Mara recognizes destination, not its secret. Returning report offers a concrete journey; her duplicate delivery receipt preserves hook if report missed/destroyed. No confirmed network or global explanation.
+An unopened civic field report in the registered stakes is addressed to missing surveyor **Sera Pell in Lornwatch town**, along the Glass Road. Reports of petty arrests provide a second reason to investigate. Mara recognizes destination, not its secret. Returning report offers a concrete journey; her duplicate delivery receipt preserves hook if report missed/destroyed. No confirmed network or global explanation.
 
 ## Optional finds: most are unrelated
 

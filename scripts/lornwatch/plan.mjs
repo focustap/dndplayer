@@ -1,0 +1,77 @@
+import { createHash } from 'node:crypto';
+import { scenes, links, npcs, monsters, encounters, placements, documents, assets } from './manifest.mjs';
+
+// Stable campaign-scoped IDs let retries add only missing content. Existing rows,
+// including sold stock, HP, visibility, notes and map edits, are never rewritten.
+export function chapterId(campaignId,key) {
+  const h=createHash('sha256').update(`wayfinder:lornwatch:v1:${campaignId}:${key}`).digest('hex');
+  return `${h.slice(0,8)}-${h.slice(8,12)}-5${h.slice(13,16)}-a${h.slice(17,20)}-${h.slice(20,32)}`;
+}
+export function validateManifest() {
+  const keys=new Set(scenes.map(s=>s.key));
+  if(keys.size!==scenes.length)throw new Error('Duplicate scene');
+  for(const [from,to,,x,y] of links)if(!keys.has(from)||!keys.has(to)||from===to||x<0||x>1536||y<0||y>1024)throw new Error('Invalid link');
+  for(const start of keys){const reached=new Set([start]);for(let i=0;i<keys.size;i++)for(const [a,b] of links)if(reached.has(a))reached.add(b);if(reached.size!==keys.size)throw new Error(`Unreachable scene from ${start}`);}
+  for(const n of npcs)if(!keys.has(n.scene)||'pages'in n||'dialogue'in n||'dialogue_text'in n)throw new Error('NPC dialogue forbidden');
+  for(const e of encounters)for(const [key,count]of e.members)if(!monsters.some(m=>m.key===key)||count<1)throw new Error('Invalid encounter');
+  for(const d of documents)if(d.name.length>160||!keys.has(d.scene))throw new Error('Invalid document');
+  if(/Catalyst|The Witness|cosmology|world inside|mother misses|Mother, I finally/i.test(JSON.stringify({npcs,documents,monsters})))throw new Error('Secret in shared payload');
+  return {scenes:scenes.length,npcs:npcs.length,links:links.length,encounters:encounters.length,documents:documents.length};
+}
+export function buildPlan(snapshot,campaignId,registry={},chapter='',runSheet='') {
+  validateManifest();
+  if(!/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(campaignId))throw new Error('Campaign UUID required');
+  const db=structuredClone(snapshot),ops=[];
+  const campaign=db.campaigns.filter(r=>r.id===campaignId);
+  if(campaign.length!==1)throw new Error('One campaign required');
+  const ownerId=campaign[0].owner_id;
+  if(!db.campaign_members.some(m=>m.campaign_id===campaignId&&m.user_id===ownerId&&['OWNER','DM'].includes(m.role)))throw new Error('Owner/DM membership required');
+  if(db.combat_sessions.some(r=>r.active))throw new Error('Refusing installation during active combat');
+  for(const rows of Object.values(db))for(const row of rows)if(row.campaign_id&&row.campaign_id!==campaignId)throw new Error('Foreign campaign row');
+  const add=(table,key,data,identity=[])=>{
+    const pk=table==='token_interactions'?'token_id':'id';
+    const id=pk==='token_id'?data.token_id:chapterId(campaignId,`${table}:${key}`);
+    const matches=db[table].filter(r=>r[pk]===id);
+    if(matches.length>1)throw new Error(`Duplicate ${table} ID`);
+    if(matches[0]){for(const field of identity)if(matches[0][field]!==data[field])throw new Error(`Identity conflict ${table}:${key}`);return matches[0];}
+    if(['scenes','encounters','npc_templates','monster_templates'].includes(table)&&db[table].some(r=>r.name===data.name))throw new Error(`Unmanaged name collision: ${data.name}`);
+    const row={[pk]:id,...data};db[table].push(row);ops.push({kind:'insert',table,key:pk,after:row});return row;
+  };
+  const asset=key=>{
+    const row=registry[key];if(!row)return null;
+    if(!assets[key]||row.verified!==true||typeof row.path!=='string'||!row.path.startsWith(`${campaignId}/`)||/[?\\]|\.\./.test(row.path)||row.path.endsWith('/'))throw new Error(`Unverified R2 asset: ${key}`);
+    return row.path;
+  };
+  for(const key of Object.keys(registry))asset(key);
+  const sceneRows=new Map();
+  for(const s of scenes){
+    const path=asset(s.key);let map=null;
+    if(path){const a=registry[s.key];if(a.width!==s.width||a.height!==s.height)throw new Error(`Wrong map dimensions: ${s.key}`);map=add('maps',s.key,{campaign_id:campaignId,name:`[Lornwatch] ${s.name}`,storage_path:path,width:s.width,height:s.height,created_by:ownerId},['campaign_id','storage_path']);}
+    const {key,...data}=s;
+    const row=add('scenes',key,{campaign_id:campaignId,...data,map_id:map?.id??null,map_url:null,active:false,revealed:false,grid_opacity:s.grid_type==='SQUARE'?0.15:0,grid_color:'#ffffff'},['campaign_id']);
+    if(row.active&&ops.length)throw new Error('Chapter scene active; resnapshot after play');
+    sceneRows.set(key,row);
+  }
+  for(const [index,n]of npcs.entries()){
+    const template=add('npc_templates',n.key,{name:`Lornwatch — ${n.name}`,image_path:asset(n.key)},['name']);
+    const token=add('tokens',`npc:${index}`,{scene_id:sceneRows.get(n.scene).id,type:'NPC',reference_id:template.id,display_name:n.name,image_path:asset(n.key),x:n.x,y:n.y,size:1,visible:!n.hidden,locked:false},['scene_id','type','reference_id']);
+    // No interaction whatsoever for ordinary NPCs. Shops cannot open a dialogue tab.
+    if(n.shop){add('token_interactions',`npc:${index}`,{token_id:token.id,campaign_id:campaignId,enabled:true,type:'SHOP',display_name:n.name,dialogue_text:'',dialogue_pages:[]},['campaign_id','type']);
+      for(const [j,item]of n.shop.entries())add('npc_shop_items',`${index}:${j}`,{interaction_id:token.id,...item,sort_order:j},['interaction_id','name']);}
+  }
+  const templates=new Map();
+  for(const m of monsters){const {key,...data}=m;templates.set(key,add('monster_templates',key,{...data,image_path:asset(key)},['name']));}
+  for(const e of encounters){const row=add('encounters',e.key,{campaign_id:campaignId,name:e.name,notes:e.notes},['campaign_id','name']);for(const [key,quantity]of e.members)add('encounter_members',`${e.key}:${key}`,{encounter_id:row.id,monster_template_id:templates.get(key).id,quantity},['encounter_id','monster_template_id']);}
+  for(const [i,p]of placements.entries()){
+    const t=templates.get(p.monster);
+    const instance=add('monster_instances',String(i),{campaign_id:campaignId,template_id:t.id,custom_name:t.name,current_hp:t.max_hp,max_hp:t.max_hp,ac:t.ac,visible:false,dead:false,notes:''},['campaign_id','template_id']);
+    add('tokens',`monster:${i}`,{scene_id:sceneRows.get(p.scene).id,type:'MONSTER',reference_id:instance.id,display_name:t.name.replace('Lornwatch — ',''),image_path:asset(p.monster),x:p.x,y:p.y,size:p.size,visible:false,locked:false},['scene_id','type','reference_id']);
+  }
+  for(const [i,[from,to,label,x,y]]of links.entries())add('scene_links',String(i),{scene_id:sceneRows.get(from).id,destination_scene_id:sceneRows.get(to).id,label,x,y,created_by:ownerId},['scene_id','destination_scene_id']);
+  for(const d of documents){const path=asset(d.key);if(path)add('scene_discoverables',d.key,{campaign_id:campaignId,scene_id:sceneRows.get(d.scene).id,name:d.name,storage_path:path,x:d.x,y:d.y,hidden:d.hidden??false,created_by:ownerId},['campaign_id','scene_id']);}
+  for(const [i,section]of chapter.split(/^## /m).slice(1).entries()){
+    const newline=section.indexOf('\n');add('campaign_notes',`chapter:${i}`,{campaign_id:campaignId,title:`[Lornwatch] ${section.slice(0,newline).trim()}`,body:`DM ONLY\n\n${section.slice(newline+1).trim()}`,created_by:ownerId},['campaign_id']);
+  }
+  if(runSheet)add('campaign_notes','run-sheet',{campaign_id:campaignId,title:'[Lornwatch] START HERE — session run sheet',body:`DM ONLY\n\n${runSheet}`,created_by:ownerId},['campaign_id']);
+  return {campaignId,ownerId,ops,after:db,missingAssets:Object.keys(assets).filter(k=>!registry[k]).map(k=>({key:k,file:assets[k]})),managedSceneIds:[...sceneRows.values()].map(s=>s.id)};
+}

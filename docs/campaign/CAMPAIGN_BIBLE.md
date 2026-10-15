@@ -315,12 +315,18 @@ Lasting canon introduced there:
 - DM_SECRET: A dormant Hollow beneath the estate attached to and amplified his existing technique, corrupting him into its Catalyst. The Hollow does not independently invent an unrelated power.
 - The enormous Pot attracts unusual challengers. Most optional objects and local stories are unrelated to Hollows.
 - Defeating the Dealer ends the local connection; his survival is a player-dependent outcome, not predetermined death.
-- Progression: Greymere Level 2 → East Road rescue → Level 3 Veyrholt → Dealer → Level 4 → Lornwatch Abbey.
+- Progression: Greymere Level 2 → East Road rescue → Level 3 Veyrholt → Dealer → Level 4 → Lornwatch town.
 - VII, Hollow origins and the campaign-scale truth remain unresolved. Veyrholt's planned recurrence should prove only that VII predates the Dealer and appears beyond Greymere: optional foreshadowing in an old History Hall painting, then an automatic post-Dealer reveal beneath the Final Table.
 
 Veyrholt NPCs should use clear modern conversational language when delivering important lore or mechanic explanations. Old-fashioned wording is appropriate for ancient inscriptions, preserved oaths, and deliberate atmosphere, not for ordinary exposition the players need to understand.
 
 ## Canon discipline
+
+### Chapter 4 — Lornwatch (prepared canon; not session progress)
+
+Issue #27 replaces the former Abbey destination with a bright, colorful town along the Glass Road. See [Lornwatch](chapters/LORNWATCH.md) and its private run sheet. Do not renumber Chapter 3 or infer it has been played.
+
+DM_SECRET: formerly compassionate Judge Ilan Rook's limited rule-enforcement sorcery is amplified by a newly formed dark sphere beneath the courthouse. The sphere is the actual Catalyst; Ilan's claim that it is a divine Witness is unreliable and it never definitively speaks. Destroying it ends the laws and can save him. Only afterward reveal an impossible landscape and ancient VII, without explaining world-scale truth. Ada's full backstory is earned through the memorial confrontation or Tomas's case. Every NPC is roleplayed by the DM; no chapter NPC dialogue is installed. The nesting owlbear/cub problem is unrelated wildlife.
 
 When a detail is marked as "considered," "possible," "planned," or otherwise uncertain, do not silently promote it to immutable canon.
 

@@ -241,8 +241,40 @@ export const asDiceRoll = (row: Record<string, unknown>): DiceRoll => {
 };
 export const asCinematicEvent = (row: Record<string, unknown>): CinematicEvent => ({ id:String(row.id),campaignId:String(row.campaign_id),name:String(row.name),duration:Number(row.duration),steps:(row.steps as CinematicEvent["steps"]) ?? [],createdAt:String(row.created_at) });
 
+// Explicit dev mode only. Uses the same native records/rendering as production;
+// no campaign credentials, realtime subscriptions, or live data are involved.
+const chapterPreview = import.meta.env.DEV && import.meta.env.VITE_CHAPTER_PREVIEW === "lornwatch" && !isSupabaseConfigured;
+let previewRows: Record<string, Record<string, unknown>[]> | null = null;
+const previewScenes = new Map<string, TabletopState>();
+async function loadChapterPreview(sceneId?: string, current?: TabletopState): Promise<TabletopState> {
+  if (current) previewScenes.set(current.scene.id, current);
+  if (!previewRows) {
+    const response = await fetch('/__lornwatch/preview.json');
+    if (!response.ok) throw new Error('Run npm run campaign:lornwatch:preview-data first.');
+    previewRows = await response.json();
+  }
+  const db = previewRows!;
+  const allScenes = db.scenes.map(asScene);
+  const scene = allScenes.find(s => s.id === sceneId) ?? allScenes[0];
+  if (previewScenes.has(scene.id)) return previewScenes.get(scene.id)!;
+  const state = createDemoState(false);
+  const scoped = (table: string) => db[table].filter(r => r.scene_id === scene.id);
+  const tokens = scoped('tokens').map(asToken);
+  const instances = await Promise.all(db.monster_instances.map(asMonsterInstance));
+  return { ...state, campaign:{...state.campaign,id:'demo',name:'Lornwatch — isolated local preview'},
+    characters:[], scene, scenes:allScenes, tokens, overlays:[], zoneMarkers:[],
+    monsterInstances:instances, monsterTemplates:db.monster_templates.map(asMonsterTemplate),
+    npcTemplates:db.npc_templates.map(asNpcTemplate),
+    sceneLinks:scoped('scene_links').map(asSceneLink), discoverables:scoped('scene_discoverables').map(asDiscoverable),
+    tokenInteractions:db.token_interactions.filter(r=>tokens.some(t=>t.id===r.token_id)).map(r=>asInteraction({...r,npc_shop_items:db.npc_shop_items.filter(i=>i.interaction_id===r.token_id)})),
+    combat:{...state.combat,id:'lornwatch-preview-combat',active:false,round:1,currentIndex:0,entries:[]},
+  };
+}
+
 export const tabletopService = {
+  rememberChapterPreview(state: TabletopState | null) { if(chapterPreview && state) previewScenes.set(state.scene.id,state); },
   async load(campaignId: string, playerView = false, sceneId?: string): Promise<TabletopState> {
+    if (chapterPreview && campaignId === 'demo') { if(playerView) throw new Error('Chapter preview is DM-only.'); return loadChapterPreview(sceneId); }
     if (!isSupabaseConfigured || campaignId === "demo") return createDemoState(playerView);
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError) throw userError;
@@ -334,6 +366,7 @@ export const tabletopService = {
     }));
   },
   async loadSceneState(campaignId: string, sceneId: string | null, base: TabletopState, playerView = false): Promise<TabletopState> {
+    if (chapterPreview && campaignId === 'demo') { if(playerView) throw new Error('Chapter preview is DM-only.'); return loadChapterPreview(sceneId ?? undefined, base); }
     if (!isSupabaseConfigured || campaignId === "demo") return base;
     let sceneQuery = supabase.from("scenes").select("*").eq("campaign_id", campaignId);
     sceneQuery = sceneId ? sceneQuery.eq("id", sceneId) : sceneQuery.eq("active", true);
@@ -576,8 +609,8 @@ export const tabletopService = {
     const {data,error}=await supabase.from("scene_discoverables").insert({id,campaign_id:campaignId,scene_id:sceneId,name,storage_path:path,x:local.x,y:local.y,hidden}).select("*").single();if(error)throw error;
     return asDiscoverable(data as Record<string,unknown>);
   },
-  async updateDiscoverable(id:string,patch:Partial<Pick<SceneDiscoverable,"name"|"x"|"y"|"hidden">>){const {error}=await supabase.from("scene_discoverables").update({name:patch.name,x:patch.x,y:patch.y,hidden:patch.hidden}).eq("id",id);if(error)throw error;},
-  async deleteDiscoverable(id:string){const {data,error}=await supabase.from("scene_discoverables").select("storage_path").eq("id",id).single();if(error)throw error;const {error:deleteError}=await supabase.from("scene_discoverables").delete().eq("id",id);if(deleteError)throw deleteError;if(data.storage_path){const path=String(data.storage_path);if(isR2AssetServiceConfigured){try{await r2AssetService.remove(path.split("/")[0]??"",path);}catch{/* Legacy cleanup below still runs. */}}const {error:assetError}=await supabase.storage.from("campaign-assets").remove([path]);if(assetError)throw assetError;}},
+  async updateDiscoverable(id:string,patch:Partial<Pick<SceneDiscoverable,"name"|"x"|"y"|"hidden">>){if(!isSupabaseConfigured)return;const {error}=await supabase.from("scene_discoverables").update({name:patch.name,x:patch.x,y:patch.y,hidden:patch.hidden}).eq("id",id);if(error)throw error;},
+  async deleteDiscoverable(id:string){if(!isSupabaseConfigured)return;const {data,error}=await supabase.from("scene_discoverables").select("storage_path").eq("id",id).single();if(error)throw error;const {error:deleteError}=await supabase.from("scene_discoverables").delete().eq("id",id);if(deleteError)throw deleteError;if(data.storage_path){const path=String(data.storage_path);if(isR2AssetServiceConfigured){try{await r2AssetService.remove(path.split("/")[0]??"",path);}catch{/* Legacy cleanup below still runs. */}}const {error:assetError}=await supabase.storage.from("campaign-assets").remove([path]);if(assetError)throw assetError;}},
   async previewDiscoverable(item:SceneDiscoverable):Promise<SceneDiscoverable>{if(item.imageUrl)return item;if(!isSupabaseConfigured)return item;let storagePath=item.storagePath;if(!storagePath){const {data,error}=await supabase.from("scene_discoverables").select("storage_path").eq("id",item.id).single();if(error)throw error;storagePath=data?.storage_path?String(data.storage_path):null;}if(!storagePath)return item;const imageUrl=await getSignedAssetUrl(storagePath,item.campaignId);return imageUrl?{...item,storagePath,imageUrl}:{...item,storagePath};},
   async discover(id:string){const {data,error}=await supabase.rpc("discover_scene_discoverable",{p_discoverable_id:id});if(error)throw error;const item=asDiscoverable(data as Record<string,unknown>);if(!item.storagePath)return item;const imageUrl=await getSignedAssetUrl(item.storagePath,item.campaignId);return imageUrl?{...item,imageUrl}:item;},
   async triggerAttack(campaignId: string, attackerTokenId: string, targetTokenId: string, preset: AttackPreset, color:string|null=null): Promise<AttackAnimationEvent> { const local: AttackAnimationEvent = { id: crypto.randomUUID(), campaignId, attackerTokenId, targetTokenId, preset, color, createdAt: new Date().toISOString() }; if (!isSupabaseConfigured) return local; const { data, error } = await supabase.from("tabletop_animation_events").insert({ campaign_id: campaignId, attacker_token_id: attackerTokenId, target_token_id: targetTokenId, preset, color }).select("id,campaign_id,attacker_token_id,target_token_id,preset,color,created_at").single(); if (error) throw error; return asAttackEvent(data as Record<string, unknown>); },
