@@ -5,9 +5,12 @@ No NPC dialogue in the app. Use LORNWATCH.md for knowledge cards and optional re
 | Beat | Do / show | Fallback / next step |
 | --- | --- | --- |
 | Enter | Post-Dealer civic report to Lornwatch, Glass Road; no Abbey | Mara's duplicate receipt / petty-arrest rumors |
+| Glass Road | Broken Crossing: Elsi's wagon, Tavin and Bracken; captain +3 robbers, one hidden lookout | Bargain15gp/two crates; DC12 reduces to5gp; rescue/brace + unload/lever; safe south ford; no Hollow connection |
+| Road pressure | Only in combat/unsafe rush: announce cargo drift round2, one unsecured crate falls endround3; securing wagon stops it | Shallow brook, no lethal fall;25gp rescue reward,10gp if cargo lost; manual outcomes |
 | Square | Flower for crying daughter; Ordinance14, seven days; invisible force violently pulls father's arms behind back | Intervene → hearing; ignore → Nell at Finch, father in cells |
 | Hub | Reveal interiors as visited, keep basement/cells and monsters hidden | Town is bright and alive, ordinary fears; no mind control |
 | Shopping | Inspect SHOP inventory; DM speaks all shopkeeper roles | Purchases/payment/consumption manual; mundane store only |
+| Market life | Lina food, Bram produce, Tessa flowers, Daro mundane goods; occupied inn/bakery/court | All four are real SHOP inventories, other extras have no interactions; one-line roles in expansion notes |
 | Bakery | Sentence order; Martha in cells, Pippa at bakery | Case moves even if skipped |
 | Ada early | Tea/garden, busy son; no full backstory yet | Earn later conversation through memorial or case |
 | Ada earned | White memorial flower → same Ordinance14 confrontation OR ask about old Tomas case | Full story in section05; she does not know sphere/Hollow |
@@ -30,4 +33,4 @@ Before session: confirm maps load; documents readable; every interior has return
 
 Token continuity is manual: after Jory's arrest hide his square token, reveal the cell copy only on visiting. If Nell goes to Finch, hide square Nell and reveal the prepared inn copy. For the memorial beat hide cottage Ada and reveal square Ada; reverse when she returns. Ilan's court and basement representations likewise appear only where he currently is. No movement or story state is automated.
 
-Private tracking (paper or DM notes): arrest intervention; Jory released; Nell location; Martha released; Ada initial visit; memorial witnessed OR Tomas case discussed; story shared; owlbear resolution/cub safety; evidence copied; chosen Ilan outcome; sphere destroyed; finale shown; VII shown; rewards paid. These are DM reminders, not automatic gates.
+Private tracking (paper or DM notes): crossing travelers safe; wagon/cargo outcome; bargain or surrendered robbers; road reward paid; arrest intervention; Jory released; Nell location; Martha released; Ada initial visit; memorial witnessed OR Tomas case discussed; story shared; owlbear resolution/cub safety; evidence copied; chosen Ilan outcome; sphere destroyed; finale shown; VII shown; rewards paid. These are DM reminders, not automatic gates.

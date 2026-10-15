@@ -49,12 +49,12 @@
     },
     {
       "key": "court",
-      "file": "maps/court.png",
+      "file": "maps/court-accessible.png",
       "status": "LOCAL_READY_R2_PENDING",
       "width": 1536,
       "height": 1024,
-      "bytes": 3336307,
-      "sha256": "1496d063c7fd0b1e2514f9f1c508a8a99f18fd61273fc849964502f3ccd47888"
+      "bytes": 2860481,
+      "sha256": "f6e4389e7c5e0b6347e7955ead0efe2a32f8f0d8e46659a0df4c4b62db94e09d"
     },
     {
       "key": "cells",
@@ -82,6 +82,15 @@
       "height": 1024,
       "bytes": 4146897,
       "sha256": "39b1751d67ddc164dc41b1bcce7665694d42513f263eb152cf4ff5b07ff0eddb"
+    },
+    {
+      "key": "crossing",
+      "file": "maps/crossing.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 4250735,
+      "sha256": "ae9fcfb7d2e87bf931905d3028361f1773e0f088f5ad03ae405ed988aa630a19"
     },
     {
       "key": "mira",
@@ -174,6 +183,96 @@
       "sha256": "ba07a4242ee12479acb8c126ea22a2b344ba2cb689b712c707d0d4452f5e261f"
     },
     {
+      "key": "elsi",
+      "file": "portraits/elsi.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2518922,
+      "sha256": "0ebe6258e3fea3ba8ed3a6a7e62601b5b6407667da9da7c973f8ff467348a668"
+    },
+    {
+      "key": "tavin",
+      "file": "portraits/tavin.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2162824,
+      "sha256": "9a58bbfbc1f7c2156c877f18dd3dfc94b5b367a9b5d9b63368b4bff5516cf19f"
+    },
+    {
+      "key": "horse",
+      "file": "portraits/horse.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2161069,
+      "sha256": "c389f5faee6e3ee0677ba55307ea0b60a436912c89bd846af9881eedf6bf931f"
+    },
+    {
+      "key": "lina",
+      "file": "portraits/lina.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2339764,
+      "sha256": "836ae8675ddea55cde950fcfea9806807dac4c5627b9d7eae220a14575c955f6"
+    },
+    {
+      "key": "bram",
+      "file": "portraits/bram.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2721786,
+      "sha256": "883f25e70e2f53a8690080b0658e011e857a9b112f9756709f02c5cae85da5ed"
+    },
+    {
+      "key": "tessa",
+      "file": "portraits/tessa.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2334417,
+      "sha256": "9c8bd67c6589bd80cdfcc8788ba3f64f2905a9c07cbc6d5022a2ac2bc410f292"
+    },
+    {
+      "key": "daro",
+      "file": "portraits/daro.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2501651,
+      "sha256": "ecd50bc9466cd017dd132ed6903ff6bf6f2ef441f83cf12dc779c63735fe8e5e"
+    },
+    {
+      "key": "residentWorker",
+      "file": "portraits/residentWorker.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2263456,
+      "sha256": "35b8c960665a4dc5185a503d21a9515a378e32e33e3edd9778cace72adc11f98"
+    },
+    {
+      "key": "residentWeaver",
+      "file": "portraits/residentWeaver.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2599778,
+      "sha256": "5080bcda7b005dd96d98ca8baba96e17b41079d27398b5e7760bf34d2858b1ef"
+    },
+    {
+      "key": "residentElder",
+      "file": "portraits/residentElder.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2557433,
+      "sha256": "eda3e7de32acbd8c6f188fe8d8dab50ddd66e9382e084d0a71136368a0d35de7"
+    },
+    {
       "key": "ilan",
       "file": "tokens/ilan.png",
       "status": "LOCAL_READY_R2_PENDING",
@@ -208,6 +307,24 @@
       "height": 1254,
       "bytes": 2424740,
       "sha256": "175675a561808793c99d0941dc414dc091931b9fbb4a2f3320fc2de909321369"
+    },
+    {
+      "key": "highwayman",
+      "file": "tokens/highwayman.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2285013,
+      "sha256": "f4b7d3f27cfea8f64e9ab2ea54f84d483c7d250849d095150dc2efa872bc4adb"
+    },
+    {
+      "key": "highwaymanCaptain",
+      "file": "tokens/highwayman.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2285013,
+      "sha256": "f4b7d3f27cfea8f64e9ab2ea54f84d483c7d250849d095150dc2efa872bc4adb"
     },
     {
       "key": "ordinances",
@@ -307,6 +424,24 @@
       "height": 1024,
       "bytes": 3989037,
       "sha256": "91dae1e0eb3ea7ee45084d0e1fce373a6de75ed1ab0d6ea4bcc7d0a7bbc6f69f"
+    },
+    {
+      "key": "wagonWaybill",
+      "file": "discoverables/wagonWaybill.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1200,
+      "height": 1400,
+      "bytes": 75178,
+      "sha256": "574c09b811e11f81f1e9291ee9ee2c5841cfa8313fd97fb57724728653bf5e8f"
+    },
+    {
+      "key": "bridgeNotice",
+      "file": "discoverables/bridgeNotice.png",
+      "status": "LOCAL_READY_R2_PENDING",
+      "width": 1200,
+      "height": 1400,
+      "bytes": 67001,
+      "sha256": "277cf7c620d26cb2f14f842c8aeaeb6eca20c58c50cbe3cd00a2386f14ebec8f"
     }
   ]
 }

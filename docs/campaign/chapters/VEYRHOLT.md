@@ -211,6 +211,8 @@ Pot has living claimants, not automatic party ownership. Return property, negoti
 
 An unopened civic field report in the registered stakes is addressed to missing surveyor **Sera Pell in Lornwatch town**, along the Glass Road. Reports of petty arrests provide a second reason to investigate. Mara recognizes destination, not its secret. Returning report offers a concrete journey; her duplicate delivery receipt preserves hook if report missed/destroyed. No confirmed network or global explanation.
 
+Before town, run **The Broken Crossing** on the Glass Road: a merchant wagon stranded on a storm-damaged bridge while opportunistic highwaymen demand its cargo. It is an ordinary roadside adventure, entirely unrelated to any Hollow, with negotiation, combat, traveler rescue, wagon repair and a safe ford. See [Lornwatch expansion](LORNWATCH_EXPANSION.md) for the prepared map/actors/DM reference. This is future preparation, not a claim the party has left Veyrholt.
+
 ## Optional finds: most are unrelated
 
 DM-note checks, not image popups. Careful ten-minute search once/location; use passive scores where appropriate. Failure misses optional loot only, no respawning.

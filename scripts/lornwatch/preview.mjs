@@ -11,9 +11,10 @@ export function emptySnapshot(campaignId=previewCampaignId) {
 async function main(){
   const chapter=await readFile(new URL('../../docs/campaign/chapters/LORNWATCH.md',import.meta.url),'utf8');
   const sheet=await readFile(new URL('../../docs/campaign/chapters/LORNWATCH_RUN_SHEET.md',import.meta.url),'utf8');
-  const db=buildPlan(emptySnapshot(),previewCampaignId,{},chapter,sheet).after;
+  const expansion=await readFile(new URL('../../docs/campaign/chapters/LORNWATCH_EXPANSION.md',import.meta.url),'utf8');
+  const db=buildPlan(emptySnapshot(),previewCampaignId,{},chapter,sheet,expansion).after;
   const local=async(file)=>{try{await access(new URL(`../../outputs/lornwatch/${file}`,import.meta.url));return `/__lornwatch/${file}`;}catch{return null;}};
-  for(const s of scenes){const row=db.scenes.find(r=>r.id===chapterId(previewCampaignId,`scenes:${s.key}`));row.map_url=await local(`maps/${s.key}.png`);}
+  for(const s of scenes){const row=db.scenes.find(r=>r.id===chapterId(previewCampaignId,`scenes:${s.key}`));row.map_url=await local(assets[s.key]);}
   for(const [i,n]of npcs.entries()){const row=db.tokens.find(t=>t.id===chapterId(previewCampaignId,`tokens:npc:${i}`));row.image_url=await local(`portraits/${n.key}.png`);}
   for(const [i,p]of placements.entries()){const row=db.tokens.find(t=>t.id===chapterId(previewCampaignId,`tokens:monster:${i}`));row.image_url=await local(assets[p.monster]);}
   for(const m of monsters){const row=db.monster_templates.find(t=>t.id===chapterId(previewCampaignId,`monster_templates:${m.key}`));row.image_url=await local(assets[m.key]);}
@@ -24,6 +25,6 @@ async function main(){
   db.campaign_notes=[];
   await mkdir(new URL('../../outputs/lornwatch/',import.meta.url),{recursive:true});
   await writeFile(new URL('../../outputs/lornwatch/preview.json',import.meta.url),JSON.stringify(db,null,2));
-  console.log(`Preview ready: /campaign/demo/scene/${chapterId(previewCampaignId,'scenes:square')}/builder`);
+  console.log(`Preview ready: /campaign/demo/scene/${chapterId(previewCampaignId,'scenes:crossing')}/builder`);
 }
 if(process.argv[1]?.replaceAll('\\','/').endsWith('/preview.mjs'))await main();

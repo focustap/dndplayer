@@ -326,6 +326,8 @@ Veyrholt NPCs should use clear modern conversational language when delivering im
 
 Issue #27 replaces the former Abbey destination with a bright, colorful town along the Glass Road. See [Lornwatch](chapters/LORNWATCH.md) and its private run sheet. Do not renumber Chapter 3 or infer it has been played.
 
+The post-Dealer journey includes **The Broken Crossing** on the Glass Road: stranded merchant wagon, damaged bridge and opportunistic highwaymen. It is an ordinary adventure with rescue, bargaining, fighting and creative alternatives, entirely unrelated to any Hollow. No recurring mark or secret faction links it to the town. See the [expansion reference](chapters/LORNWATCH_EXPANSION.md); preparation does not establish an encounter outcome.
+
 DM_SECRET: formerly compassionate Judge Ilan Rook's limited rule-enforcement sorcery is amplified by a newly formed dark sphere beneath the courthouse. The sphere is the actual Catalyst; Ilan's claim that it is a divine Witness is unreliable and it never definitively speaks. Destroying it ends the laws and can save him. Only afterward reveal an impossible landscape and ancient VII, without explaining world-scale truth. Ada's full backstory is earned through the memorial confrontation or Tomas's case. Every NPC is roleplayed by the DM; no chapter NPC dialogue is installed. The nesting owlbear/cub problem is unrelated wildlife.
 
 DM_SECRET: Ilan's Turn imperative extends the same amplified sorcery into temporary physical floor rules. Recharge5–6, DC14DEX to brace or slide15ft in a DM-chosen direction, no inherent damage/opportunity attacks. The sphere's deterioration weakens it. Cinematics supplies a visual-only whole-board tilt; DM narrates, resolves saves and moves tokens manually.

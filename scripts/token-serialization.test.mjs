@@ -39,8 +39,8 @@ test('every Lornwatch scene has NPC/monster tokens with explicit defaults and in
   const chapter = readFileSync(new URL('../docs/campaign/chapters/LORNWATCH.md', import.meta.url), 'utf8');
   const sheet = readFileSync(new URL('../docs/campaign/chapters/LORNWATCH_RUN_SHEET.md', import.meta.url), 'utf8');
   const db = buildPlan(emptySnapshot(), previewCampaignId, {}, chapter, sheet).after;
-  assert.equal(db.scenes.length, 9);
-  assert.equal(db.tokens.length, 20);
+  assert.equal(db.scenes.length, 10);
+  assert.equal(db.tokens.length, 56);
   for (const scene of db.scenes) {
     const rows = db.tokens.filter(row => row.scene_id === scene.id);
     assert.ok(rows.length, scene.name);

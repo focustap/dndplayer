@@ -20,7 +20,7 @@ for doc in rows:
     draw = ImageDraw.Draw(im)
     draw.rectangle((45, 45, 1155, 1355), outline="#426d60", width=5)
     draw.rectangle((62, 62, 1138, 1338), outline="#b89b5c", width=2)
-    draw.text((110, 110), "LORNWATCH", font=small, fill="#426d60")
+    draw.text((110, 110), doc.get("imprint", "LORNWATCH"), font=small, fill="#426d60")
     y = 185
     for index, paragraph in enumerate(doc["text"].split("\n")):
         font = heading if index == 0 else body
@@ -30,6 +30,6 @@ for doc in rows:
         y += 25
     if y > 1280:
         raise RuntimeError(f"Document overflow: {doc['key']}")
-    draw.text((110, 1265), "Civic copy • retained for public inspection", font=small, fill="#69664f")
+    draw.text((110, 1265), doc.get("footer", "Civic copy • retained for public inspection"), font=small, fill="#69664f")
     im.save(out / f"{doc['key']}.png")
 print(f"Rendered {sum(bool(d.get('text')) for d in rows)} evidence images")

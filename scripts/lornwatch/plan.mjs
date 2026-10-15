@@ -18,7 +18,7 @@ export function validateManifest() {
   if(/Catalyst|The Witness|cosmology|world inside|mother misses|Mother, I finally/i.test(JSON.stringify({npcs,documents,monsters})))throw new Error('Secret in shared payload');
   return {scenes:scenes.length,npcs:npcs.length,links:links.length,encounters:encounters.length,documents:documents.length};
 }
-export function buildPlan(snapshot,campaignId,registry={},chapter='',runSheet='') {
+export function buildPlan(snapshot,campaignId,registry={},chapter='',runSheet='',expansion='') {
   validateManifest();
   if(!/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(campaignId))throw new Error('Campaign UUID required');
   const db=structuredClone(snapshot),ops=[];
@@ -54,7 +54,7 @@ export function buildPlan(snapshot,campaignId,registry={},chapter='',runSheet=''
   }
   for(const [index,n]of npcs.entries()){
     const template=add('npc_templates',n.key,{name:`Lornwatch — ${n.name}`,image_path:asset(n.key)},['name']);
-    const token=add('tokens',`npc:${index}`,{scene_id:sceneRows.get(n.scene).id,type:'NPC',reference_id:template.id,display_name:n.name,image_path:asset(n.key),x:n.x,y:n.y,size:1,visible:!n.hidden,locked:false},['scene_id','type','reference_id']);
+    const token=add('tokens',`npc:${index}`,{scene_id:sceneRows.get(n.scene).id,type:'NPC',reference_id:template.id,display_name:n.label??n.name,image_path:asset(n.key),x:n.x,y:n.y,size:n.size??1,visible:!n.hidden,locked:false},['scene_id','type','reference_id']);
     // No interaction whatsoever for ordinary NPCs. Shops cannot open a dialogue tab.
     if(n.shop){add('token_interactions',`npc:${index}`,{token_id:token.id,campaign_id:campaignId,enabled:true,type:'SHOP',display_name:n.name,dialogue_text:'',dialogue_pages:[]},['campaign_id','type']);
       for(const [j,item]of n.shop.entries())add('npc_shop_items',`${index}:${j}`,{interaction_id:token.id,...item,sort_order:j},['interaction_id','name']);}
@@ -64,16 +64,26 @@ export function buildPlan(snapshot,campaignId,registry={},chapter='',runSheet=''
   for(const e of encounters){const row=add('encounters',e.key,{campaign_id:campaignId,name:e.name,notes:e.notes},['campaign_id','name']);for(const [key,quantity]of e.members)add('encounter_members',`${e.key}:${key}`,{encounter_id:row.id,monster_template_id:templates.get(key).id,quantity},['encounter_id','monster_template_id']);}
   for(const [i,p]of placements.entries()){
     const t=templates.get(p.monster);
-    const instance=add('monster_instances',String(i),{campaign_id:campaignId,template_id:t.id,custom_name:t.name,current_hp:t.max_hp,max_hp:t.max_hp,ac:t.ac,visible:false,dead:false,notes:''},['campaign_id','template_id']);
-    add('tokens',`monster:${i}`,{scene_id:sceneRows.get(p.scene).id,type:'MONSTER',reference_id:instance.id,display_name:t.name.replace('Lornwatch — ',''),image_path:asset(p.monster),x:p.x,y:p.y,size:p.size,visible:false,locked:false},['scene_id','type','reference_id']);
+    const instance=add('monster_instances',String(i),{campaign_id:campaignId,template_id:t.id,custom_name:t.name,current_hp:t.max_hp,max_hp:t.max_hp,ac:t.ac,visible:p.visible??false,dead:false,notes:''},['campaign_id','template_id']);
+    add('tokens',`monster:${i}`,{scene_id:sceneRows.get(p.scene).id,type:'MONSTER',reference_id:instance.id,display_name:t.name.replace('Lornwatch — ',''),image_path:asset(p.monster),x:p.x,y:p.y,size:p.size,visible:p.visible??false,locked:false},['scene_id','type','reference_id']);
   }
   for(const [i,[from,to,label,x,y]]of links.entries())add('scene_links',String(i),{scene_id:sceneRows.get(from).id,destination_scene_id:sceneRows.get(to).id,label,x,y,created_by:ownerId},['scene_id','destination_scene_id']);
+  // Only attach to an exact known earlier scene; never create a substitute
+  // Veyrholt campaign/scene or overwrite its artwork, flags or played state.
+  const departures=db.scenes.filter(s=>s.campaign_id===campaignId&&s.name==='Veyrholt - Final Table');
+  if(departures.length>1)throw new Error('Ambiguous Veyrholt Final Table; choose departure manually.');
+  if(departures.length){
+    const departure=departures[0],crossing=sceneRows.get('crossing');
+    add('scene_links','glass-road:departure',{scene_id:departure.id,destination_scene_id:crossing.id,label:'Glass Road — after the Dealer',x:(departure.width??1536)*.5,y:(departure.height??1024)*.93,created_by:ownerId},['scene_id','destination_scene_id']);
+    add('scene_links','glass-road:return',{scene_id:crossing.id,destination_scene_id:departure.id,label:'West road — Veyrholt',x:90,y:340,created_by:ownerId},['scene_id','destination_scene_id']);
+  }
   for(const d of documents){const path=asset(d.key);if(path)add('scene_discoverables',d.key,{campaign_id:campaignId,scene_id:sceneRows.get(d.scene).id,name:d.name,storage_path:path,x:d.x,y:d.y,hidden:d.hidden??false,created_by:ownerId},['campaign_id','scene_id']);}
   for(const [i,section]of chapter.split(/^## /m).slice(1).entries()){
     const newline=section.indexOf('\n');add('campaign_notes',`chapter:${i}`,{campaign_id:campaignId,title:`[Lornwatch] ${section.slice(0,newline).trim()}`,body:`DM ONLY\n\n${section.slice(newline+1).trim()}`,created_by:ownerId},['campaign_id']);
   }
   if(runSheet)add('campaign_notes','run-sheet',{campaign_id:campaignId,title:'[Lornwatch] START HERE — session run sheet',body:`DM ONLY\n\n${runSheet}`,created_by:ownerId},['campaign_id']);
-  return {campaignId,ownerId,ops,after:db,missingAssets:Object.keys(assets).filter(k=>!registry[k]).map(k=>({key:k,file:assets[k]})),managedSceneIds:[...sceneRows.values()].map(s=>s.id)};
+  if(expansion)add('campaign_notes','expansion-v1',{campaign_id:campaignId,title:'[Lornwatch] Glass Road, populated town and service stairs — DM reference',body:`DM ONLY\n\n${expansion}`,created_by:ownerId},['campaign_id']);
+  return {campaignId,ownerId,ops,after:db,travelConnection:departures.length?'ATTACHED_TO_EXISTING_FINAL_TABLE':'VEYRHOLT_SCENE_NOT_PRESENT',missingAssets:Object.keys(assets).filter(k=>!registry[k]).map(k=>({key:k,file:assets[k]})),managedSceneIds:[...sceneRows.values()].map(s=>s.id)};
 }
 
 // Explicit optional exception for the retired destination, private notes only.

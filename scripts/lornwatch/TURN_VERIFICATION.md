@@ -17,7 +17,7 @@ Browser re-verification used the actual Cinematic motion control with the local 
 
 The original local fixture omitted `tokens.rotation`. `Number(undefined)` produced NaN and Pixi could not render those containers. New planner records explicitly include rotation, conditions, owner and image defaults. The shared production/preview deserializer now supplies finite position/rotation/size defaults for incomplete or malformed records while preserving valid authored transforms and hidden state. Pixi also guards rotation at the rendering boundary.
 
-Three regression tests in `scripts/token-serialization.test.mjs` exercise legacy records, invalid numeric payloads, preservation of valid values and all twenty generated NPC/monster records across all nine scenes, including actual Pixi transform/inverse round trips. The in-Codex browser loaded every scene and rendered the following tokens. Hidden actors remain translucent DM-only ghosts; their visibility flags were not changed.
+Three regression tests in `scripts/token-serialization.test.mjs` exercise legacy records, invalid numeric payloads, preservation of valid values and every generated NPC/monster record, including actual Pixi transform/inverse round trips. They now cover56 records across ten scenes. The original browser pass loaded the following twenty tokens; the later population/travel expansion is documented in [expansion verification](EXPANSION_VERIFICATION.md). Hidden actors remain translucent DM-only ghosts.
 
 | Scene | Tokens checked |
 | --- | --- |
