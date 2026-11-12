@@ -10,6 +10,7 @@ import {
 } from "react";
 import { useParams } from "react-router-dom";
 import { useDealerCards } from './useDealerCards';
+import { cinematicAppliesToScene } from '../domain/cinematicTilt';
 import type {
   AttackPreset,
   Character,
@@ -174,10 +175,13 @@ export function TabletopProvider({
 }) {
   const { campaignId = "demo" } = useParams();
   const [state, setState] = useState<TabletopState | null>(null);
+  useEffect(() => { tabletopService.rememberChapterPreview(state); }, [state]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const dealerCards = useDealerCards(state?.combat.active ? state.combat.id : undefined, Boolean(state && isDmRole(state.role) && !playerView && !state.previewPlayerView), state?.campaign.id);
   const stateRef = useRef(state);
+  const latestCinematicAt = useRef(0);
+  const cinematicRequestRevision = useRef(0);
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
@@ -551,8 +555,12 @@ export function TabletopProvider({
           const event = asCinematicEvent(
             payload.new as Record<string, unknown>,
           );
+          const eventTime = Date.parse(event.createdAt) || 0;
+          if (eventTime < latestCinematicAt.current) return;
+          latestCinematicAt.current = eventTime;
           setState((current) => {
             if (!current) return current;
+            if (!cinematicAppliesToScene(event, current.scene.id)) return current;
             if (event.name === "Dread")
               return { ...current, dreadActive: true };
             if (event.name === "Dread off")
@@ -852,6 +860,7 @@ export function TabletopProvider({
       async triggerCinematic(name, duration, steps) {
         const s = stateRef.current;
         if (!s || !isDmRole(s.role)) return;
+        const revision = ++cinematicRequestRevision.current;
         const event: CinematicEvent = builder
           ? {
               id: `preview-${crypto.randomUUID()}`,
@@ -859,7 +868,7 @@ export function TabletopProvider({
               name,
               duration,
               steps,
-              createdAt: new Date().toISOString(),
+              createdAt: new Date(serverNowMs()).toISOString(),
             }
           : await tabletopService.triggerCinematic(
               s.campaign.id,
@@ -867,8 +876,13 @@ export function TabletopProvider({
               duration,
               steps,
             );
+        if (revision !== cinematicRequestRevision.current) return;
+        const eventTime = Date.parse(event.createdAt) || 0;
+        if (eventTime < latestCinematicAt.current) return;
+        latestCinematicAt.current = eventTime;
         setState((current) => {
-          if (!current) return current;
+          if (!current || current.campaign.id !== event.campaignId) return current;
+          if (!cinematicAppliesToScene(event, current.scene.id)) return current;
           if (event.name === "Dread")
             return { ...current, dreadActive: true };
           if (event.name === "Dread off")
@@ -887,9 +901,14 @@ export function TabletopProvider({
         );
       },
       cancelCinematic() {
+        const s = stateRef.current;
+        if (!s || !isDmRole(s.role)) return;
+        cinematicRequestRevision.current++;
+        latestCinematicAt.current = Math.max(latestCinematicAt.current, serverNowMs());
         setState((current) =>
           current ? { ...current, cinematicEvent: null } : current,
         );
+        if (!builder) void tabletopService.triggerCinematic(s.campaign.id, 'Restore view', 100, []).catch(reason => setError(reason instanceof Error ? reason.message : 'Could not broadcast view restoration.'));
       },
       async targetAttack(targetTokenId) {
         const s = stateRef.current;

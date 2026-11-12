@@ -12,6 +12,9 @@
     "typecheck": "tsc -b --pretty false",
     "lint": "eslint . --ignore-pattern dist",
     "campaign:veyholt": "node scripts/import-veyholt.mjs",
+    "campaign:lornwatch": "node scripts/import-lornwatch.mjs",
+    "campaign:lornwatch:preview-data": "node scripts/lornwatch/preview.mjs",
+    "campaign:lornwatch:preview": "vite --mode chapter-preview",
     "preview": "vite preview"
   },
   "dependencies": {

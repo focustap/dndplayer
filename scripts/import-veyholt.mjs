@@ -12,13 +12,14 @@ async function main(){
  const campaignId=flag('--campaign-id');
  if(args.includes('--snapshot-sql')){console.log(snapshotSql(campaignId));return;}
  if(!flag('--snapshot')){if(args.includes('--apply')||flag('--sql'))throw new Error('--snapshot is required before any write');console.log(JSON.stringify({valid:true,...validateManifest()},null,2));return;}
- const snapshot=JSON.parse(await readFile(resolve(flag('--snapshot')),'utf8'));
+ const rawSnapshot=await readFile(resolve(flag('--snapshot')),'utf8');
+ const snapshot=JSON.parse(rawSnapshot);
  const registry=flag('--assets')?JSON.parse(await readFile(resolve(flag('--assets')),'utf8')):{};
  const chapter=await readFile(resolve(root,'docs/campaign/chapters/VEYRHOLT.md'),'utf8');
  const plan=(args.includes('--favorite-card')?buildFavoriteCardPlan:buildPlan)(snapshot,campaignId,registry,chapter);
  const summary={valid:true,...validateManifest(),operations:plan.ops.length,byTable:Object.fromEntries([...new Set(plan.ops.map(o=>o.table))].map(t=>[t,plan.ops.filter(o=>o.table===t).length])),missingAssets:plan.missingAssets};
  if(flag('--plan'))await writeFile(resolve(flag('--plan')),JSON.stringify(plan,null,2));
- const sql=transactionSql(plan,snapshot);
+ const sql=transactionSql(plan,snapshot,rawSnapshot);
  if(flag('--sql'))await writeFile(resolve(flag('--sql')),sql);
  if(args.includes('--apply')){
   if(!process.env.WAYFINDER_DATABASE_URL)throw new Error('Set WAYFINDER_DATABASE_URL for psql, or execute the reviewed --sql output through the Supabase connector. Never commit credentials.');

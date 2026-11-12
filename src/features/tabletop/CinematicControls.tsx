@@ -1,13 +1,24 @@
 import { Clapperboard, Crosshair, Flashlight, Gauge, ShieldAlert, Undo2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { useTabletop } from "../../contexts/TabletopContext";
-import type { CinematicEvent } from "../../domain/types";
+import { isDmRole, type CinematicEvent } from "../../domain/types";
+import { resolveTurnDirection, turnDirections, type TurnDirection } from "../../domain/cinematicTilt";
 import { DealerCardBuilderPreview } from "./DealerCards";
+import { getCinematicMotionPreference, setCinematicMotionPreference, subscribeCinematicMotion, type CinematicMotionPreference } from '../../domain/cinematicMotion';
 
 export function CinematicControls() {
-  const { state, actions, builder } = useTabletop();
+  const { state, actions, builder, playerView } = useTabletop();
   const [open, setOpen] = useState(false);
-  if (!state) return null;
+  const [direction, setDirection] = useState<TurnDirection>('TOWARD');
+  const [referenceId, setReferenceId] = useState('');
+  const motionPreference = useSyncExternalStore(subscribeCinematicMotion, getCinematicMotionPreference, () => 'SYSTEM' as const);
+  if (!state || !isDmRole(state.role) || playerView || state.previewPlayerView) return null;
+  const reference = state.tokens.find(t => t.id === referenceId) ?? state.tokens.find(t => /\bIlan\b/i.test(t.displayName));
+  const vector = resolveTurnDirection(direction, {x:state.scene.width/2,y:state.scene.height/2}, reference);
+  const playTurn = () => {
+    if (!vector) return;
+    void actions.triggerCinematic('Turn', 8000, [{at:0,duration:8000,type:'MAP_TILT',sceneId:state.scene.id,degrees:16,directionX:vector.x,directionY:vector.y}]);
+  };
   const selected = state.selectedTokenId ? state.tokens.find((token) => token.id === state.selectedTokenId) : null;
   const play = (name: string, duration: number, steps: CinematicEvent["steps"]) => void actions.triggerCinematic(name, duration, steps);
   const focusSelected = selected ? [{ at: 0, duration: 900, type: "CAMERA_FOCUS_TOKEN" as const, tokenId: selected.id, zoom: 1.38, persistCamera: true }] : [];
@@ -58,6 +69,20 @@ export function CinematicControls() {
         <button disabled={!selected} className="cinematic-power" onClick={() => selected && play("Power surge", 1200, powerSurge)}><Crosshair />Power surge</button>
         <button disabled={!selected} className="boss-entrance" onClick={() => void playBossEntrance()}><Clapperboard />Boss entrance demo</button>
       </div>
+      <section className="cinematic-turn" aria-label="Turn battlefield tilt">
+        <label>Cinematic motion<select value={motionPreference} onChange={event=>setCinematicMotionPreference(event.target.value as CinematicMotionPreference)}>
+          <option value="SYSTEM">Follow browser preference (default)</option><option value="FULL">Full rotation — opt in</option><option value="REDUCED">Reduced motion — static cue</option>
+        </select></label>
+        <p>Turn motion for this browser only. Other viewers keep their own preference.</p>
+        <label>Turn direction<select value={direction} onChange={event=>setDirection(event.target.value as TurnDirection)}>
+          <option value="TOWARD">Toward Rook / reference token</option><option value="AWAY">Away from Rook / reference token</option>
+          {Object.keys(turnDirections).map(key=><option key={key} value={key}>{key} — map direction</option>)}
+        </select></label>
+        {(direction==='TOWARD'||direction==='AWAY')&&<label>Rook / reference token<select value={reference?.id??''} onChange={event=>setReferenceId(event.target.value)}><option value="">Choose token…</option>{state.tokens.map(token=><option key={token.id} value={token.id}>{token.displayName}</option>)}</select></label>}
+        <button disabled={!vector} onClick={playTurn}><Gauge/>Turn — tilt battlefield</button>
+        <p>Visual only · returns after 8 seconds. Resolve saves and move tokens manually. North is map up.</p>
+        {!vector&&<p>Choose a compass direction or a reference token away from the map center.</p>}
+      </section>
       {builder && <DealerCardBuilderPreview />}
       <button className="cinematic-restore" onClick={actions.cancelCinematic}><Undo2 />Cancel / restore</button>
     </div>}

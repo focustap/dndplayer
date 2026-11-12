@@ -41,3 +41,11 @@ html.cinematic-screen-shake-active, html.cinematic-screen-shake-active body { ov
 .cinematic-action-grid .cinematic-power { background: #27203f; border-color: #8e75ce; }
 .cinematic-action-grid svg, .cinematic-restore svg { height: 14px; width: 14px; }
 .cinematic-restore { justify-content: center; margin-top: 8px; width: 100%; }
+.cinematic-turn { border-top: 1px solid #3d5144; display: grid; gap: 8px; margin-top: 12px; padding-top: 10px; }
+.cinematic-turn label { color: #d8d1c4; display: grid; font-size: 12px; gap: 5px; }
+.cinematic-turn select { background: #1c2722; border: 1px solid #3d5144; color: #eee5d6; min-width: 0; padding: 7px; width: 100%; }
+.cinematic-turn > button { align-items: center; background: #27203f; border: 1px solid #8e75ce; color: #eee5d6; cursor: pointer; display: flex; gap: 7px; min-height: 36px; padding: 8px; }
+.cinematic-turn > button:disabled { cursor: not-allowed; opacity: .45; }
+.cinematic-turn svg { height: 16px; width: 16px; }
+.cinematic-slope-cue { align-items: center; background: #101614e8; border: 1px solid #c8aa74; border-radius: 5px; bottom: 100px; color: #f4ead9; display: flex; font: 700 13px Arial, sans-serif; gap: 12px; left: 50%; padding: 8px 14px; position: absolute; transform: translateX(-50%); }
+.cinematic-slope-cue > span { display: inline-block; font-size: 28px; line-height: 1; }
